@@ -31,6 +31,7 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -53,13 +54,20 @@ object BamToRawVcf extends ToolCommand[Args] {
 
     val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
     reads.rdd.cache()
-    val flagstats = Future(reads.flagStat()).map { case (failed, passed) => sparkSession.createDataset(passed + failed :: Nil).write.csv(cmdArgs.outputFile + ".flagstat") }
+    val flagstats = Future(reads.flagStat()).map {
+      case (_, passed) =>
+        sc.parallelize(passed :: Nil)
+          .toDS()
+          .write
+          .csv(cmdArgs.outputFile + ".flagstat")
+    }
 
     val groups = reads.rdd.flatMap { read =>
       read.getAttributes
         .split("\t")
         .find(_.startsWith(cmdArgs.sampleTag + ":"))
-        .map(_.split(":")(2)).map(_ -> read)
+        .map(_.split(":")(2))
+        .map(_ -> read)
     }
 
     val values =
