@@ -24,12 +24,15 @@ package nl.biopet.tools.bamtorawvcf
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.ngs.intervals.BedRecordList
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object BamToRawVcf extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -43,35 +46,28 @@ object BamToRawVcf extends ToolCommand[Args] {
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
-    implicit val sc = sparkSession.sparkContext
+    implicit val sc: SparkContext = sparkSession.sparkContext
     import sparkSession.implicits._
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    val dict = bam.getDictFromBam(cmdArgs.inputFile)
-    val regions = BedRecordList.fromDict(dict).scatter(cmdArgs.binSize)
+    val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+    reads.rdd.cache()
+    val flagstats = Future(reads.flagStat()).map { case (failed, passed) => sparkSession.createDataset(passed + failed :: Nil).write.csv(cmdArgs.outputFile + ".flagstat") }
 
-//    val reads = regions.flatten.map(
-//      r =>
-//        r -> sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath,
-//                               ReferenceRegion(r.chr, r.start, r.end)))
-//    val rdd = AlignmentRecordRDD(
-//      sc.union(reads.map(x => x._2.rdd.filter(_.getStart >= x._1.start))),
-//      reads.map(a => a._2.sequences).reduce(_ ++ _),
-//      reads.map(a => a._2.recordGroups).reduce(_ ++ _),
-//      Nil
-//    )
-    val rdd = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
-
-    val groups = rdd.rdd.map(
-      _.getAttributes
+    val groups = reads.rdd.flatMap { read =>
+      read.getAttributes
         .split("\t")
         .find(_.startsWith(cmdArgs.sampleTag + ":"))
-        .map(_.split(":")(2)))
+        .map(_.split(":")(2)).map(_ -> read)
+    }
 
     val values =
-      groups.map(x => x.getOrElse("None") -> 1).reduceByKey(_ + _).toDS()
+      groups.map(x => x._1 -> 1).reduceByKey(_ + _).toDS()
     values.write.csv(cmdArgs.outputFile.getAbsolutePath)
+
+    reads.rdd.unpersist()
+    Await.result(flagstats, Duration.Inf)
 
     logger.info("Done")
   }
