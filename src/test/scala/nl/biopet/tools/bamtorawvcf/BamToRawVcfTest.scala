@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.bamtorawvcf
 
+import java.io.File
+
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
 
@@ -29,7 +31,21 @@ class BamToRawVcfTest extends ToolTest[Args] {
   @Test
   def testNoArgs(): Unit = {
     intercept[IllegalArgumentException] {
-      ToolTemplate.main(Array())
+      BamToRawVcf.main(Array())
     }
+  }
+
+  @Test
+  def testDefault(): Unit = {
+    val outputFile = File.createTempFile("test.", ".csv")
+    outputFile.delete()
+    outputFile.deleteOnExit()
+    BamToRawVcf.main(Array("-i", resourcePath("/paired01.bam"),
+      "--sparkMaster", "local[2]",
+      "-R", "<some fasta>",
+      "--binSize", "1000",
+      "--sampleTag", "NM",
+      "-o", outputFile.getAbsolutePath))
+    ""
   }
 }

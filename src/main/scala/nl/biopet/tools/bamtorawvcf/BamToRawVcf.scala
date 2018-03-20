@@ -22,50 +22,72 @@
 package nl.biopet.tools.bamtorawvcf
 
 import nl.biopet.utils.tool.ToolCommand
+import nl.biopet.utils.ngs.bam
+import nl.biopet.utils.ngs.intervals.BedRecordList
+import org.apache.spark.SparkConf
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.sql.SparkSession
+import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 
 object BamToRawVcf extends ToolCommand[Args] {
   def emptyArgs = Args()
   def argsParser = new ArgsParser(this)
 
-  override def urlToolName: String = "tool-template"
   def main(args: Array[String]): Unit = {
     val cmdArgs = cmdArrayToArgs(args)
 
     logger.info("Start")
+    val sparkConf: SparkConf =
+      new SparkConf(true).setMaster(cmdArgs.sparkMaster)
+    implicit val sparkSession: SparkSession =
+      SparkSession.builder().config(sparkConf).getOrCreate()
+    implicit val sc = sparkSession.sparkContext
+    import sparkSession.implicits._
+    logger.info(
+      s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    //TODO: Execute code
+    val dict = bam.getDictFromBam(cmdArgs.inputFile)
+    val regions = BedRecordList.fromDict(dict).scatter(cmdArgs.binSize)
+
+//    val reads = regions.flatten.map(
+//      r =>
+//        r -> sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath,
+//                               ReferenceRegion(r.chr, r.start, r.end)))
+//    val rdd = AlignmentRecordRDD(
+//      sc.union(reads.map(x => x._2.rdd.filter(_.getStart >= x._1.start))),
+//      reads.map(a => a._2.sequences).reduce(_ ++ _),
+//      reads.map(a => a._2.recordGroups).reduce(_ ++ _),
+//      Nil
+//    )
+    val rdd = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+
+    val groups = rdd.rdd.map(
+      _.getAttributes
+        .split("\t")
+        .find(_.startsWith(cmdArgs.sampleTag + ":"))
+        .map(_.split(":")(2)))
+
+    val values =
+      groups.map(x => x.getOrElse("None") -> 1).reduceByKey(_ + _).toDS()
+    values.write.csv(cmdArgs.outputFile.getAbsolutePath)
 
     logger.info("Done")
   }
-  // TODO: Remove loremIpsum
-  val loremIpsum: String =
-    """Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                              |Aliquam bibendum tellus sed lectus tristique egestas.
-                              |Aenean malesuada lacus sed mollis hendrerit. Aliquam ac mollis sapien.
-                              |Donec vel suscipit dui. Aenean pretium nibh in pulvinar consequat.
-                              |Duis feugiat mattis erat, sed varius lectus eleifend vel.
-                              |Etiam feugiat neque a dolor ornare pulvinar.
-                              |
-                              |Aenean id nibh mi.Fusce vel dapibus dui, quis dapibus felis.
-                              |Aenean ipsum purus, bibendum a odio non, mattis efficitur dui.
-                              |In fermentum est faucibus, bibendum urna sollicitudin, tempor erat.
-                              |Vivamus aliquet nulla enim, non pharetra dui pulvinar id.
-                              |Aliquam erat volutpat. Morbi tincidunt iaculis viverra.
-                              |Suspendisse eget metus at lorem varius feugiat. Aliquam erat volutpat.
-                              |Aliquam consequat nibh ut feugiat condimentum.
-                              |Pellentesque aliquam cursus ex, ac consequat est viverra vitae.
-                              |Donec purus orci, efficitur vel sem a, sodales aliquam tellus.
-                              |Maecenas at leo posuere, tempus risus in, sodales ligula.
-                              |Nam mattis enim a ligula iaculis vulputate. Nam fringilla.
-                              """.stripMargin
 
-  def descriptionText: String = loremIpsum.substring(0, 250)
+  def descriptionText: String =
+    """
+      |
+    """.stripMargin
 
   def manualText: String =
     s"""
-      |${loremIpsum.substring(0, 250)} Example:
-      |${example("-i", "<input_file>")}
+      |
     """.stripMargin
 
-  def exampleText: String = loremIpsum.substring(0, 250)
+  def exampleText: String =
+    """
+      |
+    """.stripMargin
 }
