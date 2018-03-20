@@ -70,11 +70,13 @@ object BamToRawVcf extends ToolCommand[Args] {
         .map(_ -> read)
     }
 
-    val values =
-      groups.map(x => x._1 -> 1).reduceByKey(_ + _).toDS()
-    values.write.csv(cmdArgs.outputFile.getAbsolutePath)
+    val values = Future {
+      val v = groups.map(x => x._1 -> 1).reduceByKey(_ + _).toDS()
+      v.write.csv(cmdArgs.outputFile.getAbsolutePath)
+    }
 
     reads.rdd.unpersist()
+    Await.result(values, Duration.Inf)
     Await.result(flagstats, Duration.Inf)
 
     logger.info("Done")
