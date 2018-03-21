@@ -19,22 +19,32 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.variantcalls
 
-import nl.biopet.tools.tenxkit.cellreads.CellReads
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.utils.tool.ToolCommand
-import nl.biopet.utils.tool.multi.MultiToolCommand
+import java.io.File
 
-object TenxKit extends MultiToolCommand {
+import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 
-  def subTools: Map[String, List[ToolCommand[_]]] =
-    Map("Tools" -> List(CellReads, CellVariantcaller))
-
-  def descriptionText: String = extendedDescriptionText
-
-  def manualText: String = extendedManualText
-
-  def exampleText: String = extendedExampleText
-
+class ArgsParser(toolCommand: ToolCommand[Args])
+    extends AbstractOptParser[Args](toolCommand) {
+  opt[File]('i', "inputFile")
+    .required()
+    .action((x, c) => c.copy(inputFile = x))
+    .text("Input bam file")
+  opt[File]('o', "outputDir")
+    .required()
+    .action((x, c) => c.copy(outputDir = x))
+    .text("Output directory")
+  opt[File]("correctCells")
+    .required()
+    .action((x, c) => c.copy(correctCells = x))
+    .text("List of correct cells")
+  opt[String]('s', "sampleTag")
+    .action((x, c) => c.copy(sampleTag = x))
+    .text(
+      s"Tag where to find the sample barcode, default '${Args().sampleTag}'")
+  opt[String]("sparkMaster")
+    .required()
+    .action((x, c) => c.copy(sparkMaster = x))
+    .text("Spark master")
 }

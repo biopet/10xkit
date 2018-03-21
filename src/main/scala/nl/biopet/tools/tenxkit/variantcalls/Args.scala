@@ -19,22 +19,12 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.variantcalls
 
-import nl.biopet.tools.tenxkit.cellreads.CellReads
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.utils.tool.ToolCommand
-import nl.biopet.utils.tool.multi.MultiToolCommand
+import java.io.File
 
-object TenxKit extends MultiToolCommand {
-
-  def subTools: Map[String, List[ToolCommand[_]]] =
-    Map("Tools" -> List(CellReads, CellVariantcaller))
-
-  def descriptionText: String = extendedDescriptionText
-
-  def manualText: String = extendedManualText
-
-  def exampleText: String = extendedExampleText
-
-}
+case class Args(inputFile: File = null,
+                outputDir: File = null,
+                correctCells: File = null,
+                sampleTag: String = "CB",
+                sparkMaster: String = null)
