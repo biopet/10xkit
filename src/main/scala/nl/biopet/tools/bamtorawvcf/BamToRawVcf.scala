@@ -59,12 +59,11 @@ object BamToRawVcf extends ToolCommand[Args] {
         .split("\t")
         .find(_.startsWith(cmdArgs.sampleTag + ":"))
         .map(_.split(":")(2))
-        .map(_ -> read)
     }
 
     val values = Future {
       val v = groups
-        .map(x => x._1 -> 1)
+        .map(_ -> 1)
         .reduceByKey(_ + _)
         .aggregate(new Histogram[Int]())((a, b) => { a.add(b._2); a },
                                          (a, b) => a += b)
