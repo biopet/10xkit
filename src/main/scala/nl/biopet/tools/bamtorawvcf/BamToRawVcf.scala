@@ -53,7 +53,6 @@ object BamToRawVcf extends ToolCommand[Args] {
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
-    reads.rdd.cache()
     val flagstats = Future(reads.flagStat()).map {
       case (_, passed) =>
         sc.parallelize(passed :: Nil)
@@ -75,7 +74,6 @@ object BamToRawVcf extends ToolCommand[Args] {
       v.write.csv(cmdArgs.outputFile.getAbsolutePath)
     }
 
-    reads.rdd.unpersist()
     Await.result(values, Duration.Inf)
     Await.result(flagstats, Duration.Inf)
 
