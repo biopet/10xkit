@@ -1,44 +1,15 @@
-/*
- * Copyright (c) 2017 Biopet
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-package nl.biopet.tools.bamtorawvcf
+package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.File
 
+import nl.biopet.tools.tenxkit.{Args, ArgsParser}
 import nl.biopet.utils.Histogram
 import nl.biopet.utils.tool.ToolCommand
-import nl.biopet.utils.ngs.bam
-import nl.biopet.utils.ngs.intervals.BedRecordList
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
-import org.bdgenomics.adam.models.ReferenceRegion
+import org.apache.spark.{SparkConf, SparkContext}
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
-
-object BamToRawVcf extends ToolCommand[Args] {
+object CellReads extends ToolCommand[Args] {
   def emptyArgs = Args()
   def argsParser = new ArgsParser(this)
 
@@ -51,7 +22,6 @@ object BamToRawVcf extends ToolCommand[Args] {
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
     implicit val sc: SparkContext = sparkSession.sparkContext
-    import sparkSession.implicits._
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
@@ -88,7 +58,7 @@ object BamToRawVcf extends ToolCommand[Args] {
 
   def manualText: String =
     s"""
-      |
+       |
     """.stripMargin
 
   def exampleText: String =

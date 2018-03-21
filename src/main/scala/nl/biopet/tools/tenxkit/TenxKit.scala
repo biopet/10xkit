@@ -19,39 +19,21 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.bamtorawvcf
+package nl.biopet.tools.tenxkit
 
-import java.io.File
+import nl.biopet.tools.tenxkit.cellreads.CellReads
+import nl.biopet.utils.tool.ToolCommand
+import nl.biopet.utils.tool.multi.MultiToolCommand
 
-import nl.biopet.utils.test.tools.ToolTest
-import org.testng.annotations.Test
+object TenxKit extends MultiToolCommand {
 
-class BamToRawVcfTest extends ToolTest[Args] {
-  def toolCommand: BamToRawVcf.type = BamToRawVcf
-  @Test
-  def testNoArgs(): Unit = {
-    intercept[IllegalArgumentException] {
-      BamToRawVcf.main(Array())
-    }
-  }
+  def subTools: Map[String, List[ToolCommand[_]]] =
+    Map("Tools" -> List(CellReads))
 
-  @Test
-  def testDefault(): Unit = {
-    val outputFile = File.createTempFile("test.", ".csv")
-    outputFile.delete()
-    outputFile.deleteOnExit()
-    BamToRawVcf.main(
-      Array(
-        "-i",
-        resourcePath("/paired01.bam"),
-        "--sparkMaster",
-        "local[2]",
-        "-R",
-        "<some fasta>",
-        "--sampleTag",
-        "NM",
-        "-o",
-        outputFile.getAbsolutePath
-      ))
-  }
+  def descriptionText: String = extendedDescriptionText
+
+  def manualText: String = extendedManualText
+
+  def exampleText: String = extendedExampleText
+
 }

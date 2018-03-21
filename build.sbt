@@ -3,8 +3,8 @@ organizationName := "Biopet"
 
 startYear := Some(2018)
 
-name := "BamToRawVcf"
-biopetUrlName := "bamtorawvcf"
+name := "TenxKit"
+biopetUrlName := "10xkit"
 
 biopetIsTool := true
 
