@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.bamtorawvcf
 
+import java.io.File
+
 import nl.biopet.utils.Histogram
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.bam
@@ -54,16 +56,27 @@ object BamToRawVcf extends ToolCommand[Args] {
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
-    val groups = reads.rdd.flatMap { read =>
-      read.getAttributes
-        .split("\t")
-        .find(_.startsWith(cmdArgs.sampleTag + ":"))
-        .map(_.split(":")(2))
-    }.countByValue()
+    val groups = reads.rdd
+      .flatMap { read =>
+        read.getAttributes
+          .split("\t")
+          .find(_.startsWith(cmdArgs.sampleTag + ":"))
+          .map(read.getDuplicateRead -> _.split(":")(2))
+      }
+      .countByValue()
 
+    val histogramDuplicates = new Histogram[Long]()
     val histogram = new Histogram[Long]()
-    groups.foreach(x => histogram.add(x._2))
+    groups.groupBy(_._1._2).foreach {
+      case (key, map) =>
+        val dup = map.getOrElse((true, key), 0L)
+        val nonDup = map.getOrElse((false, key), 0L)
+        histogramDuplicates.add(dup + nonDup)
+        histogram.add(nonDup)
+    }
     histogram.writeHistogramToTsv(cmdArgs.outputFile)
+    histogramDuplicates.writeHistogramToTsv(
+      new File(cmdArgs.outputFile + ".duplucates"))
 
     logger.info("Done")
   }
