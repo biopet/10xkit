@@ -2,7 +2,7 @@ package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.File
 
-import nl.biopet.tools.tenxkit.{Args, ArgsParser}
+import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.Histogram
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.sql.SparkSession
@@ -53,7 +53,8 @@ object CellReads extends ToolCommand[Args] {
 
   def descriptionText: String =
     """
-      |
+      |This tool will generate a histogram of reads per cell barcode.
+      |This can be used to validate output from cellranger or to set a alternative cutoff.
     """.stripMargin
 
   def manualText: String =
@@ -62,7 +63,12 @@ object CellReads extends ToolCommand[Args] {
     """.stripMargin
 
   def exampleText: String =
-    """
+    s"""
+      |Default run:
+      |${TenxKit.sparkExample("CellReads", "-i", "<input file>", "-o", "<output dir>", "--sparkMaster", "<spark master>")}
+      |
+      |Alternative tag:
+      |${TenxKit.sparkExample("CellReads", "-i", "<input file>", "-o", "<output dir>", "--sparkMaster", "<spark master>", "--sampleTag", "<tag>")}
       |
     """.stripMargin
 }

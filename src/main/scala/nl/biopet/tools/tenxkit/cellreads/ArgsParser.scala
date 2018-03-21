@@ -19,38 +19,27 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.File
 
-import nl.biopet.utils.test.tools.ToolTest
-import nl.biopet.utils.tool.multi
-import org.testng.annotations.Test
+import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 
-class TenxKitTest extends ToolTest[multi.Args] {
-  def toolCommand: TenxKit.type = TenxKit
-  @Test
-  def testNoArgs(): Unit = {
-    intercept[IllegalArgumentException] {
-      TenxKit.main(Array())
-    }
-  }
-
-  @Test
-  def testCellReads(): Unit = {
-    val outputFile = File.createTempFile("test.", ".csv")
-    outputFile.delete()
-    outputFile.deleteOnExit()
-    TenxKit.main(
-      Array("CellReads",
-            "-i",
-            resourcePath("/paired01.bam"),
-            "--sparkMaster",
-            "local[2]",
-            "--sampleTag",
-            "NM",
-            "-o",
-            outputFile.getAbsolutePath))
-    outputFile should exist
-  }
+class ArgsParser(toolCommand: ToolCommand[Args])
+    extends AbstractOptParser[Args](toolCommand) {
+  opt[File]('i', "inputFile")
+    .required()
+    .action((x, c) => c.copy(inputFile = x))
+    .text("Input bam file")
+  opt[File]('o', "outputfile")
+    .required()
+    .action((x, c) => c.copy(outputFile = x))
+    .text("Input bam file")
+  opt[String]('s', "sampleTag")
+    .action((x, c) => c.copy(sampleTag = x))
+    .text(s"Tag where to find the sample barcode, default '${Args().sampleTag}'")
+  opt[String]("sparkMaster")
+    .required()
+    .action((x, c) => c.copy(sparkMaster = x))
+    .text("Spark master")
 }

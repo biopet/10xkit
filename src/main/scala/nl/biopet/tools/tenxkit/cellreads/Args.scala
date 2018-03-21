@@ -19,32 +19,12 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.File
 
-import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
-
-class ArgsParser(toolCommand: ToolCommand[Args])
-    extends AbstractOptParser[Args](toolCommand) {
-  opt[File]('i', "inputFile")
-    .required()
-    .action((x, c) => c.copy(inputFile = x))
-    .text("Input bam file")
-  opt[File]('o', "outputfile")
-    .required()
-    .action((x, c) => c.copy(outputFile = x))
-    .text("Input bam file")
-  opt[String]('s', "sampleTag")
-    .required()
-    .action((x, c) => c.copy(sampleTag = x))
-    .text("Input bam file")
-  opt[File]('R', "reference")
-    .required()
-    .action((x, c) => c.copy(reference = x))
-    .text("Reference fasta file")
-  opt[String]("sparkMaster")
-    .required()
-    .action((x, c) => c.copy(sparkMaster = x))
-    .text("Spark master")
-}
+case class Args(inputFile: File = null,
+                outputFile: File = null,
+                reference: File = null,
+                sampleTag: String = "CB",
+                sparkMaster: String = null)

@@ -19,12 +19,36 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.File
 
-case class Args(inputFile: File = null,
-                outputFile: File = null,
-                reference: File = null,
-                sampleTag: String = null,
-                sparkMaster: String = null)
+import nl.biopet.utils.test.tools.ToolTest
+import org.testng.annotations.Test
+
+class CellReadsTest extends ToolTest[Args] {
+  def toolCommand: CellReads.type = CellReads
+  @Test
+  def testNoArgs(): Unit = {
+    intercept[IllegalArgumentException] {
+      CellReads.main(Array())
+    }
+  }
+
+  @Test
+  def testDefault(): Unit = {
+    val outputFile = File.createTempFile("test.", ".csv")
+    outputFile.delete()
+    outputFile.deleteOnExit()
+    CellReads.main(
+      Array("-i",
+            resourcePath("/paired01.bam"),
+            "--sparkMaster",
+            "local[2]",
+            "--sampleTag",
+            "NM",
+            "-o",
+            outputFile.getAbsolutePath))
+    outputFile should exist
+  }
+}
