@@ -59,18 +59,11 @@ object BamToRawVcf extends ToolCommand[Args] {
         .split("\t")
         .find(_.startsWith(cmdArgs.sampleTag + ":"))
         .map(_.split(":")(2))
-    }
+    }.countByValue()
 
-    val values = Future {
-      val v = groups
-        .map(_ -> 1)
-        .reduceByKey(_ + _)
-        .aggregate(new Histogram[Int]())((a, b) => { a.add(b._2); a },
-                                         (a, b) => a += b)
-      v.writeHistogramToTsv(cmdArgs.outputFile)
-    }
-
-    Await.result(values, Duration.Inf)
+    val histogram = new Histogram[Long]()
+    groups.foreach(x => histogram.add(x._2))
+    histogram.writeHistogramToTsv(cmdArgs.outputFile)
 
     logger.info("Done")
   }
