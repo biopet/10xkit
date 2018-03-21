@@ -8,6 +8,7 @@ import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 
 object CellReads extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -25,12 +26,21 @@ object CellReads extends ToolCommand[Args] {
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+    val reads: AlignmentRecordRDD =
+      sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+    generateHistograms(reads, cmdArgs.sampleTag, cmdArgs.outputDir)
+
+    logger.info("Done")
+  }
+
+  def generateHistograms(reads: AlignmentRecordRDD,
+                         sampleTag: String,
+                         outputDir: File): Unit = {
     val groups = reads.rdd
       .flatMap { read =>
         read.getAttributes
           .split("\t")
-          .find(_.startsWith(cmdArgs.sampleTag + ":"))
+          .find(_.startsWith(sampleTag + ":"))
           .map(read.getDuplicateRead -> _.split(":")(2))
       }
       .countByValue()
@@ -44,11 +54,9 @@ object CellReads extends ToolCommand[Args] {
         histogramDuplicates.add(dup + nonDup)
         histogram.add(nonDup)
     }
-    histogram.writeHistogramToTsv(cmdArgs.outputFile)
+    histogram.writeHistogramToTsv(new File(outputDir, s"$sampleTag.csv"))
     histogramDuplicates.writeHistogramToTsv(
-      new File(cmdArgs.outputFile + ".duplucates"))
-
-    logger.info("Done")
+      new File(outputDir, s"$sampleTag.duplicates.csv"))
   }
 
   def descriptionText: String =
@@ -65,10 +73,24 @@ object CellReads extends ToolCommand[Args] {
   def exampleText: String =
     s"""
       |Default run:
-      |${TenxKit.sparkExample("CellReads", "-i", "<input file>", "-o", "<output dir>", "--sparkMaster", "<spark master>")}
+      |${TenxKit.sparkExample("CellReads",
+                              "-i",
+                              "<input file>",
+                              "-o",
+                              "<output dir>",
+                              "--sparkMaster",
+                              "<spark master>")}
       |
       |Alternative tag:
-      |${TenxKit.sparkExample("CellReads", "-i", "<input file>", "-o", "<output dir>", "--sparkMaster", "<spark master>", "--sampleTag", "<tag>")}
+      |${TenxKit.sparkExample("CellReads",
+                              "-i",
+                              "<input file>",
+                              "-o",
+                              "<output dir>",
+                              "--sparkMaster",
+                              "<spark master>",
+                              "--sampleTag",
+                              "<tag>")}
       |
     """.stripMargin
 }

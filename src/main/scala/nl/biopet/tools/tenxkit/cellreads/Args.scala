@@ -24,7 +24,6 @@ package nl.biopet.tools.tenxkit.cellreads
 import java.io.File
 
 case class Args(inputFile: File = null,
-                outputFile: File = null,
-                reference: File = null,
+                outputDir: File = null,
                 sampleTag: String = "CB",
                 sparkMaster: String = null)
