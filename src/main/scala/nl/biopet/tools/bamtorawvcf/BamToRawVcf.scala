@@ -55,10 +55,10 @@ object BamToRawVcf extends ToolCommand[Args] {
     val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
     val flagstats = Future(reads.flagStat()).map {
       case (_, passed) =>
-        sc.parallelize(passed :: Nil)
+        sc.parallelize(passed.duplicatesPrimary :: Nil)
           .toDS()
           .write
-          .csv(cmdArgs.outputFile + ".flagstat")
+          .csv(cmdArgs.outputFile + ".duplicates.flagstat")
     }
 
     val groups = reads.rdd.flatMap { read =>
