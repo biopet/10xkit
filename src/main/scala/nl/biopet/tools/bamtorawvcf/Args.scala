@@ -27,5 +27,4 @@ case class Args(inputFile: File = null,
                 outputFile: File = null,
                 reference: File = null,
                 sampleTag: String = null,
-                binSize: Int = 1000000,
                 sparkMaster: String = null)

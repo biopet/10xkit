@@ -21,6 +21,7 @@
 
 package nl.biopet.tools.bamtorawvcf
 
+import nl.biopet.utils.Histogram
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -53,14 +54,6 @@ object BamToRawVcf extends ToolCommand[Args] {
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     val reads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
-    val flagstats = Future(reads.flagStat()).map {
-      case (_, passed) =>
-        sc.parallelize(passed.duplicatesPrimary :: Nil)
-          .toDS()
-          .write
-          .csv(cmdArgs.outputFile + ".duplicates.flagstat")
-    }
-
     val groups = reads.rdd.flatMap { read =>
       read.getAttributes
         .split("\t")
@@ -70,12 +63,15 @@ object BamToRawVcf extends ToolCommand[Args] {
     }
 
     val values = Future {
-      val v = groups.map(x => x._1 -> 1).reduceByKey(_ + _).toDS()
-      v.write.csv(cmdArgs.outputFile.getAbsolutePath)
+      val v = groups
+        .map(x => x._1 -> 1)
+        .reduceByKey(_ + _)
+        .aggregate(new Histogram[Int]())((a, b) => { a.add(b._2); a },
+                                         (a, b) => a += b)
+      v.writeHistogramToTsv(cmdArgs.outputFile)
     }
 
     Await.result(values, Duration.Inf)
-    Await.result(flagstats, Duration.Inf)
 
     logger.info("Done")
   }

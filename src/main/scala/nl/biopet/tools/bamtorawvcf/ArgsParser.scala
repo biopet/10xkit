@@ -47,7 +47,4 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .required()
     .action((x, c) => c.copy(sparkMaster = x))
     .text("Spark master")
-  opt[Int]("binSize")
-    .action((x, c) => c.copy(binSize = x))
-    .text("binSize for partitions")
 }

@@ -40,12 +40,18 @@ class BamToRawVcfTest extends ToolTest[Args] {
     val outputFile = File.createTempFile("test.", ".csv")
     outputFile.delete()
     outputFile.deleteOnExit()
-    BamToRawVcf.main(Array("-i", resourcePath("/paired01.bam"),
-      "--sparkMaster", "local[2]",
-      "-R", "<some fasta>",
-      "--binSize", "1000",
-      "--sampleTag", "NM",
-      "-o", outputFile.getAbsolutePath))
-    ""
+    BamToRawVcf.main(
+      Array(
+        "-i",
+        resourcePath("/paired01.bam"),
+        "--sparkMaster",
+        "local[2]",
+        "-R",
+        "<some fasta>",
+        "--sampleTag",
+        "NM",
+        "-o",
+        outputFile.getAbsolutePath
+      ))
   }
 }
