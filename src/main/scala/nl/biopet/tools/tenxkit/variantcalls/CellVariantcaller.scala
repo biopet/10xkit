@@ -53,7 +53,7 @@ object CellVariantcaller extends ToolCommand[Args] {
       }
       .flatMap(_.sampleBases)
       .toDS()
-      .cache()
+      //.cache()
 
     val writer = new PrintWriter(new File(cmdArgs.outputDir, "counts.tsv"))
     filteredReads
