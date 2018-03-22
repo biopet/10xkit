@@ -32,7 +32,7 @@ case class SampleRead(sample: String,
                                                       refPos,
                                                       base.toString,
                                                       strand,
-                                                      qual.toShort :: Nil)
+                                                      qual.toByte :: Nil)
               refPos += 1
           }
         case CigarOperator.INSERTION =>
@@ -41,7 +41,7 @@ case class SampleRead(sample: String,
             case Some(b) =>
               referenceBuffer += (refPos - 1) -> b.copy(
                 allele = b.allele ++ seq.map(_._1),
-                qual = b.qual ++ seq.map(_._2.toShort))
+                qual = b.qual ++ seq.map(_._2.toByte))
             case _ =>
               throw new IllegalStateException(
                 "Insertion without a base found, cigar start with I (or after the S/H)")

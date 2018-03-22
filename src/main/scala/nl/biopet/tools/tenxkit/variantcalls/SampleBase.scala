@@ -5,9 +5,9 @@ case class SampleBase(sample: String,
                       pos: Long,
                       allele: String,
                       strand: Boolean,
-                      qual: List[Short],
+                      qual: List[Byte],
                       delBases: Int = 0) {
 
-  def avgQual: Option[Char] =
-    if (qual.nonEmpty) Some((qual.sum / qual.size).toChar) else None
+  def avgQual: Option[Byte] =
+    if (qual.nonEmpty) Some((qual.sum / qual.size).toByte) else None
 }
