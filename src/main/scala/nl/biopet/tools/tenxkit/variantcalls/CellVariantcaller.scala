@@ -56,8 +56,12 @@ object CellVariantcaller extends ToolCommand[Args] {
       //.cache()
 
     val writer = new PrintWriter(new File(cmdArgs.outputDir, "counts.tsv"))
-    filteredReads.map(_.avgQual)
-      .groupBy("value").count()
+    filteredReads
+      .filter(_.avgQual.exists(_ >= cmdArgs.minBaseQual))
+      .groupBy("contig", "pos")
+      .count()
+      .groupBy("count")
+      .count()
       .collect()
       .foreach(row => writer.println(row.mkString("\t")))
     writer.close()
