@@ -46,8 +46,8 @@ object CellVariantcaller extends ToolCommand[Args] {
                        read.getContigName,
                        read.getStart,
                        read.getEnd,
-                       read.getSequence,
-                       read.getQual,
+                       read.getSequence.getBytes,
+                       read.getQual.getBytes,
                        read.getCigar,
                        !read.getReadNegativeStrand))
       }

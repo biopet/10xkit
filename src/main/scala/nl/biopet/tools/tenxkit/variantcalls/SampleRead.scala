@@ -9,13 +9,13 @@ case class SampleRead(sample: String,
                       contig: String,
                       start: Long,
                       end: Long,
-                      sequence: String,
-                      quality: String,
+                      sequence: Array[Byte],
+                      quality: Array[Byte],
                       cigar: String,
                       strand: Boolean) {
 
   lazy val sampleBases: List[SampleBase] = {
-    val seqIt = sequence.zip(quality).iterator
+    val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
     var refPos = start
@@ -40,7 +40,7 @@ case class SampleRead(sample: String,
           referenceBuffer.get(refPos - 1) match {
             case Some(b) =>
               referenceBuffer += (refPos - 1) -> b.copy(
-                allele = b.allele ++ seq.map(_._1),
+                allele = b.allele ++ seq.map(_._1.toChar),
                 qual = b.qual ++ seq.map(_._2.toByte))
             case _ =>
               throw new IllegalStateException(

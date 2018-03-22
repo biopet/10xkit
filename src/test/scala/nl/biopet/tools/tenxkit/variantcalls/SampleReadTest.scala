@@ -10,8 +10,8 @@ class SampleReadTest extends BiopetTest {
                           "chr1",
                           10,
                           20,
-                          "AATTCCGGAA",
-                          "AAAAAAAAAA",
+                          "AATTCCGGAA".getBytes,
+                          "AAAAAAAAAA".getBytes,
                           "3M1D3M1I3M",
                           strand = true)
     read.sampleBases.map(_.allele).mkString shouldBe read.sequence

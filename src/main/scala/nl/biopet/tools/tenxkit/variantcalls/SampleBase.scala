@@ -9,5 +9,5 @@ case class SampleBase(sample: String,
                       delBases: Int = 0) {
 
   def avgQual: Option[Byte] =
-    if (qual.nonEmpty) Some((qual.sum / qual.size).toByte) else None
+    if (qual.nonEmpty) Some((qual.map(_.toInt).sum / qual.size).toByte) else None
 }
