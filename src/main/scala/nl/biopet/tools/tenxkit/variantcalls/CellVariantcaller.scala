@@ -41,13 +41,15 @@ object CellVariantcaller extends ToolCommand[Args] {
           .find(_.startsWith(cmdArgs.sampleTag + ":"))
           .map(_.split(":")(2))
           .filter(correctCells.value.contains)
-          .map(
+          .flatMap(
             SampleRead(_,
                      read.getContigName,
                      read.getStart,
+                     read.getEnd,
                      read.getSequence,
                      read.getQual,
-                     read.getCigar))
+                     read.getCigar,
+                     !read.getReadNegativeStrand).sampleBases)
       }
       .toDS()
       .cache()

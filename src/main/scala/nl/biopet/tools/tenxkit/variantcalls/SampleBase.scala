@@ -1,15 +1,12 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-case class SampleBase(sample: String, contig: String, pos: Long, allele: String, count: Long = 1L) {
+case class SampleBase(sample: String,
+                      contig: String,
+                      pos: Long,
+                      allele: String,
+                      strand: Boolean,
+                      qual: List[Char],
+                      delBases: Int = 0) {
 
-}
-
-object SampleBase {
-  def from(read: SampleRead): List[SampleBase] = {
-
-    val bases = read.sequence.zip(read.quality).iterator
-
-
-    Nil
-  }
+  def avgQual: Option[Char] = if (qual.nonEmpty) Some((qual.sum / qual.size).toChar) else None
 }
