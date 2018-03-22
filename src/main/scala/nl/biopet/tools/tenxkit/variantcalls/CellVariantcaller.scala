@@ -43,13 +43,13 @@ object CellVariantcaller extends ToolCommand[Args] {
           .filter(correctCells.value.contains)
           .map(
             SampleRead(_,
-                     read.getContigName,
-                     read.getStart,
-                     read.getEnd,
-                     read.getSequence,
-                     read.getQual,
-                     read.getCigar,
-                     !read.getReadNegativeStrand))
+                       read.getContigName,
+                       read.getStart,
+                       read.getEnd,
+                       read.getSequence,
+                       read.getQual,
+                       read.getCigar,
+                       !read.getReadNegativeStrand))
       }
       .flatMap(_.sampleBases)
       .toDS()

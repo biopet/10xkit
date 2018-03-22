@@ -23,25 +23,48 @@ case class SampleRead(sample: String,
       element.getOperator match {
         case CigarOperator.SOFT_CLIP =>
           seqIt.drop(element.getLength)
-        case CigarOperator.MATCH_OR_MISMATCH | CigarOperator.EQ | CigarOperator.X =>
-          seqIt.take(element.getLength).foreach { case (base, qual) =>
-            referenceBuffer += refPos -> SampleBase(sample, contig, refPos, base.toString, strand, qual :: Nil)
+        case CigarOperator.MATCH_OR_MISMATCH | CigarOperator.EQ |
+            CigarOperator.X =>
+          seqIt.take(element.getLength).foreach {
+            case (base, qual) =>
+              referenceBuffer += refPos -> SampleBase(sample,
+                                                      contig,
+                                                      refPos,
+                                                      base.toString,
+                                                      strand,
+                                                      qual.toShort :: Nil)
               refPos += 1
           }
         case CigarOperator.INSERTION =>
           val seq = seqIt.take(element.getLength).toList
           referenceBuffer.get(refPos - 1) match {
-            case Some(b) => referenceBuffer += (refPos - 1) -> b.copy(allele = b.allele ++ seq.map(_._1), qual = b.qual ++ seq.map(_._2))
-            case _ => throw new IllegalStateException("Insertion without a base found, cigar start with I (or after the S/H)")
+            case Some(b) =>
+              referenceBuffer += (refPos - 1) -> b.copy(
+                allele = b.allele ++ seq.map(_._1),
+                qual = b.qual ++ seq.map(_._2.toShort))
+            case _ =>
+              throw new IllegalStateException(
+                "Insertion without a base found, cigar start with I (or after the S/H)")
           }
         case CigarOperator.DELETION =>
           referenceBuffer.get(refPos - 1) match {
-            case Some(b) => referenceBuffer += (refPos - 1) -> b.copy(delBases = b.delBases + element.getLength)
-            case _ => throw new IllegalStateException("Deletion without a base found, cigar start with D (or after the S/H)")
+            case Some(b) =>
+              referenceBuffer += (refPos - 1) -> b.copy(
+                delBases = b.delBases + element.getLength)
+            case _ =>
+              throw new IllegalStateException(
+                "Deletion without a base found, cigar start with D (or after the S/H)")
           }
-          (refPos to (element.getLength + refPos)).foreach(p => referenceBuffer += p -> SampleBase(sample, contig, p, "", strand, Nil))
+          (refPos to (element.getLength + refPos)).foreach(
+            p =>
+              referenceBuffer += p -> SampleBase(sample,
+                                                 contig,
+                                                 p,
+                                                 "",
+                                                 strand,
+                                                 Nil))
           refPos += element.getLength
-        case CigarOperator.SKIPPED_REGION => refPos += element.getLength
+        case CigarOperator.SKIPPED_REGION                    => refPos += element.getLength
         case CigarOperator.HARD_CLIP | CigarOperator.PADDING =>
       }
     }
