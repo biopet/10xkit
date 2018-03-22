@@ -24,7 +24,10 @@ package nl.biopet.tools.tenxkit.variantcalls
 import java.io.File
 
 case class Args(inputFile: File = null,
-                minTotalDepth: Int = 2,
+                reference: File = null,
+                minAlternativeDepth: Int = 2,
+                minCellAlternativeDepth: Int = 2,
+                minTotalDepth: Int = 5,
                 minBaseQual: Byte = '*'.toByte,
                 outputDir: File = null,
                 correctCells: File = null,

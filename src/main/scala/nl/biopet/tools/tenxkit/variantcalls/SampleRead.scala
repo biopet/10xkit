@@ -30,7 +30,7 @@ case class SampleRead(sample: String,
               referenceBuffer += refPos -> SampleBase(sample,
                                                       contig,
                                                       refPos,
-                                                      base.toString,
+                                                      base.toChar.toString,
                                                       strand,
                                                       qual.toByte :: Nil)
               refPos += 1
