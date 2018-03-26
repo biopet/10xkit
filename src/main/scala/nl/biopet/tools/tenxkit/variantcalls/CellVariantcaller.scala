@@ -35,19 +35,22 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val dict = bam.getDictFromBam(cmdArgs.inputFile)
 
-    //TODO: duplicate checking
     val correctCells =
       sc.broadcast(io.getLinesFromFile(cmdArgs.correctCells).toArray)
     require(correctCells.value.length == correctCells.value.distinct.length, "Duplicates cell barcodes found")
     val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
     val minBaseQual = sc.broadcast(cmdArgs.minBaseQual)
 
+    val allReads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+
     val filteredReads = for (contig <- dict.getSequences) yield {
       val contigName = contig.getSequenceName
       val contigRegion = ReferenceRegion(contig.getSequenceName, 1, contig.getSequenceLength)
       sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
-      val contigReads: AlignmentRecordRDD =
-        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigRegion)
+//      val contigReads: AlignmentRecordRDD =
+//        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigRegion)
+      val contigReads = allReads.filterByOverlappingRegion(contigRegion)
+
 
       val bases = contigReads.rdd.flatMap { read =>
         val sample = read.getAttributes
@@ -89,7 +92,7 @@ object CellVariantcaller extends ToolCommand[Args] {
         .filter (_.totalDepth >= cmdArgs.minTotalDepth)
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
         .toDS().cache()
-      ds.rdd.countAsync()
+      //ds.rdd.countAsync()
       sc.clearJobGroup()
       ds
     }
