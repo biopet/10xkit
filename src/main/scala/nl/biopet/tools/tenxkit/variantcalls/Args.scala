@@ -25,10 +25,7 @@ import java.io.File
 
 case class Args(inputFile: File = null,
                 reference: File = null,
-                minAlternativeDepth: Int = 2,
-                minCellAlternativeDepth: Int = 2,
-                minTotalDepth: Int = 5,
-                minBaseQual: Byte = '*'.toByte,
+                cutoffs: Cutoffs = Cutoffs(),
                 outputDir: File = null,
                 correctCells: File = null,
                 sampleTag: String = "CB",

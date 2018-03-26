@@ -42,7 +42,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     require(correctCells.value.length == correctCells.value.distinct.length,
             "Duplicates cell barcodes found")
     val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
-    val minBaseQual = sc.broadcast(cmdArgs.minBaseQual)
+    val cutoffs = sc.broadcast(cmdArgs.cutoffs)
 
     val allReads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
 
@@ -56,7 +56,7 @@ object CellVariantcaller extends ToolCommand[Args] {
 //      val contigReads: AlignmentRecordRDD =
 //        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contig)
 
-      val bases = allReads.rdd.flatMap { read =>
+      val bases = allReads.rdd.filter(r => r.getReadMapped && !r.getDuplicateRead).flatMap { read =>
         val sample = read.getAttributes
           .split("\t")
           .find(_.startsWith(cmdArgs.sampleTag + ":"))
@@ -71,7 +71,7 @@ object CellVariantcaller extends ToolCommand[Args] {
                                      read.getSequence.getBytes,
                                      read.getQual.getBytes,
                                      read.getCigar))
-          .filter(_._2.avgQual.exists(_ >= minBaseQual.value))
+          .filter(_._2.avgQual.exists(_ >= cutoffs.value.minBaseQual))
       }
 
       val ds = bases
@@ -147,10 +147,10 @@ object CellVariantcaller extends ToolCommand[Args] {
                           genotypes)
           }
         }
-        .filter(_.hasNonReference)
-        .filter(_.altDepth >= cmdArgs.minAlternativeDepth)
-        .filter(_.totalDepth >= cmdArgs.minTotalDepth)
-        .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
+        .filter(x => x.hasNonReference &&
+          x.altDepth >= cutoffs.value.minAlternativeDepth &&
+          x.totalDepth >= cutoffs.value.minTotalDepth &&
+          x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
         .toDS()
 //        .cache()
 //      ds.rdd.countAsync()
