@@ -45,6 +45,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     val filteredReads = for (contig <- dict.getSequences) yield {
       val contigName = contig.getSequenceName
       val contigRegion = ReferenceRegion(contig.getSequenceName, 1, contig.getSequenceLength)
+      sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
       val contigReads: AlignmentRecordRDD =
         sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigRegion)
 
@@ -89,17 +90,11 @@ object CellVariantcaller extends ToolCommand[Args] {
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
         .toDS().cache()
       ds.rdd.countAsync()
+      sc.clearJobGroup()
       ds
     }
 
-    //val writer = new PrintWriter(new File(cmdArgs.outputDir, "counts.tsv"))
     filteredReads.reduce(_.union(_)).toDF().map(_.toString()).write.csv(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
-//      .groupBy("sample", "contig", "pos", "allele", "delBases")
-//      .count()
-//    writer.println(df.columns.mkString("#","\t", ""))
-//    df.collect()
-//      .foreach(row => writer.println(row.mkString("\t")))
-//    writer.close()
 
     logger.info("Done")
   }
