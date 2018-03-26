@@ -24,39 +24,13 @@ case class VariantCall(contig: String,
   def minSampleAltDepth(cutoff: Int): Boolean = {
     samples.values.exists(_.tail.exists(_.total >= cutoff))
   }
-}
 
-object VariantCall {
-//  def from(list: List[SampleVariant],
-//           contig: String,
-//           pos: Long): VariantCall = {
-//    val refAlleles =
-//      list.flatMap(_.alleles.find(_.reference == true).map(_.allele)).distinct
-//
-//    val refAllele = (if (refAlleles.size > 1) {
-//                       refAlleles.find(
-//                         _.length == refAlleles.map(x => x.length).max)
-//                     } else refAlleles.headOption) match {
-//      case Some(x) => x
-//      case _       => throw new IllegalStateException("No ref allele found")
-//    }
-//
-//    val sampleVariants = list.map { sampleVariant =>
-//      val split = sampleVariant.alleles.groupBy(_.reference)
-//      sampleVariant.sample -> (if (split(true).head.allele == refAllele) {
-//                                 sampleVariant.alleles
-//                               } else {
-//                                 sampleVariant.alleles.map { x =>
-//                                   x.copy(
-//                                     allele = new String(
-//                                       refAllele.zipWithIndex
-//                                         .map(y =>
-//                                           x.allele.lift(y._2).getOrElse(y._1))
-//                                         .toArray))
-//                                 }
-//                               })
-//    }.toMap
-//
-//    VariantCall(contig, pos, sampleVariants)
-//  }
+  def toVcfLine(samplesIdxs: Range): String = {
+    s"$contig\t$pos\t.\t$refAllele\t${altAlleles.mkString(",")}\t.\t.\t.\tAD\t" +
+      s"${samplesIdxs
+        .map { idx =>
+          samples.get(idx).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")
+        }
+        .mkString("\t")}"
+  }
 }

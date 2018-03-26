@@ -6,14 +6,23 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
+import org.apache.hadoop.io.LongWritable
+import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
+import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.LocatableReferenceRegion
 import org.bdgenomics.adam.sql.{Genotype, Variant}
+import org.bdgenomics.utils.misc.HadoopUtil
+import org.seqdoop.hadoop_bam.{BAMInputFormat, SAMRecordWritable}
 
 import scala.collection.JavaConversions._
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
 object CellVariantcaller extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
@@ -45,15 +54,12 @@ object CellVariantcaller extends ToolCommand[Args] {
     val contigs = dict.getSequences.map(c =>
       ReferenceRegion(c.getSequenceName, 1, c.getSequenceLength))
 
-//    val allReads = sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigs)
-
     val filteredReads = for (contig <- contigs) yield {
       val contigName = contig.referenceName
       logger.info(s"Start on contig '$contigName'")
       sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
       val contigReads: AlignmentRecordRDD =
         sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contig)
-//      val contigReads = allReads.filterByOverlappingRegion(contig)
 
       val bases = contigReads.rdd.flatMap { read =>
         val sample = read.getAttributes
@@ -91,7 +97,8 @@ object CellVariantcaller extends ToolCommand[Args] {
               keys.map { key =>
                 (a.get(key), b.get(key)) match {
                   case (Some(x), Some(y)) =>
-                    key -> AlleleCount(x.forward + y.forward, x.reverse + y.reverse)
+                    key -> AlleleCount(x.forward + y.forward,
+                                       x.reverse + y.reverse)
                   case (Some(x), _) => key -> x
                   case (_, Some(y)) => key -> y
                 }
@@ -106,50 +113,75 @@ object CellVariantcaller extends ToolCommand[Args] {
               val end = position + allSamples.map(_._1.delBases).max
               val refAllele = fastaReader
                 .getSubsequenceAt(contigName, position, end)
-                .getBaseString.toUpperCase
+                .getBaseString
+                .toUpperCase
               val oldAlleles = allSamples.keys.map(x => (x.allele, x.delBases))
-              val newAllelesMap = oldAlleles.map { case (allele, delBases) =>
-                (allele, delBases) -> (if (delBases > 0 || !refAllele.startsWith(
-                  allele)) {
-                  if (allele.length == refAllele.length || delBases > 0)
-                    allele
-                  else
-                    new String(refAllele.zipWithIndex
-                      .map(x => allele.lift(x._2).getOrElse(x._1))
-                      .toArray)
-                } else refAllele)
+              val newAllelesMap = oldAlleles.map {
+                case (allele, delBases) =>
+                  (allele, delBases) -> (if (delBases > 0 || !refAllele
+                                               .startsWith(allele)) {
+                                           if (allele.length == refAllele.length || delBases > 0)
+                                             allele
+                                           else
+                                             new String(
+                                               refAllele.zipWithIndex
+                                                 .map(x =>
+                                                   allele
+                                                     .lift(x._2)
+                                                     .getOrElse(x._1))
+                                                 .toArray)
+                                         } else refAllele)
               }.toMap
-              val altAlleles = newAllelesMap.values.filter(_ != refAllele).toArray.distinct
+              val altAlleles =
+                newAllelesMap.values.filter(_ != refAllele).toArray.distinct
               val allAlleles = Array(refAllele) ++ altAlleles
               val genotypes = allSamples.groupBy(_._1.sample).map {
                 case (sample, list) =>
                   sample -> allAlleles.map { allele =>
-                    list.find(x => newAllelesMap((x._1.allele, x._1.delBases)) == allele)
-                      .map(x => x._2).getOrElse(AlleleCount())
+                    list
+                      .find(x =>
+                        newAllelesMap((x._1.allele, x._1.delBases)) == allele)
+                      .map(x => x._2)
+                      .getOrElse(AlleleCount())
                   }
               }
-              VariantCall(contigName, position, refAllele, altAlleles, genotypes)
+              VariantCall(contigName,
+                          position,
+                          refAllele,
+                          altAlleles,
+                          genotypes)
           }
         }
         .filter(_.hasNonReference)
         .filter(_.altDepth >= cmdArgs.minAlternativeDepth)
         .filter(_.totalDepth >= cmdArgs.minTotalDepth)
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
-        .toDS().sort("contig", "pos")
+        .toDS()
         .cache()
-      ds.rdd.countAsync()
+      Future(ds.count())
+
       sc.clearJobGroup()
-      ds
+      contigName -> ds
     }
 
-    filteredReads
-      .reduce(_.union(_))
-      .map(x => s"${x.contig}\t${x.pos}\t.\t${x.refAllele}\t${x.altAlleles.mkString(",")}\t.\t.\t.\tAD\t" +
-        s"${correctCells.value.indices.map { y =>
-          x.samples.get(y).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")
-        }.mkString("\t")}")
-      .write
-      .text(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
+    val futures = filteredReads.map {
+      case (contigName, ds) =>
+        Future {
+          ds.unpersist()
+            .map(_.toVcfLine(correctCells.value.indices))
+            .write
+            .text(new File(cmdArgs.outputDir,
+                           "vcf" + File.separator + contigName).getAbsolutePath)
+        }
+    }
+
+    Await.result(Future.sequence(futures), Duration.Inf)
+
+//    filteredReads.map(_._2)
+//      .reduce(_.union(_))
+//      .map(_.toVcfLine(correctCells.value.indices))
+//      .write
+//      .text(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
 
     logger.info("Done")
   }

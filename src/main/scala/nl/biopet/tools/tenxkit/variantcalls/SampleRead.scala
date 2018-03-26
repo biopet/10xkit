@@ -59,7 +59,5 @@ object SampleRead {
     }
     require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
     referenceBuffer.toList
-    //.map { case (k, v) => SamplePosition(sample, k) -> v }
-    //.sortBy(_._1.position)
   }
 }
