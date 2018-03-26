@@ -152,9 +152,9 @@ object CellVariantcaller extends ToolCommand[Args] {
         .filter(_.totalDepth >= cmdArgs.minTotalDepth)
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
         .toDS()
-        .cache()
-      ds.rdd.countAsync()
-
+//        .cache()
+//      ds.rdd.countAsync()
+//
 //      sc.clearJobGroup()
 //      contigName -> ds
 //    }
