@@ -1,23 +1,16 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-import java.io.{File, PrintWriter}
+import java.io.File
 
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
-import org.apache.hadoop.io.LongWritable
-import org.apache.parquet.hadoop.util.ContextUtil
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.bdgenomics.adam.converters.SAMRecordConverter
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.LocatableReferenceRegion
-import org.bdgenomics.adam.sql.{Genotype, Variant}
-import org.bdgenomics.utils.misc.HadoopUtil
-import org.seqdoop.hadoop_bam.{BAMInputFormat, SAMRecordWritable}
 
 import scala.collection.JavaConversions._
 import scala.concurrent.{Await, Future}
@@ -158,7 +151,7 @@ object CellVariantcaller extends ToolCommand[Args] {
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
         .toDS()
         .cache()
-      Future(ds.count())
+      ds.rdd.countAsync()
 
       sc.clearJobGroup()
       contigName -> ds
@@ -167,11 +160,11 @@ object CellVariantcaller extends ToolCommand[Args] {
     val futures = filteredReads.map {
       case (contigName, ds) =>
         Future {
-          ds.unpersist()
-            .map(_.toVcfLine(correctCells.value.indices))
+          ds.map(_.toVcfLine(correctCells.value.indices))
             .write
             .text(new File(cmdArgs.outputDir,
                            "vcf" + File.separator + contigName).getAbsolutePath)
+          ds.unpersist()
         }
     }
 
