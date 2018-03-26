@@ -6,12 +6,13 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 
 object SampleRead {
-  def sampleBases(start: Long,
+  def sampleBases(contig: Int,
+                  start: Long,
                   sample: Int,
                   strand: Boolean,
                   sequence: Array[Byte],
                   quality: Array[Byte],
-                  cigar: String): List[(Long, SampleBase)] = {
+                  cigar: String): List[(Position, SampleBase)] = {
     val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
@@ -58,6 +59,6 @@ object SampleRead {
       }
     }
     require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
-    referenceBuffer.toList
+    referenceBuffer.map(x => Position(contig, x._1) -> x._2).toList
   }
 }

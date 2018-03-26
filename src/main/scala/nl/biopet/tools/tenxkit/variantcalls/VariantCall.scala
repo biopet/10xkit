@@ -1,6 +1,8 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-case class VariantCall(contig: String,
+import htsjdk.samtools.SAMSequenceDictionary
+
+case class VariantCall(contig: Int,
                        pos: Long,
                        refAllele: String,
                        altAlleles: Array[String],
@@ -25,8 +27,8 @@ case class VariantCall(contig: String,
     samples.values.exists(_.tail.exists(_.total >= cutoff))
   }
 
-  def toVcfLine(samplesIdxs: Range): String = {
-    s"$contig\t$pos\t.\t$refAllele\t${altAlleles.mkString(",")}\t.\t.\t.\tAD\t" +
+  def toVcfLine(samplesIdxs: Range, dict: SAMSequenceDictionary): String = {
+    s"${dict.getSequence(contig).getSequenceName}\t$pos\t.\t$refAllele\t${altAlleles.mkString(",")}\t.\t.\t.\tAD\t" +
       s"${samplesIdxs
         .map { idx =>
           samples.get(idx).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")

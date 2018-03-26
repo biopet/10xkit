@@ -35,7 +35,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    val dict = bam.getDictFromBam(cmdArgs.inputFile)
+    val dict = sc.broadcast(bam.getDictFromBam(cmdArgs.inputFile))
 
     val correctCells =
       sc.broadcast(io.getLinesFromFile(cmdArgs.correctCells).toArray)
@@ -44,17 +44,19 @@ object CellVariantcaller extends ToolCommand[Args] {
     val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
     val minBaseQual = sc.broadcast(cmdArgs.minBaseQual)
 
-    val contigs = dict.getSequences.map(c =>
-      ReferenceRegion(c.getSequenceName, 1, c.getSequenceLength))
+    val allReads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
 
-    val filteredReads = for (contig <- contigs) yield {
-      val contigName = contig.referenceName
-      logger.info(s"Start on contig '$contigName'")
-      sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
-      val contigReads: AlignmentRecordRDD =
-        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contig)
+//    val contigs = dict.value.getSequences.map(c =>
+//      ReferenceRegion(c.getSequenceName, 1, c.getSequenceLength))
+//
+//    val filteredReads = for (contig <- contigs) yield {
+//      val contigName = contig.referenceName
+//      logger.info(s"Start on contig '$contigName'")
+//      sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
+//      val contigReads: AlignmentRecordRDD =
+//        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contig)
 
-      val bases = contigReads.rdd.flatMap { read =>
+      val bases = allReads.rdd.flatMap { read =>
         val sample = read.getAttributes
           .split("\t")
           .find(_.startsWith(cmdArgs.sampleTag + ":"))
@@ -62,7 +64,8 @@ object CellVariantcaller extends ToolCommand[Args] {
         sample.toList
           .flatMap(
             s =>
-              SampleRead.sampleBases(read.getStart + 1,
+              SampleRead.sampleBases(dict.value.getSequenceIndex(read.getContigName),
+                                     read.getStart + 1,
                                      s,
                                      !read.getReadNegativeStrand,
                                      read.getSequence.getBytes,
@@ -71,7 +74,7 @@ object CellVariantcaller extends ToolCommand[Args] {
           .filter(_._2.avgQual.exists(_ >= minBaseQual.value))
       }
 
-      val bla = bases
+      val ds = bases
         .aggregateByKey(Map[Key, AlleleCount]())(
           {
             case (a, b) =>
@@ -98,14 +101,13 @@ object CellVariantcaller extends ToolCommand[Args] {
               }.toMap
           }
         )
-      val ds = bla
         .mapPartitions { it =>
           val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
           it.map {
             case (position, allSamples) =>
-              val end = position + allSamples.map(_._1.delBases).max
+              val end = position.position + allSamples.map(_._1.delBases).max
               val refAllele = fastaReader
-                .getSubsequenceAt(contigName, position, end)
+                .getSubsequenceAt(dict.value.getSequence(position.contig).getSequenceName, position.position, end)
                 .getBaseString
                 .toUpperCase
               val oldAlleles = allSamples.keys.map(x => (x.allele, x.delBases))
@@ -138,8 +140,8 @@ object CellVariantcaller extends ToolCommand[Args] {
                       .getOrElse(AlleleCount())
                   }
               }
-              VariantCall(contigName,
-                          position,
+              VariantCall(position.contig,
+                          position.position,
                           refAllele,
                           altAlleles,
                           genotypes)
@@ -153,28 +155,26 @@ object CellVariantcaller extends ToolCommand[Args] {
         .cache()
       ds.rdd.countAsync()
 
-      sc.clearJobGroup()
-      contigName -> ds
-    }
+//      sc.clearJobGroup()
+//      contigName -> ds
+//    }
+//
+//    val futures = filteredReads.map {
+//      case (contigName, ds) =>
+//        Future {
+//          ds.map(_.toVcfLine(correctCells.value.indices))
+//            .write
+//            .text(new File(cmdArgs.outputDir,
+//                           "vcf" + File.separator + contigName).getAbsolutePath)
+//          ds.unpersist()
+//        }
+//    }
+//
+//    Await.result(Future.sequence(futures), Duration.Inf)
 
-    val futures = filteredReads.map {
-      case (contigName, ds) =>
-        Future {
-          ds.map(_.toVcfLine(correctCells.value.indices))
-            .write
-            .text(new File(cmdArgs.outputDir,
-                           "vcf" + File.separator + contigName).getAbsolutePath)
-          ds.unpersist()
-        }
-    }
-
-    Await.result(Future.sequence(futures), Duration.Inf)
-
-//    filteredReads.map(_._2)
-//      .reduce(_.union(_))
-//      .map(_.toVcfLine(correctCells.value.indices))
-//      .write
-//      .text(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
+    ds.map(_.toVcfLine(correctCells.value.indices, dict.value))
+      .write
+      .text(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
 
     logger.info("Done")
   }

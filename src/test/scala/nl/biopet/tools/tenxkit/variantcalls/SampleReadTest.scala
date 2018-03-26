@@ -6,7 +6,8 @@ import org.testng.annotations.Test
 class SampleReadTest extends BiopetTest {
   @Test
   def test(): Unit = {
-    val bases = SampleRead.sampleBases(10,
+    val bases = SampleRead.sampleBases(1,
+                                       10,
                                        1,
                                        true,
                                        "AATTCCGGAA".getBytes,
