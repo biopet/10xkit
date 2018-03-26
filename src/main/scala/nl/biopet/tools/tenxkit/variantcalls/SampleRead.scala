@@ -6,7 +6,12 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 
 object SampleRead {
-  def sampleBases(start: Long, sample: Int, strand: Boolean, sequence: Array[Byte], quality: Array[Byte], cigar: String): List[(SamplePosition, SampleBase)] = {
+  def sampleBases(start: Long,
+                  sample: Int,
+                  strand: Boolean,
+                  sequence: Array[Byte],
+                  quality: Array[Byte],
+                  cigar: String): List[(SamplePosition, SampleBase)] = {
     val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
@@ -44,17 +49,16 @@ object SampleRead {
               throw new IllegalStateException(
                 "Deletion without a base found, cigar start with D (or after the S/H)")
           }
-          (refPos to (element.getLength + refPos)).foreach(
-            p =>
-              referenceBuffer += p -> SampleBase("",
-                                                 strand,
-                                                 Nil))
+          (refPos to (element.getLength + refPos)).foreach(p =>
+            referenceBuffer += p -> SampleBase("", strand, Nil))
           refPos += element.getLength
         case CigarOperator.SKIPPED_REGION                    => refPos += element.getLength
         case CigarOperator.HARD_CLIP | CigarOperator.PADDING =>
       }
     }
     require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
-    referenceBuffer.toList.map { case (k, v) => SamplePosition(sample, k) -> v }.sortBy(_._1.position)
+    referenceBuffer.toList
+      .map { case (k, v) => SamplePosition(sample, k) -> v }
+      .sortBy(_._1.position)
   }
 }

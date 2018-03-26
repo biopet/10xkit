@@ -37,67 +37,99 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val correctCells =
       sc.broadcast(io.getLinesFromFile(cmdArgs.correctCells).toArray)
-    require(correctCells.value.length == correctCells.value.distinct.length, "Duplicates cell barcodes found")
+    require(correctCells.value.length == correctCells.value.distinct.length,
+            "Duplicates cell barcodes found")
     val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
     val minBaseQual = sc.broadcast(cmdArgs.minBaseQual)
 
-    val allReads = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+    val contigs = dict.getSequences.map(c => ReferenceRegion(c.getSequenceName, 1, c.getSequenceLength))
 
-    val filteredReads = for (contig <- dict.getSequences) yield {
-      val contigName = contig.getSequenceName
-      val contigRegion = ReferenceRegion(contig.getSequenceName, 1, contig.getSequenceLength)
+    val allReads = sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigs)
+
+    val filteredReads = for (contig <- contigs) yield {
+      val contigName = contig.referenceName
       sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
 //      val contigReads: AlignmentRecordRDD =
 //        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigRegion)
-      val contigReads = allReads.filterByOverlappingRegion(contigRegion)
-
+      val contigReads = allReads.filterByOverlappingRegion(contig)
 
       val bases = contigReads.rdd.flatMap { read =>
         val sample = read.getAttributes
           .split("\t")
           .find(_.startsWith(cmdArgs.sampleTag + ":"))
           .flatMap(t => correctCellsMap.value.get(t.split(":")(2)))
-        sample.toList.flatMap(s => SampleRead.sampleBases(read.getStart + 1, s,
-          !read.getReadNegativeStrand,
-          read.getSequence.getBytes,
-          read.getQual.getBytes,
-          read.getCigar)).filter(_._2.avgQual.exists(_ >= minBaseQual.value))
+        sample.toList
+          .flatMap(
+            s =>
+              SampleRead.sampleBases(read.getStart + 1,
+                                     s,
+                                     !read.getReadNegativeStrand,
+                                     read.getSequence.getBytes,
+                                     read.getQual.getBytes,
+                                     read.getCigar))
+          .filter(_._2.avgQual.exists(_ >= minBaseQual.value))
       }
 
-      val ds = bases.groupByKey()
+      val ds = bases
+        .groupByKey()
         .mapPartitions { it =>
           val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
-          it.map { case (samplePos,list) =>
-            val end = samplePos.position + list.map(_.delBases).max
-            val refAllele = fastaReader.getSubsequenceAt(contigName, samplePos.position, end).getBaseString
-            val alleles = list.groupBy(x => (x.allele, x.delBases)).map { case ((allele, delBases), bases) =>
-              val newAllele = if (delBases > 0 || !refAllele.startsWith(allele)) {
-                if (allele.length == refAllele.length || delBases > 0) allele
-                else new String(refAllele.zipWithIndex.map(x => allele.lift(x._2).getOrElse(x._1)).toArray)
-              } else refAllele
-              val total = bases.size
-              val forward = bases.count(_.strand)
-              val reverse = total - forward
-              AlleleCount(newAllele, forward, reverse, newAllele == refAllele)
-            }.toList
-            val newAlleles = if (alleles.exists(_.allele == refAllele)) alleles else AlleleCount(refAllele, 0, 0, true) :: alleles
-            samplePos.position -> SampleVariant(samplePos.sample, newAlleles)
+          it.map {
+            case (samplePos, list) =>
+              val end = samplePos.position + list.map(_.delBases).max
+              val refAllele = fastaReader
+                .getSubsequenceAt(contigName, samplePos.position, end)
+                .getBaseString
+              val alleles = list
+                .groupBy(x => (x.allele, x.delBases))
+                .map {
+                  case ((allele, delBases), bases) =>
+                    val newAllele =
+                      if (delBases > 0 || !refAllele.startsWith(allele)) {
+                        if (allele.length == refAllele.length || delBases > 0)
+                          allele
+                        else
+                          new String(refAllele.zipWithIndex
+                            .map(x => allele.lift(x._2).getOrElse(x._1))
+                            .toArray)
+                      } else refAllele
+                    val total = bases.size
+                    val forward = bases.count(_.strand)
+                    val reverse = total - forward
+                    AlleleCount(newAllele,
+                                forward,
+                                reverse,
+                                newAllele == refAllele)
+                }
+                .toList
+              val newAlleles =
+                if (alleles.exists(_.allele == refAllele)) alleles
+                else AlleleCount(refAllele, 0, 0, true) :: alleles
+              samplePos.position -> SampleVariant(samplePos.sample, newAlleles)
           }
         }
-        .groupByKey().map { case (pos, list) =>
-        VariantCall.from(list.toList, contigName, pos)
-      }
+        .groupByKey()
+        .map {
+          case (pos, list) =>
+            VariantCall.from(list.toList, contigName, pos)
+        }
         .filter(_.hasNonReference)
-        .filter (_.altDepth >= cmdArgs.minAlternativeDepth)
-        .filter (_.totalDepth >= cmdArgs.minTotalDepth)
+        .filter(_.altDepth >= cmdArgs.minAlternativeDepth)
+        .filter(_.totalDepth >= cmdArgs.minTotalDepth)
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
-        .toDS().cache()
+        .toDS()
+        .cache()
       //ds.rdd.countAsync()
       sc.clearJobGroup()
       ds
     }
 
-    filteredReads.reduce(_.union(_)).toDF().map(_.toString()).write.csv(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
+    filteredReads
+      .reduce(_.union(_))
+      .toDF()
+      .map(_.toString())
+      .write
+      .csv(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
 
     logger.info("Done")
   }

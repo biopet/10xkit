@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.tenxkit.variantcalls
 
+import java.io.File
+
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
 
@@ -33,4 +35,19 @@ class CellVariantcallerTest extends ToolTest[Args] {
     }
   }
 
+  @Test
+  def testDefault(): Unit = {
+    val outputDir = File.createTempFile("test.", ".calls")
+    outputDir.delete()
+    outputDir.deleteOnExit()
+    CellVariantcaller.main(Array(
+      "-i", resourcePath("/wgs2.realign.bam"),
+      "-o", outputDir.getAbsolutePath,
+      "--sparkMaster", "local[2]",
+      "-R", resourcePath("/reference.fasta"),
+      "--correctCells", resourcePath("/wgs2.readgroups.txt"),
+      "--sampleTag", "RG"
+    ))
+    outputDir should exist
+  }
 }
