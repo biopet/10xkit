@@ -40,14 +40,21 @@ class CellVariantcallerTest extends ToolTest[Args] {
     val outputDir = File.createTempFile("test.", ".calls")
     outputDir.delete()
     outputDir.deleteOnExit()
-    CellVariantcaller.main(Array(
-      "-i", resourcePath("/wgs2.realign.bam"),
-      "-o", outputDir.getAbsolutePath,
-      "--sparkMaster", "local[2]",
-      "-R", resourcePath("/reference.fasta"),
-      "--correctCells", resourcePath("/wgs2.readgroups.txt"),
-      "--sampleTag", "RG"
-    ))
+    CellVariantcaller.main(
+      Array(
+        "-i",
+        resourcePath("/wgs2.realign.bam"),
+        "-o",
+        outputDir.getAbsolutePath,
+        "--sparkMaster",
+        "local[2]",
+        "-R",
+        resourcePath("/reference.fasta"),
+        "--correctCells",
+        resourcePath("/wgs2.readgroups.txt"),
+        "--sampleTag",
+        "RG"
+      ))
     outputDir should exist
   }
 }

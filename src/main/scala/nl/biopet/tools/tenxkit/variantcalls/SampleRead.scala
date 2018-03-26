@@ -11,7 +11,7 @@ object SampleRead {
                   strand: Boolean,
                   sequence: Array[Byte],
                   quality: Array[Byte],
-                  cigar: String): List[(SamplePosition, SampleBase)] = {
+                  cigar: String): List[(Long, SampleBase)] = {
     val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
@@ -24,7 +24,8 @@ object SampleRead {
             CigarOperator.X =>
           seqIt.take(element.getLength).foreach {
             case (base, qual) =>
-              referenceBuffer += refPos -> SampleBase(base.toChar.toString,
+              referenceBuffer += refPos -> SampleBase(sample,
+                                                      base.toChar.toString,
                                                       strand,
                                                       qual.toByte :: Nil)
               refPos += 1
@@ -50,7 +51,7 @@ object SampleRead {
                 "Deletion without a base found, cigar start with D (or after the S/H)")
           }
           (refPos to (element.getLength + refPos)).foreach(p =>
-            referenceBuffer += p -> SampleBase("", strand, Nil))
+            referenceBuffer += p -> SampleBase(sample, "", strand, Nil))
           refPos += element.getLength
         case CigarOperator.SKIPPED_REGION                    => refPos += element.getLength
         case CigarOperator.HARD_CLIP | CigarOperator.PADDING =>
@@ -58,7 +59,7 @@ object SampleRead {
     }
     require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
     referenceBuffer.toList
-      .map { case (k, v) => SamplePosition(sample, k) -> v }
-      .sortBy(_._1.position)
+    //.map { case (k, v) => SamplePosition(sample, k) -> v }
+    //.sortBy(_._1.position)
   }
 }

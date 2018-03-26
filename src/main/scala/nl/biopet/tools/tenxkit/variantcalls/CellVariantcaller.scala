@@ -45,15 +45,15 @@ object CellVariantcaller extends ToolCommand[Args] {
     val contigs = dict.getSequences.map(c =>
       ReferenceRegion(c.getSequenceName, 1, c.getSequenceLength))
 
-    val allReads = sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigs)
+//    val allReads = sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigs)
 
     val filteredReads = for (contig <- contigs) yield {
       val contigName = contig.referenceName
       logger.info(s"Start on contig '$contigName'")
       sc.setJobGroup(s"Contig: $contigName", s"Contig: $contigName")
-//      val contigReads: AlignmentRecordRDD =
-//        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigRegion)
-      val contigReads = allReads.filterByOverlappingRegion(contig)
+      val contigReads: AlignmentRecordRDD =
+        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contig)
+//      val contigReads = allReads.filterByOverlappingRegion(contig)
 
       val bases = contigReads.rdd.flatMap { read =>
         val sample = read.getAttributes
@@ -72,84 +72,89 @@ object CellVariantcaller extends ToolCommand[Args] {
           .filter(_._2.avgQual.exists(_ >= minBaseQual.value))
       }
 
-      val bla = bases.aggregateByKey(Map[Key, Value]())({ case (a, b) =>
-        val key = Key(b.allele, b.delBases)
-        a.get(key) match {
-          case Some(count) if b.strand => a + (key -> count.copy(forward = count.forward + 1))
-          case Some(count) => a + (key -> count.copy(reverse = count.reverse + 1))
-          case _ if b.strand => a + (key -> Value(forward = 1))
-          case _ => a + (key -> Value(reverse = 1))
-        }
-      }, { case (a, b) =>
-          val keys = a.keySet ++ b.keySet
-          keys.map { key =>
-            (a.get(key), b.get(key)) match {
-              case (Some(x), Some(y)) => key -> Value(x.forward + y.forward, x.reverse + y.reverse)
-              case (Some(x), _) => key -> x
-              case (_, Some(y)) => key -> y
-            }
-          }.toMap
-      }).mapPartitions { it =>
-        val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
-        it.map {
-          case (samplePos, list) =>
-            val end = samplePos.position + list.map(_._1.delBases).max
-            val refAllele = fastaReader
-              .getSubsequenceAt(contigName, samplePos.position, end)
-              .getBaseString
-            val alleles = list
-              .map {
-                case (key, bases) =>
-                  val newAllele =
-                    if (key.delBases > 0 || !refAllele.startsWith(key.allele)) {
-                      if (key.allele.length == refAllele.length || key.delBases > 0)
-                        key.allele
-                      else
-                        new String(refAllele.zipWithIndex
-                          .map(x => key.allele.lift(x._2).getOrElse(x._1))
-                          .toArray)
-                    } else refAllele
-                  AlleleCount(newAllele,
-                    bases.forward,
-                    bases.reverse,
-                    newAllele == refAllele)
+      val bla = bases
+        .aggregateByKey(Map[Key, AlleleCount]())(
+          {
+            case (a, b) =>
+              val key = Key(b.sample, b.allele, b.delBases)
+              a.get(key) match {
+                case Some(count) if b.strand =>
+                  a + (key -> count.copy(forward = count.forward + 1))
+                case Some(count) =>
+                  a + (key -> count.copy(reverse = count.reverse + 1))
+                case _ if b.strand => a + (key -> AlleleCount(forward = 1))
+                case _             => a + (key -> AlleleCount(reverse = 1))
               }
-              .toList
-            val newAlleles =
-              if (alleles.exists(_.allele == refAllele)) alleles
-              else AlleleCount(refAllele, 0, 0, true) :: alleles
-            samplePos.position -> SampleVariant(samplePos.sample, newAlleles)
-        }
-      }
-
-      val ds = bla.groupByKey()
-        .map {
-          case (pos, list) =>
-            VariantCall.from(list.toList, contigName, pos)
+          }, {
+            case (a, b) =>
+              val keys = a.keySet ++ b.keySet
+              keys.map { key =>
+                (a.get(key), b.get(key)) match {
+                  case (Some(x), Some(y)) =>
+                    key -> AlleleCount(x.forward + y.forward, x.reverse + y.reverse)
+                  case (Some(x), _) => key -> x
+                  case (_, Some(y)) => key -> y
+                }
+              }.toMap
+          }
+        )
+      val ds = bla
+        .mapPartitions { it =>
+          val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
+          it.map {
+            case (position, allSamples) =>
+              val end = position + allSamples.map(_._1.delBases).max
+              val refAllele = fastaReader
+                .getSubsequenceAt(contigName, position, end)
+                .getBaseString.toUpperCase
+              val oldAlleles = allSamples.keys.map(x => (x.allele, x.delBases))
+              val newAllelesMap = oldAlleles.map { case (allele, delBases) =>
+                (allele, delBases) -> (if (delBases > 0 || !refAllele.startsWith(
+                  allele)) {
+                  if (allele.length == refAllele.length || delBases > 0)
+                    allele
+                  else
+                    new String(refAllele.zipWithIndex
+                      .map(x => allele.lift(x._2).getOrElse(x._1))
+                      .toArray)
+                } else refAllele)
+              }.toMap
+              val altAlleles = newAllelesMap.values.filter(_ != refAllele).toArray.distinct
+              val allAlleles = Array(refAllele) ++ altAlleles
+              val genotypes = allSamples.groupBy(_._1.sample).map {
+                case (sample, list) =>
+                  sample -> allAlleles.map { allele =>
+                    list.find(x => newAllelesMap((x._1.allele, x._1.delBases)) == allele)
+                      .map(x => x._2).getOrElse(AlleleCount())
+                  }
+              }
+              VariantCall(contigName, position, refAllele, altAlleles, genotypes)
+          }
         }
         .filter(_.hasNonReference)
         .filter(_.altDepth >= cmdArgs.minAlternativeDepth)
         .filter(_.totalDepth >= cmdArgs.minTotalDepth)
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
-        .toDS()
+        .toDS().sort("contig", "pos")
         .cache()
-      //ds.rdd.countAsync()
+      ds.rdd.countAsync()
       sc.clearJobGroup()
       ds
     }
 
     filteredReads
       .reduce(_.union(_))
-      .toDF()
-      .map(_.toString())
+      .map(x => s"${x.contig}\t${x.pos}\t.\t${x.refAllele}\t${x.altAlleles.mkString(",")}\t.\t.\t.\tAD\t" +
+        s"${correctCells.value.indices.map { y =>
+          x.samples.get(y).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")
+        }.mkString("\t")}")
       .write
-      .csv(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
+      .text(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
 
     logger.info("Done")
   }
 
-  case class Value(forward: Int = 0, reverse: Int = 0)
-  case class Key(allele: String, delBases: Int)
+  case class Key(sample: Int, allele: String, delBases: Int)
 
   def descriptionText: String =
     """
