@@ -60,7 +60,7 @@ object CellVariantcaller extends ToolCommand[Args] {
           read.getCigar)).filter(_._2.avgQual.exists(_ >= minBaseQual.value))
       }
 
-      bases.groupByKey()
+      val ds = bases.groupByKey()
         .mapPartitions { it =>
           val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
           it.map { case (samplePos,list) =>
@@ -87,7 +87,9 @@ object CellVariantcaller extends ToolCommand[Args] {
         .filter (_.altDepth >= cmdArgs.minAlternativeDepth)
         .filter (_.totalDepth >= cmdArgs.minTotalDepth)
         .filter(_.minSampleAltDepth(cmdArgs.minCellAlternativeDepth))
-        .toDS()
+        .toDS().cache()
+      ds.rdd.countAsync()
+      ds
     }
 
     //val writer = new PrintWriter(new File(cmdArgs.outputDir, "counts.tsv"))
