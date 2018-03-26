@@ -1,9 +1,6 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-case class SampleBase(sample: String,
-                      contig: String,
-                      pos: Long,
-                      allele: String,
+case class SampleBase(allele: String,
                       strand: Boolean,
                       qual: List[Byte],
                       delBases: Int = 0) {

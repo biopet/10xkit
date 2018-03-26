@@ -34,8 +34,13 @@ object CellVariantcaller extends ToolCommand[Args] {
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     val dict = bam.getDictFromBam(cmdArgs.inputFile)
+
+    //TODO: duplicate checking
     val correctCells =
-      sc.broadcast(io.getLinesFromFile(cmdArgs.correctCells).toSet)
+      sc.broadcast(io.getLinesFromFile(cmdArgs.correctCells).toArray)
+    require(correctCells.value.length == correctCells.value.distinct.length, "Duplicates cell barcodes found")
+    val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
+    val minBaseQual = sc.broadcast(cmdArgs.minBaseQual)
 
     val filteredReads = for (contig <- dict.getSequences) yield {
       val contigName = contig.getSequenceName
@@ -43,31 +48,24 @@ object CellVariantcaller extends ToolCommand[Args] {
       val contigReads: AlignmentRecordRDD =
         sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contigRegion)
 
-      contigReads.rdd
-        .filter(r => !r.getDuplicateRead && r.getReadMapped)
-        .flatMap { read =>
-          read.getAttributes
-            .split("\t")
-            .find(_.startsWith(cmdArgs.sampleTag + ":"))
-            .map(_.split(":")(2))
-            .filter(correctCells.value.contains)
-            .map(
-              SampleRead(_,
-                read.getContigName,
-                read.getStart + 1,
-                read.getEnd,
-                read.getSequence.getBytes,
-                read.getQual.getBytes,
-                read.getCigar,
-                !read.getReadNegativeStrand))
-        }
-        .flatMap(_.sampleBases.filter(_.avgQual.exists(_ >= cmdArgs.minBaseQual))) //TODO: reduce
-        .groupBy(x => (x.sample, x.pos))
+      val bases = contigReads.rdd.flatMap { read =>
+        val sample = read.getAttributes
+          .split("\t")
+          .find(_.startsWith(cmdArgs.sampleTag + ":"))
+          .flatMap(t => correctCellsMap.value.get(t.split(":")(2)))
+        sample.toList.flatMap(s => SampleRead.sampleBases(read.getStart + 1, s,
+          !read.getReadNegativeStrand,
+          read.getSequence.getBytes,
+          read.getQual.getBytes,
+          read.getCigar)).filter(_._2.avgQual.exists(_ >= minBaseQual.value))
+      }
+
+      bases.groupByKey()
         .mapPartitions { it =>
           val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
-          it.map { case ((sample, pos),list) =>
-            val end = pos + list.map(_.delBases).max
-            val refAllele = fastaReader.getSubsequenceAt(contigName, pos, end).getBaseString
+          it.map { case (samplePos,list) =>
+            val end = samplePos.position + list.map(_.delBases).max
+            val refAllele = fastaReader.getSubsequenceAt(contigName, samplePos.position, end).getBaseString
             val alleles = list.groupBy(x => (x.allele, x.delBases)).map { case ((allele, delBases), bases) =>
               val newAllele = if (delBases > 0 || !refAllele.startsWith(allele)) {
                 if (allele.length == refAllele.length || delBases > 0) allele
@@ -78,10 +76,11 @@ object CellVariantcaller extends ToolCommand[Args] {
               val reverse = total - forward
               AlleleCount(newAllele, forward, reverse, newAllele == refAllele)
             }.toList
-            SampleVariant(sample, contigName, pos, if (alleles.exists(_.allele == refAllele)) alleles else AlleleCount(refAllele, 0, 0, true) :: alleles)
+            val newAlleles = if (alleles.exists(_.allele == refAllele)) alleles else AlleleCount(refAllele, 0, 0, true) :: alleles
+            samplePos.position -> SampleVariant(samplePos.sample, newAlleles)
           }
         }
-        .groupBy(x => x.pos).map { case (pos, list) =>
+        .groupByKey().map { case (pos, list) =>
         VariantCall.from(list.toList, contigName, pos)
       }
         .filter(_.hasNonReference)

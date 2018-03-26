@@ -1,6 +1,6 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-case class SampleVariant(sample: String, contig: String, pos: Long, alleles: List[AlleleCount]) {
+case class SampleVariant(sample: Int, alleles: List[AlleleCount]) {
 
 }
 

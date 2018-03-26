@@ -6,17 +6,15 @@ import org.testng.annotations.Test
 class SampleReadTest extends BiopetTest {
   @Test
   def test(): Unit = {
-    val read = SampleRead("name",
-                          "chr1",
+    val bases = SampleRead.sampleBases(
                           10,
-                          20,
+                          1,true,
                           "AATTCCGGAA".getBytes,
                           "AAAAAAAAAA".getBytes,
-                          "3M1D3M1I3M",
-                          strand = true)
-    read.sampleBases.map(_.allele).mkString shouldBe read.sequence
-    read.sampleBases.size shouldBe 10
-    read.sampleBases(2).delBases shouldBe 1
-    read.sampleBases(6).allele shouldBe "CG"
+                          "3M1D3M1I3M")
+    bases.map(_._2.allele).mkString shouldBe "AATTCCGGAA"
+    bases.size shouldBe 10
+    bases(2)._2.delBases shouldBe 1
+    bases(6)._2.allele shouldBe "CG"
   }
 }

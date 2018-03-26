@@ -1,6 +1,6 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-case class VariantCall(contig: String, pos: Long, samples: Map[String, List[AlleleCount]]) {
+case class VariantCall(contig: String, pos: Long, samples: Map[Int, List[AlleleCount]]) {
   def hasNonReference: Boolean = {
     samples.exists(_._2.exists(!_.reference))
   }
@@ -20,7 +20,6 @@ case class VariantCall(contig: String, pos: Long, samples: Map[String, List[Alle
 
 object VariantCall {
   def from(list: List[SampleVariant], contig: String, pos: Long): VariantCall = {
-    require(list.map(_.pos).distinct.size == 1, "Can't merge different positions")
     val refAlleles = list.flatMap(_.alleles.find(_.reference == true).map(_.allele)).distinct
 
     val refAllele = (if (refAlleles.size > 1) {

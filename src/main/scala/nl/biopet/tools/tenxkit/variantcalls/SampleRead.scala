@@ -5,16 +5,8 @@ import htsjdk.samtools.{CigarOperator, TextCigarCodec}
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-case class SampleRead(sample: String,
-                      contig: String,
-                      start: Long,
-                      end: Long,
-                      sequence: Array[Byte],
-                      quality: Array[Byte],
-                      cigar: String,
-                      strand: Boolean) {
-
-  lazy val sampleBases: List[SampleBase] = {
+object SampleRead {
+  def sampleBases(start: Long, sample: Int, strand: Boolean, sequence: Array[Byte], quality: Array[Byte], cigar: String): List[(SamplePosition, SampleBase)] = {
     val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
@@ -27,10 +19,7 @@ case class SampleRead(sample: String,
             CigarOperator.X =>
           seqIt.take(element.getLength).foreach {
             case (base, qual) =>
-              referenceBuffer += refPos -> SampleBase(sample,
-                                                      contig,
-                                                      refPos,
-                                                      base.toChar.toString,
+              referenceBuffer += refPos -> SampleBase(base.toChar.toString,
                                                       strand,
                                                       qual.toByte :: Nil)
               refPos += 1
@@ -57,10 +46,7 @@ case class SampleRead(sample: String,
           }
           (refPos to (element.getLength + refPos)).foreach(
             p =>
-              referenceBuffer += p -> SampleBase(sample,
-                                                 contig,
-                                                 p,
-                                                 "",
+              referenceBuffer += p -> SampleBase("",
                                                  strand,
                                                  Nil))
           refPos += element.getLength
@@ -69,6 +55,6 @@ case class SampleRead(sample: String,
       }
     }
     require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
-    referenceBuffer.values.toList.sortBy(_.pos)
+    referenceBuffer.toList.map { case (k, v) => SamplePosition(sample, k) -> v }.sortBy(_._1.position)
   }
 }
