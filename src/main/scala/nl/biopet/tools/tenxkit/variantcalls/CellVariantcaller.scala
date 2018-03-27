@@ -160,7 +160,6 @@ object CellVariantcaller extends ToolCommand[Args] {
           x.altDepth >= cutoffs.value.minAlternativeDepth &&
           x.totalDepth >= cutoffs.value.minTotalDepth &&
           x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
-        .toDS()
 
 //        .cache()
 //      ds.rdd.countAsync()
@@ -200,7 +199,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     }
 
 
-    val bla = ds.sort("contig", "pos").rdd.map(_.toVariantContext(correctCells.value, dict.value))
+    val bla = ds.sortBy(x => (x.contig, x.pos)).map(_.toVariantContext(correctCells.value, dict.value))
 
     val vcfDir = new File(cmdArgs.outputDir, "vcf")
     vcfDir.mkdir()
