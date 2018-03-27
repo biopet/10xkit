@@ -200,7 +200,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     }
 
 
-    val bla = ds.rdd.map(_.toVariantContext(correctCells.value, dict.value))
+    val bla = ds.sort("contig", "pos").rdd.map(_.toVariantContext(correctCells.value, dict.value))
 
     val vcfDir = new File(cmdArgs.outputDir, "vcf")
     vcfDir.mkdir()
@@ -208,8 +208,7 @@ object CellVariantcaller extends ToolCommand[Args] {
       val outputFile = new File(vcfDir, s"$idx.vcf.gz")
       val writer = new VariantContextWriterBuilder().setOutputFile(outputFile).build()
       writer.writeHeader(vcfHeader.value)
-      val sorted = it.toList.sortBy(x => (x.getContig, x.getStart))
-      sorted.foreach(writer.add)
+      it.foreach(writer.add)
       writer.close()
       Iterator(outputFile)
     }.collect()
