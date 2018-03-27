@@ -3,10 +3,10 @@ package nl.biopet.tools.tenxkit.variantcalls
 import nl.biopet.test.BiopetTest
 import org.testng.annotations.Test
 
-class SampleReadTest extends BiopetTest {
+class SampleBaseTest extends BiopetTest {
   @Test
   def test(): Unit = {
-    val bases = SampleRead.sampleBases(1,
+    val bases = SampleBase.createBases(1,
                                        10,
                                        1,
                                        true,

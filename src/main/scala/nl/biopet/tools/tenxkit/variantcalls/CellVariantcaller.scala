@@ -64,7 +64,7 @@ object CellVariantcaller extends ToolCommand[Args] {
         sample.toList
           .flatMap(
             s =>
-              SampleRead.sampleBases(dict.value.getSequenceIndex(read.getContigName),
+              SampleBase.createBases(dict.value.getSequenceIndex(read.getContigName),
                                      read.getStart + 1,
                                      s,
                                      !read.getReadNegativeStrand,
