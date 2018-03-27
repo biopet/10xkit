@@ -1,6 +1,10 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
 import htsjdk.samtools.SAMSequenceDictionary
+import htsjdk.variant.variantcontext.{Allele, GenotypeBuilder, VariantContext, VariantContextBuilder}
+import org.bdgenomics.adam.converters.VariantContextConverter
+
+import scala.collection.JavaConversions._
 
 case class VariantCall(contig: Int,
                        pos: Long,
@@ -34,5 +38,28 @@ case class VariantCall(contig: Int,
           samples.get(idx).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")
         }
         .mkString("\t")}"
+  }
+
+  def toVariantContext(sampleList: Array[String],
+                       dict: SAMSequenceDictionary): VariantContext = {
+    val genotypes = samples.map { case (sample, a) =>
+      val attributes = Map(
+        "DPF" -> a.map(_.forward).sum.toString,
+        "DPR" -> a.map(_.reverse).sum.toString,
+        "ADF" -> a.map(_.forward).mkString(","),
+        "ADR" -> a.map(_.reverse).mkString(",")
+      )
+      new GenotypeBuilder(sampleList(sample)).AD(a.map(_.total)).DP(a.map(_.total).sum).attributes(attributes).make()
+    }
+    val alleles = Allele.create(refAllele, true) :: altAlleles.map(Allele.create).toList
+    val attributes = Map("DP" -> totalDepth, "SN" -> samples.size)
+    new VariantContextBuilder()
+      .chr(dict.getSequence(contig).getSequenceName)
+      .start(pos)
+      .attributes(attributes)
+      .computeEndFromAlleles(alleles, pos.toInt)
+      .alleles(alleles)
+      .genotypes(genotypes)
+      .make()
   }
 }

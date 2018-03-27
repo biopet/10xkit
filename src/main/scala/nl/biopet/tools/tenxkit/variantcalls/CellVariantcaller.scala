@@ -2,15 +2,24 @@ package nl.biopet.tools.tenxkit.variantcalls
 
 import java.io.File
 
+import htsjdk.samtools.ValidationStringency
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
+import htsjdk.variant.vcf._
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.bdgenomics.adam.models.ReferenceRegion
+import org.bdgenomics.adam.converters.VariantContextConverter
+import org.bdgenomics.adam.models.{ReferenceRegion, VariantContext}
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.variant.VariantContextRDD
+import org.bdgenomics.adam.sql.{Variant, VariantCallingAnnotations}
+import org.bdgenomics.formats.avro.Sample
 
 import scala.collection.JavaConversions._
 import scala.concurrent.{Await, Future}
@@ -152,6 +161,7 @@ object CellVariantcaller extends ToolCommand[Args] {
           x.totalDepth >= cutoffs.value.minTotalDepth &&
           x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
         .toDS()
+
 //        .cache()
 //      ds.rdd.countAsync()
 //
@@ -172,9 +182,37 @@ object CellVariantcaller extends ToolCommand[Args] {
 //
 //    Await.result(Future.sequence(futures), Duration.Inf)
 
-    ds.map(_.toVcfLine(correctCells.value.indices, dict.value))
-      .write
-      .text(new File(cmdArgs.outputDir, "counts.tsv").getAbsolutePath)
+    val headerLines: Seq[VCFHeaderLine] = Seq(
+      new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Read dept"),
+      new VCFInfoHeaderLine("SN", 1, VCFHeaderLineType.Integer, "Sample count"),
+      new VCFFormatHeaderLine("GT", VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, ""),
+      new VCFFormatHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Total reads"),
+      new VCFFormatHeaderLine("DPF", 1, VCFHeaderLineType.Integer, "Total reads"),
+      new VCFFormatHeaderLine("DPR", 1, VCFHeaderLineType.Integer, "Total reads"),
+      new VCFFormatHeaderLine("AD", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Total reads count per allele"),
+      new VCFFormatHeaderLine("ADF", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Forward reads count per allele"),
+      new VCFFormatHeaderLine("ADR", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Reverse reads count per allele")
+    )
+    val vcfHeader = sc.broadcast {
+      val h = new VCFHeader(headerLines.toSet, correctCells.value.toSet)
+      //headerLines.foreach(h.addMetaDataLine)
+      h
+    }
+
+
+    val bla = ds.rdd.map(_.toVariantContext(correctCells.value, dict.value))
+
+    val vcfDir = new File(cmdArgs.outputDir, "vcf")
+    vcfDir.mkdir()
+    val outputFiles = bla.mapPartitionsWithIndex { case (idx, it) =>
+      val outputFile = new File(vcfDir, s"$idx.vcf.gz")
+      val writer = new VariantContextWriterBuilder().setOutputFile(outputFile).build()
+      writer.writeHeader(vcfHeader.value)
+      val sorted = it.toList.sortBy(x => (x.getContig, x.getStart))
+      sorted.foreach(writer.add)
+      writer.close()
+      Iterator(outputFile)
+    }.collect()
 
     logger.info("Done")
   }
