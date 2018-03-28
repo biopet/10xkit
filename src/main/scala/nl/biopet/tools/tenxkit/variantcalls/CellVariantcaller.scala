@@ -105,11 +105,11 @@ object CellVariantcaller extends ToolCommand[Args] {
             val key = Key(b.sample, b.allele, b.delBases, b.umi)
             a.get(key) match {
               case Some(count) if b.strand =>
-                a + (key -> count.copy(forwardUmi = count.forwardUmi + 1))
+                a + (key -> count.addForward())
               case Some(count) =>
-                a + (key -> count.copy(reverseUmi = count.reverseUmi + 1))
-              case _ if b.strand => a + (key -> AlleleCount(forwardUmi = 1))
-              case _             => a + (key -> AlleleCount(reverseUmi = 1))
+                a + (key -> count.addReverse())
+              case _ if b.strand => a + (key -> AlleleCount(forward = 1))
+              case _             => a + (key -> AlleleCount(reverse = 1))
             }
         }, {
           case (a, b) =>
@@ -117,8 +117,7 @@ object CellVariantcaller extends ToolCommand[Args] {
             keys.map { key =>
               (a.get(key), b.get(key)) match {
                 case (Some(x), Some(y)) =>
-                  key -> AlleleCount(x.forwardUmi + y.forwardUmi,
-                                     x.reverseUmi + y.reverseUmi)
+                  key -> (x + y)
                 case (Some(x), _) => key -> x
                 case (_, Some(y)) => key -> y
               }
@@ -167,13 +166,14 @@ object CellVariantcaller extends ToolCommand[Args] {
                     .groupBy(_._1.umi)
                     .map {
                       case (k, v) =>
-                        if (k.isDefined) k -> v.values
-                          .fold(AlleleCount())(_ + _)
-                          .copy(forwardUmi = 1, reverseUmi = 1)
-                        else k -> v.values
-                          .fold(AlleleCount())(_ + _)
+                        if (k.isDefined)
+                          v.values
+                            .foldLeft(AlleleCount())(_ + _)
+                            .copy(forwardUmi = 1, reverseUmi = 1)
+                        else
+                          v.values
+                            .foldLeft(AlleleCount())(_ + _)
                     }
-                    .values
                     .foldLeft(AlleleCount())(_ + _)
                 }
             }
@@ -211,36 +211,45 @@ object CellVariantcaller extends ToolCommand[Args] {
 //    Await.result(Future.sequence(futures), Duration.Inf)
 
     val headerLines: Seq[VCFHeaderLine] = Seq(
-      new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Read dept"),
+      new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Umi dept"),
+      new VCFInfoHeaderLine("DP-READ",
+                            1,
+                            VCFHeaderLineType.Integer,
+                            "Read dept"),
       new VCFInfoHeaderLine("SN", 1, VCFHeaderLineType.Integer, "Sample count"),
       new VCFFormatHeaderLine("GT",
                               VCFHeaderLineCount.UNBOUNDED,
                               VCFHeaderLineType.String,
                               ""),
-      new VCFFormatHeaderLine("DP",
+      new VCFFormatHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Total umi"),
+      new VCFFormatHeaderLine("DP-READ",
                               1,
                               VCFHeaderLineType.Integer,
                               "Total reads"),
       new VCFFormatHeaderLine("DPF",
                               1,
                               VCFHeaderLineType.Integer,
-                              "Total reads"),
+                              "Forward umi"),
       new VCFFormatHeaderLine("DPR",
                               1,
                               VCFHeaderLineType.Integer,
-                              "Total reads"),
+                              "Reverse umi"),
       new VCFFormatHeaderLine("AD",
+                              VCFHeaderLineCount.R,
+                              VCFHeaderLineType.Integer,
+                              "Total umi count per allele"),
+      new VCFFormatHeaderLine("AD-READ",
                               VCFHeaderLineCount.R,
                               VCFHeaderLineType.Integer,
                               "Total reads count per allele"),
       new VCFFormatHeaderLine("ADF",
                               VCFHeaderLineCount.R,
                               VCFHeaderLineType.Integer,
-                              "Forward reads count per allele"),
+                              "Forward umi count per allele"),
       new VCFFormatHeaderLine("ADR",
                               VCFHeaderLineCount.R,
                               VCFHeaderLineType.Integer,
-                              "Reverse reads count per allele")
+                              "Reverse umi count per allele")
     )
 
     val vcfHeader =

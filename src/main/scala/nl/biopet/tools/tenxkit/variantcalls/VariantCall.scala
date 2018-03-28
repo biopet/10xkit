@@ -24,6 +24,10 @@ case class VariantCall(contig: Int,
     samples.map(_._2.map(_.total).sum).sum
   }
 
+  def totalReadDepth: Int = {
+    samples.map(_._2.map(_.totalReads).sum).sum
+  }
+
   def referenceDepth: Int = {
     samples.map(_._2.headOption.map(_.total).getOrElse(0)).sum
   }
@@ -51,8 +55,10 @@ case class VariantCall(contig: Int,
     val genotypes = samples.map {
       case (sample, a) =>
         val attributes = Map(
+          "DP-READ" -> a.map(_.totalReads).sum.toString,
           "DPF" -> a.map(_.forwardUmi).sum.toString,
           "DPR" -> a.map(_.reverseUmi).sum.toString,
+          "AD-READ" -> a.map(_.totalReads).mkString(","),
           "ADF" -> a.map(_.forwardUmi).mkString(","),
           "ADR" -> a.map(_.reverseUmi).mkString(",")
         )
@@ -65,7 +71,8 @@ case class VariantCall(contig: Int,
     val alleles = Allele.create(refAllele, true) :: altAlleles
       .map(Allele.create)
       .toList
-    val attributes = Map("DP" -> totalDepth, "SN" -> samples.size)
+    val attributes =
+      Map("DP" -> totalDepth, "DP-READ" -> totalReadDepth, "SN" -> samples.size)
     new VariantContextBuilder()
       .chr(dict.getSequence(contig).getSequenceName)
       .start(pos)
