@@ -9,7 +9,8 @@ case class SampleBase(sample: Int,
                       allele: String,
                       strand: Boolean,
                       qual: List[Byte],
-                      delBases: Int = 0) {
+                      delBases: Int = 0,
+                      umi: Option[Int] = None) {
 
   def avgQual: Option[Byte] =
     if (qual.nonEmpty) Some((qual.map(_.toInt).sum / qual.size).toByte)
@@ -23,7 +24,8 @@ object SampleBase {
                   strand: Boolean,
                   sequence: Array[Byte],
                   quality: Array[Byte],
-                  cigar: String): List[(Position, SampleBase)] = {
+                  cigar: String,
+                  umni: Option[Int]): List[(Position, SampleBase)] = {
     val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
@@ -33,13 +35,14 @@ object SampleBase {
         case CigarOperator.SOFT_CLIP =>
           seqIt.drop(element.getLength)
         case CigarOperator.MATCH_OR_MISMATCH | CigarOperator.EQ |
-             CigarOperator.X =>
+            CigarOperator.X =>
           seqIt.take(element.getLength).foreach {
             case (base, qual) =>
               referenceBuffer += refPos -> SampleBase(sample,
-                base.toChar.toString,
-                strand,
-                qual.toByte :: Nil)
+                                                      base.toChar.toString,
+                                                      strand,
+                                                      qual.toByte :: Nil,
+                                                      umi = umni)
               refPos += 1
           }
         case CigarOperator.INSERTION =>
@@ -62,8 +65,13 @@ object SampleBase {
               throw new IllegalStateException(
                 "Deletion without a base found, cigar start with D (or after the S/H)")
           }
-          (refPos to (element.getLength + refPos)).foreach(p =>
-            referenceBuffer += p -> SampleBase(sample, "", strand, Nil))
+          (refPos to (element.getLength + refPos)).foreach(
+            p =>
+              referenceBuffer += p -> SampleBase(sample,
+                                                 "",
+                                                 strand,
+                                                 Nil,
+                                                 umi = umni))
           refPos += element.getLength
         case CigarOperator.SKIPPED_REGION                    => refPos += element.getLength
         case CigarOperator.HARD_CLIP | CigarOperator.PADDING =>

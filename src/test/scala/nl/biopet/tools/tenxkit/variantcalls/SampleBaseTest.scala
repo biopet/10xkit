@@ -12,7 +12,8 @@ class SampleBaseTest extends BiopetTest {
                                        true,
                                        "AATTCCGGAA".getBytes,
                                        "AAAAAAAAAA".getBytes,
-                                       "3M1D3M1I3M")
+                                       "3M1D3M1I3M",
+                                       None)
     bases.map(_._2.allele).mkString shouldBe "AATTCCGGAA"
     bases.size shouldBe 10
     bases(2)._2.delBases shouldBe 1

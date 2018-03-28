@@ -7,6 +7,7 @@ import htsjdk.samtools.reference.IndexedFastaSequenceFile
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
 import htsjdk.variant.vcf._
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
+import nl.biopet.utils.ngs
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
 import org.apache.hadoop.conf.Configuration
@@ -65,98 +66,126 @@ object CellVariantcaller extends ToolCommand[Args] {
 //      val contigReads: AlignmentRecordRDD =
 //        sc.loadIndexedBam(cmdArgs.inputFile.getAbsolutePath, contig)
 
-      val bases = allReads.rdd.filter(r => r.getReadMapped && !r.getDuplicateRead).flatMap { read =>
-        val sample = read.getAttributes
+    val bases = allReads.rdd
+      .filter(r =>
+        r.getReadMapped && (cmdArgs.umnTag.isDefined || !r.getDuplicateRead))
+      .flatMap { read =>
+        val attributes = read.getAttributes
           .split("\t")
+        val sample = attributes
           .find(_.startsWith(cmdArgs.sampleTag + ":"))
           .flatMap(t => correctCellsMap.value.get(t.split(":")(2)))
+
         sample.toList
-          .flatMap(
-            s =>
-              SampleBase.createBases(dict.value.getSequenceIndex(read.getContigName),
-                                     read.getStart + 1,
-                                     s,
-                                     !read.getReadNegativeStrand,
-                                     read.getSequence.getBytes,
-                                     read.getQual.getBytes,
-                                     read.getCigar))
+          .flatMap { s =>
+            val umni = cmdArgs.umnTag.flatMap { u =>
+              attributes
+                .find(_.startsWith(u + ":"))
+                .map(_.split(":")(2))
+                .map(ngs.sequenceTo2bitSingleInt)
+            }
+            SampleBase.createBases(
+              dict.value.getSequenceIndex(read.getContigName),
+              read.getStart + 1,
+              s,
+              !read.getReadNegativeStrand,
+              read.getSequence.getBytes,
+              read.getQual.getBytes,
+              read.getCigar,
+              umni
+            )
+          }
           .filter(_._2.avgQual.exists(_ >= cutoffs.value.minBaseQual))
       }
 
-      val ds = bases
-        .aggregateByKey(Map[Key, AlleleCount]())(
-          {
-            case (a, b) =>
-              val key = Key(b.sample, b.allele, b.delBases)
-              a.get(key) match {
-                case Some(count) if b.strand =>
-                  a + (key -> count.copy(forward = count.forward + 1))
-                case Some(count) =>
-                  a + (key -> count.copy(reverse = count.reverse + 1))
-                case _ if b.strand => a + (key -> AlleleCount(forward = 1))
-                case _             => a + (key -> AlleleCount(reverse = 1))
+    val ds = bases
+      .aggregateByKey(Map[Key, AlleleCount]())(
+        {
+          case (a, b) =>
+            val key = Key(b.sample, b.allele, b.delBases, b.umi)
+            a.get(key) match {
+              case Some(count) if b.strand =>
+                a + (key -> count.copy(forwardUmi = count.forwardUmi + 1))
+              case Some(count) =>
+                a + (key -> count.copy(reverseUmi = count.reverseUmi + 1))
+              case _ if b.strand => a + (key -> AlleleCount(forwardUmi = 1))
+              case _             => a + (key -> AlleleCount(reverseUmi = 1))
+            }
+        }, {
+          case (a, b) =>
+            val keys = a.keySet ++ b.keySet
+            keys.map { key =>
+              (a.get(key), b.get(key)) match {
+                case (Some(x), Some(y)) =>
+                  key -> AlleleCount(x.forwardUmi + y.forwardUmi,
+                                     x.reverseUmi + y.reverseUmi)
+                case (Some(x), _) => key -> x
+                case (_, Some(y)) => key -> y
               }
-          }, {
-            case (a, b) =>
-              val keys = a.keySet ++ b.keySet
-              keys.map { key =>
-                (a.get(key), b.get(key)) match {
-                  case (Some(x), Some(y)) =>
-                    key -> AlleleCount(x.forward + y.forward,
-                                       x.reverse + y.reverse)
-                  case (Some(x), _) => key -> x
-                  case (_, Some(y)) => key -> y
-                }
-              }.toMap
-          }
-        )
-        .mapPartitions { it =>
-          val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
-          it.map {
-            case (position, allSamples) =>
-              val end = position.position + allSamples.map(_._1.delBases).max
-              val refAllele = fastaReader
-                .getSubsequenceAt(dict.value.getSequence(position.contig).getSequenceName, position.position, end)
-                .getBaseString
-                .toUpperCase
-              val oldAlleles = allSamples.keys.map(x => (x.allele, x.delBases))
-              val newAllelesMap = oldAlleles.map {
-                case (allele, delBases) =>
-                  (allele, delBases) -> (if (delBases > 0 || !refAllele
-                                               .startsWith(allele)) {
-                                           if (allele.length == refAllele.length || delBases > 0)
-                                             allele
-                                           else
-                                             new String(
-                                               refAllele.zipWithIndex
-                                                 .map(x =>
-                                                   allele
-                                                     .lift(x._2)
-                                                     .getOrElse(x._1))
-                                                 .toArray)
-                                         } else refAllele)
-              }.toMap
-              val altAlleles =
-                newAllelesMap.values.filter(_ != refAllele).toArray.distinct
-              val allAlleles = Array(refAllele) ++ altAlleles
-              val genotypes = allSamples.groupBy(_._1.sample).map {
-                case (sample, list) =>
-                  sample -> allAlleles.map { allele =>
-                    list
-                      .find(x =>
-                        newAllelesMap((x._1.allele, x._1.delBases)) == allele)
-                      .map(x => x._2)
-                      .getOrElse(AlleleCount())
-                  }
-              }
-              VariantCall(position.contig,
-                          position.position,
-                          refAllele,
-                          altAlleles,
-                          genotypes)
-          }
+            }.toMap
         }
-        .filter(x => x.hasNonReference &&
+      )
+      .mapPartitions { it =>
+        val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
+        it.map {
+          case (position, allSamples) =>
+            val end = position.position + allSamples.map(_._1.delBases).max
+            val refAllele = fastaReader
+              .getSubsequenceAt(
+                dict.value.getSequence(position.contig).getSequenceName,
+                position.position,
+                end)
+              .getBaseString
+              .toUpperCase
+            val oldAlleles =
+              allSamples.keys.map(x => (x.allele, x.delBases)).toList.distinct
+            val newAllelesMap = oldAlleles.map {
+              case (allele, delBases) =>
+                (allele, delBases) -> (if (delBases > 0 || !refAllele
+                                             .startsWith(allele)) {
+                                         if (allele.length == refAllele.length || delBases > 0)
+                                           allele
+                                         else
+                                           new String(
+                                             refAllele.zipWithIndex
+                                               .map(x =>
+                                                 allele
+                                                   .lift(x._2)
+                                                   .getOrElse(x._1))
+                                               .toArray)
+                                       } else refAllele)
+            }.toMap
+            val altAlleles =
+              newAllelesMap.values.filter(_ != refAllele).toArray.distinct
+            val allAlleles = Array(refAllele) ++ altAlleles
+            val genotypes = allSamples.groupBy(_._1.sample).map {
+              case (sample, list) =>
+                sample -> allAlleles.map { allele =>
+                  list
+                    .filter(x =>
+                      newAllelesMap((x._1.allele, x._1.delBases)) == allele)
+                    .groupBy(_._1.umi)
+                    .map {
+                      case (k, v) =>
+                        if (k.isDefined) k -> v.values
+                          .fold(AlleleCount())(_ + _)
+                          .copy(forwardUmi = 1, reverseUmi = 1)
+                        else k -> v.values
+                          .fold(AlleleCount())(_ + _)
+                    }
+                    .values
+                    .foldLeft(AlleleCount())(_ + _)
+                }
+            }
+            VariantCall(position.contig,
+                        position.position,
+                        refAllele,
+                        altAlleles,
+                        genotypes)
+        }
+      }
+      .filter(x =>
+        x.hasNonReference &&
           x.altDepth >= cutoffs.value.minAlternativeDepth &&
           x.totalDepth >= cutoffs.value.minTotalDepth &&
           x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
@@ -184,38 +213,62 @@ object CellVariantcaller extends ToolCommand[Args] {
     val headerLines: Seq[VCFHeaderLine] = Seq(
       new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Read dept"),
       new VCFInfoHeaderLine("SN", 1, VCFHeaderLineType.Integer, "Sample count"),
-      new VCFFormatHeaderLine("GT", VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, ""),
-      new VCFFormatHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Total reads"),
-      new VCFFormatHeaderLine("DPF", 1, VCFHeaderLineType.Integer, "Total reads"),
-      new VCFFormatHeaderLine("DPR", 1, VCFHeaderLineType.Integer, "Total reads"),
-      new VCFFormatHeaderLine("AD", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Total reads count per allele"),
-      new VCFFormatHeaderLine("ADF", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Forward reads count per allele"),
-      new VCFFormatHeaderLine("ADR", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Reverse reads count per allele")
+      new VCFFormatHeaderLine("GT",
+                              VCFHeaderLineCount.UNBOUNDED,
+                              VCFHeaderLineType.String,
+                              ""),
+      new VCFFormatHeaderLine("DP",
+                              1,
+                              VCFHeaderLineType.Integer,
+                              "Total reads"),
+      new VCFFormatHeaderLine("DPF",
+                              1,
+                              VCFHeaderLineType.Integer,
+                              "Total reads"),
+      new VCFFormatHeaderLine("DPR",
+                              1,
+                              VCFHeaderLineType.Integer,
+                              "Total reads"),
+      new VCFFormatHeaderLine("AD",
+                              VCFHeaderLineCount.R,
+                              VCFHeaderLineType.Integer,
+                              "Total reads count per allele"),
+      new VCFFormatHeaderLine("ADF",
+                              VCFHeaderLineCount.R,
+                              VCFHeaderLineType.Integer,
+                              "Forward reads count per allele"),
+      new VCFFormatHeaderLine("ADR",
+                              VCFHeaderLineCount.R,
+                              VCFHeaderLineType.Integer,
+                              "Reverse reads count per allele")
     )
-    val vcfHeader = sc.broadcast {
-      val h = new VCFHeader(headerLines.toSet, correctCells.value.toSet)
-      //headerLines.foreach(h.addMetaDataLine)
-      h
-    }
 
+    val vcfHeader =
+      sc.broadcast(new VCFHeader(headerLines.toSet, correctCells.value.toSet))
 
-    val bla = ds.sortBy(x => (x.contig, x.pos)).map(_.toVariantContext(correctCells.value, dict.value))
+    val bla = ds
+      .sortBy(x => (x.contig, x.pos))
+      .map(_.toVariantContext(correctCells.value, dict.value))
 
     val vcfDir = new File(cmdArgs.outputDir, "vcf")
     vcfDir.mkdir()
-    val outputFiles = bla.mapPartitionsWithIndex { case (idx, it) =>
-      val outputFile = new File(vcfDir, s"$idx.vcf.gz")
-      val writer = new VariantContextWriterBuilder().setOutputFile(outputFile).build()
-      writer.writeHeader(vcfHeader.value)
-      it.foreach(writer.add)
-      writer.close()
-      Iterator(outputFile)
-    }.collect()
+    val outputFiles = bla
+      .mapPartitionsWithIndex {
+        case (idx, it) =>
+          val outputFile = new File(vcfDir, s"$idx.vcf.gz")
+          val writer =
+            new VariantContextWriterBuilder().setOutputFile(outputFile).build()
+          writer.writeHeader(vcfHeader.value)
+          it.foreach(writer.add)
+          writer.close()
+          Iterator(outputFile)
+      }
+      .collect()
 
     logger.info("Done")
   }
 
-  case class Key(sample: Int, allele: String, delBases: Int)
+  case class Key(sample: Int, allele: String, delBases: Int, umi: Option[Int])
 
   def descriptionText: String =
     """

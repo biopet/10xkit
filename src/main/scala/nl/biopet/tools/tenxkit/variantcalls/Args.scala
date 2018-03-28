@@ -29,4 +29,5 @@ case class Args(inputFile: File = null,
                 outputDir: File = null,
                 correctCells: File = null,
                 sampleTag: String = "CB",
+                umnTag: Option[String] = None,
                 sparkMaster: String = null)
