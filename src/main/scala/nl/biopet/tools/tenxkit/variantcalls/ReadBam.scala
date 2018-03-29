@@ -23,14 +23,19 @@ class ReadBam(samReader: SamReader,
               region: BedRecord,
               dict: SAMSequenceDictionary,
               referenceFile: IndexedFastaSequenceFile,
-              correctCells: Map[String, Int])
+              correctCells: Map[String, Int],
+              minBaseQual: Byte)
     extends Iterator[VariantCall]
     with AutoCloseable {
   private val contig = dict.getSequenceIndex(region.chr)
-  private val referenceRegion = ReferenceRegion(referenceFile,
-                                                region.chr,
-                                                region.start + 1,
-                                                if (dict.getSequence(contig).getSequenceLength > (region.end + 30)) region.end + 30 else dict.getSequence(contig).getSequenceLength)
+  private val referenceRegion = ReferenceRegion(
+    referenceFile,
+    region.chr,
+    region.start + 1,
+    if (dict.getSequence(contig).getSequenceLength > (region.end + 30))
+      region.end + 30
+    else dict.getSequence(contig).getSequenceLength
+  )
   private val samIt =
     samReader.query(region.chr, region.start - 3, region.end + 3, false)
   private val samItBuffer = samIt.buffered
@@ -64,7 +69,9 @@ class ReadBam(samReader: SamReader,
         bases.foreach {
           case (pos, base) =>
             val position = pos.position.toInt
-            buffer += position -> (base :: buffer.getOrElse(position, Nil))
+            if (position > region.start && position <= region.end && base.avgQual
+                  .exists(_ >= minBaseQual))
+              buffer += position -> (base :: buffer.getOrElse(position, Nil))
         }
       case _ =>
     }

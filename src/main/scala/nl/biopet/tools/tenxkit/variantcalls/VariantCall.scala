@@ -91,10 +91,10 @@ object VariantCall {
                       referenceRegion: ReferenceRegion): VariantCall = {
     val maxDel = bases.map(_.delBases).max
     val end = position + maxDel
-    val refAllele = new String(referenceRegion.sequence.slice(position - referenceRegion.start, position - referenceRegion.start + maxDel + 1))
-//      .subSequence(position, end)
-//      .sequenceString
-      .toUpperCase
+    val refAllele = new String(
+      referenceRegion.sequence.slice(
+        position - referenceRegion.start,
+        position - referenceRegion.start + maxDel + 1)).toUpperCase
     val oldAlleles = bases.map(x => (x.allele, x.delBases)).distinct
     val newAllelesMap = oldAlleles.map {
       case (allele, delBases) =>
@@ -126,9 +126,9 @@ object VariantCall {
                 .map {
                   case (umi, umiBases) =>
                     if (umi.isDefined)
-                      AlleleCount(1,
+                      AlleleCount(if (umiBases.exists(_.strand)) 1 else 0,
+                                  if (umiBases.exists(!_.strand)) 1 else 0,
                                   umiBases.count(_.strand),
-                                  1,
                                   umiBases.count(!_.strand))
                     else
                       AlleleCount(umiBases.count(_.strand),

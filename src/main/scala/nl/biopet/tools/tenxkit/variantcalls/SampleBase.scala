@@ -23,14 +23,14 @@ object SampleBase {
                   contig: Int,
                   sample: Int,
                   umi: Option[Int]): List[(Position, SampleBase)] = {
-    if (read.getMateUnmappedFlag) Nil
+    if (read.getReadUnmappedFlag) Nil
     else
       SampleBase.createBases(contig,
                              read.getAlignmentStart,
                              sample,
                              !read.getReadNegativeStrandFlag,
                              read.getReadBases,
-                             read.getBaseQualities,
+                             read.getBaseQualityString.getBytes,
                              read.getCigar,
                              umi)
   }
@@ -76,7 +76,7 @@ object SampleBase {
               referenceBuffer += refPos -> SampleBase(sample,
                                                       base.toChar.toString,
                                                       strand,
-                                                      qual.toByte :: Nil,
+                                                      qual :: Nil,
                                                       umi = umni)
               refPos += 1
           }

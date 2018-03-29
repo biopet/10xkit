@@ -7,13 +7,6 @@ case class AlleleCount(forwardUmi: Int,
   def total: Int = forwardUmi + reverseUmi
   def totalReads: Int = forwardReads + reverseReads
 
-  def addForward(): AlleleCount =
-    this.copy(forwardUmi = this.forwardUmi + 1,
-              forwardReads = this.forwardReads + 1)
-  def addReverse(): AlleleCount =
-    this.copy(reverseUmi = this.reverseUmi + 1,
-              reverseReads = this.reverseReads + 1)
-
   def +(other: AlleleCount): AlleleCount = {
     AlleleCount(this.forwardUmi + other.forwardUmi,
                 this.reverseUmi + other.reverseUmi,
