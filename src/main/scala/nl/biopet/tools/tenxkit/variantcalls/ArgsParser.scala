@@ -61,7 +61,7 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .text(
       s"Tag where to find the sample barcode, default '${Args().sampleTag}'")
   opt[String]('u', "umiTag")
-    .action((x, c) => c.copy(umnTag = Some(x)))
+    .action((x, c) => c.copy(umiTag = Some(x)))
     .text(
       s"Tag where to find the umi barcode, if not given read with the duplicate flag will be ignored'")
   opt[String]("sparkMaster")

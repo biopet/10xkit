@@ -2,9 +2,16 @@ package nl.biopet.tools.tenxkit.variantcalls
 
 import java.io.File
 
-import htsjdk.samtools.{SAMRecord, SAMSequenceDictionary, SamReader, SamReaderFactory}
+import htsjdk.samtools.reference.IndexedFastaSequenceFile
+import htsjdk.samtools.{
+  SAMRecord,
+  SAMSequenceDictionary,
+  SamReader,
+  SamReaderFactory
+}
 import nl.biopet.utils.ngs.intervals.BedRecord
 import nl.biopet.utils.ngs
+import nl.biopet.utils.ngs.fasta.ReferenceRegion
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -15,18 +22,26 @@ class ReadBam(samReader: SamReader,
               umiTag: Option[String],
               region: BedRecord,
               dict: SAMSequenceDictionary,
-              referenceFile: File,
-              correctCells: Map[String, Int]) extends Iterator[VariantCall] with AutoCloseable {
+              referenceFile: IndexedFastaSequenceFile,
+              correctCells: Map[String, Int])
+    extends Iterator[VariantCall]
+    with AutoCloseable {
   private val contig = dict.getSequenceIndex(region.chr)
-  private val samIt = samReader.query(region.chr, region.start - 3, region.end + 3, false)
+  private val referenceRegion = ReferenceRegion(referenceFile,
+                                                region.chr,
+                                                region.start + 1,
+                                                if (dict.getSequence(contig).getSequenceLength > (region.end + 30)) region.end + 30 else dict.getSequence(contig).getSequenceLength)
+  private val samIt =
+    samReader.query(region.chr, region.start - 3, region.end + 3, false)
   private val samItBuffer = samIt.buffered
-  private var nextVariantcall: Option[VariantCall] = detectNext
 
   def hasNext: Boolean = nextVariantcall.isDefined
 
   private var position: Int = 0
 
-  private val buffer: mutable.Map[Int, ListBuffer[SampleBase]] = mutable.Map()
+  private val buffer: mutable.Map[Int, List[SampleBase]] = mutable.Map()
+
+  private var nextVariantcall: Option[VariantCall] = detectNext
 
   private def fillBuffer(): Unit = {
     while (samItBuffer.hasNext && buffer.isEmpty) {
@@ -46,10 +61,10 @@ class ReadBam(samReader: SamReader,
       case Some(s) =>
         val umi = ReadBam.extractUmi(read, umiTag)
         val bases = SampleBase.createBases(read, contig, s, umi)
-        bases.foreach { case (pos, base) =>
-          val position = pos.position.toInt
-          if (!buffer.contains(pos.position)) buffer += position -> new ListBuffer()
-          buffer(position).add(base)
+        bases.foreach {
+          case (pos, base) =>
+            val position = pos.position.toInt
+            buffer += position -> (base :: buffer.getOrElse(position, Nil))
         }
       case _ =>
     }
@@ -59,9 +74,13 @@ class ReadBam(samReader: SamReader,
     fillBuffer()
     if (position > region.end || buffer.isEmpty) None
     else {
-
-
-      ???
+      val variantCall = Some(
+        VariantCall.createFromBases(contig,
+                                    position,
+                                    buffer(position).toList,
+                                    referenceRegion))
+      buffer -= position
+      variantCall
     }
   }
 
@@ -70,7 +89,9 @@ class ReadBam(samReader: SamReader,
       case Some(n) =>
         nextVariantcall = detectNext
         n
-      case _ => throw new IllegalStateException("Iterator is depleted, please check .hasNext")
+      case _ =>
+        throw new IllegalStateException(
+          "Iterator is depleted, please check .hasNext")
     }
   }
 
@@ -80,12 +101,15 @@ class ReadBam(samReader: SamReader,
 }
 
 object ReadBam {
-  def extractSample(read: SAMRecord, samples: Map[String, Int], sampleTag: String): Option[Int] = {
-    Option(read.getAttribute(sampleTag)).flatMap(samples.get)
+  def extractSample(read: SAMRecord,
+                    samples: Map[String, Int],
+                    sampleTag: String): Option[Int] = {
+    Option(read.getAttribute(sampleTag)).flatMap(s => samples.get(s.toString))
   }
 
   def extractUmi(read: SAMRecord, umiTag: Option[String]): Option[Int] = {
-    umiTag.flatMap(t => Option(read.getAttribute(t)).map(u => ngs.sequenceTo2bitSingleInt(u.toString)))
+    umiTag.flatMap(t =>
+      Option(read.getAttribute(t)).map(u =>
+        ngs.sequenceTo2bitSingleInt(u.toString)))
   }
-
 }

@@ -7,6 +7,7 @@ import htsjdk.variant.variantcontext.{
   VariantContext,
   VariantContextBuilder
 }
+import nl.biopet.utils.ngs.fasta.ReferenceRegion
 
 import scala.collection.JavaConversions._
 
@@ -84,39 +85,59 @@ case class VariantCall(contig: Int,
 }
 
 object VariantCall {
-  def createFromBases(position:Int, contig:Int, bases: List[SampleBase]): VariantCall = {
-    val end = position + allSamples.map(_._1.delBases).max
-    val refAllele = fastaReader
-      .getSubsequenceAt(
-        dict.value.getSequence(contig).getSequenceName,
-        position,
-        end)
-      .getBaseString
+  def createFromBases(contig: Int,
+                      position: Int,
+                      bases: List[SampleBase],
+                      referenceRegion: ReferenceRegion): VariantCall = {
+    val maxDel = bases.map(_.delBases).max
+    val end = position + maxDel
+    val refAllele = new String(referenceRegion.sequence.slice(position - referenceRegion.start, position - referenceRegion.start + maxDel + 1))
+//      .subSequence(position, end)
+//      .sequenceString
       .toUpperCase
-    val oldAlleles =
-      allSamples.keys.map(x => (x.allele, x.delBases)).toList.distinct
+    val oldAlleles = bases.map(x => (x.allele, x.delBases)).distinct
     val newAllelesMap = oldAlleles.map {
       case (allele, delBases) =>
         (allele, delBases) -> (if (delBases > 0 || !refAllele
-          .startsWith(allele)) {
-          if (allele.length == refAllele.length || delBases > 0)
-            allele
-          else
-            new String(
-              refAllele.zipWithIndex
-                .map(x =>
-                  allele
-                    .lift(x._2)
-                    .getOrElse(x._1))
-                .toArray)
-        } else refAllele)
+                                     .startsWith(allele)) {
+                                 if (allele.length == refAllele.length || delBases > 0)
+                                   allele
+                                 else
+                                   new String(
+                                     refAllele.zipWithIndex
+                                       .map(x =>
+                                         allele
+                                           .lift(x._2)
+                                           .getOrElse(x._1))
+                                       .toArray)
+                               } else refAllele)
     }.toMap
     val altAlleles =
       newAllelesMap.values.filter(_ != refAllele).toArray.distinct
     val allAlleles = Array(refAllele) ++ altAlleles
 
-    bases.groupBy(_.sample).map { case (sample, sampleBases) =>
-      sampleBases.groupBy(_.all)
+    val samples = bases.groupBy(_.sample).map {
+      case (sample, sampleBases) =>
+        val alleles =
+          sampleBases.groupBy(x => newAllelesMap((x.allele, x.delBases))).map {
+            case (allele, alleleBases) =>
+              allele -> alleleBases
+                .groupBy(_.umi)
+                .map {
+                  case (umi, umiBases) =>
+                    if (umi.isDefined)
+                      AlleleCount(1,
+                                  umiBases.count(_.strand),
+                                  1,
+                                  umiBases.count(!_.strand))
+                    else
+                      AlleleCount(umiBases.count(_.strand),
+                                  umiBases.count(!_.strand))
+                }
+                .reduce(_ + _)
+          }
+        sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
     }
+    VariantCall(contig, position, refAllele, altAlleles, samples)
   }
 }

@@ -19,11 +19,20 @@ case class SampleBase(sample: Int,
 
 object SampleBase {
 
-  def createBases(read: SAMRecord, contig: Int, sample: Int, umi: Option[Int]): List[(Position, SampleBase)] = {
+  def createBases(read: SAMRecord,
+                  contig: Int,
+                  sample: Int,
+                  umi: Option[Int]): List[(Position, SampleBase)] = {
     if (read.getMateUnmappedFlag) Nil
-    else SampleBase.createBases(contig, read.getAlignmentStart, sample,
-      !read.getReadNegativeStrandFlag, read.getReadBases, read.getBaseQualities, read.getCigar,
-      umi)
+    else
+      SampleBase.createBases(contig,
+                             read.getAlignmentStart,
+                             sample,
+                             !read.getReadNegativeStrandFlag,
+                             read.getReadBases,
+                             read.getBaseQualities,
+                             read.getCigar,
+                             umi)
   }
 
   def createBases(contig: Int,
@@ -34,10 +43,17 @@ object SampleBase {
                   quality: Array[Byte],
                   cigar: String,
                   umni: Option[Int]): List[(Position, SampleBase)] = {
-    createBases(contig, start, sample, strand, sequence, quality, TextCigarCodec.decode(cigar), umni)
+    createBases(contig,
+                start,
+                sample,
+                strand,
+                sequence,
+                quality,
+                TextCigarCodec.decode(cigar),
+                umni)
   }
 
-    def createBases(contig: Int,
+  def createBases(contig: Int,
                   start: Long,
                   sample: Int,
                   strand: Boolean,

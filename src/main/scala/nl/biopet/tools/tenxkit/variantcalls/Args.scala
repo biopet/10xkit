@@ -25,9 +25,11 @@ import java.io.File
 
 case class Args(inputFile: File = null,
                 reference: File = null,
+                intervals: Option[File] = None,
+                binSize: Int = 1000000,
                 cutoffs: Cutoffs = Cutoffs(),
                 outputDir: File = null,
                 correctCells: File = null,
                 sampleTag: String = "CB",
-                umnTag: Option[String] = None,
+                umiTag: Option[String] = None,
                 sparkMaster: String = null)
