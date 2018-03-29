@@ -44,7 +44,7 @@ class ReadBam(samReader: SamReader,
 
   private var position: Int = 0
 
-  private val buffer: mutable.Map[Int, List[SampleBase]] = mutable.Map()
+  private val buffer: mutable.Map[Int, PositionBases] = mutable.Map()
 
   private var nextVariantcall: Option[VariantCall] = detectNext
 
@@ -65,13 +65,43 @@ class ReadBam(samReader: SamReader,
     sample match {
       case Some(s) =>
         val umi = ReadBam.extractUmi(read, umiTag)
-        val bases = SampleBase.createBases(read, contig, s, umi)
+        val bases = SampleBase
+          .createBases(read, contig, s, umi)
+          .filter(_._2.avgQual.exists(_ >= minBaseQual))
         bases.foreach {
           case (pos, base) =>
             val position = pos.position.toInt
-            if (position > region.start && position <= region.end && base.avgQual
-                  .exists(_ >= minBaseQual))
-              buffer += position -> (base :: buffer.getOrElse(position, Nil))
+            if (position > region.start && position <= region.end) {
+              if (!buffer.contains(position))
+                buffer += position -> PositionBases()
+              if (!buffer(position).samples.contains(s))
+                buffer(position).samples += s -> mutable.Map()
+              val sampleAllele = SampleAllele(base.allele, base.delBases)
+              val current = buffer(position)
+                .samples(s)
+                .getOrElse(sampleAllele, AlleleCount())
+              val seen = umi.exists { u =>
+                val alreadySeen = buffer(position).umis.contains(u)
+                if (!alreadySeen) buffer(position).umis.add(u)
+                alreadySeen
+              }
+              (base.strand, seen) match {
+                case (true, true) =>
+                  buffer(position).samples(s) += sampleAllele -> current.copy(
+                    forwardReads = current.forwardReads + 1)
+                case (true, false) =>
+                  buffer(position).samples(s) += sampleAllele -> current.copy(
+                    forwardReads = current.forwardReads + 1,
+                    forwardUmi = current.forwardUmi + 1)
+                case (false, true) =>
+                  buffer(position).samples(s) += sampleAllele -> current.copy(
+                    reverseReads = current.reverseReads + 1)
+                case (false, false) =>
+                  buffer(position).samples(s) += sampleAllele -> current.copy(
+                    reverseReads = current.reverseReads + 1,
+                    reverseUmi = current.reverseUmi + 1)
+              }
+            }
         }
       case _ =>
     }
@@ -82,10 +112,8 @@ class ReadBam(samReader: SamReader,
     if (position > region.end || buffer.isEmpty) None
     else {
       val variantCall = Some(
-        VariantCall.createFromBases(contig,
-                                    position,
-                                    buffer(position).toList,
-                                    referenceRegion))
+        VariantCall
+          .createFromBases(contig, position, buffer(position), referenceRegion))
       buffer -= position
       variantCall
     }
