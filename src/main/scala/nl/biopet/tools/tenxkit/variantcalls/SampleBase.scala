@@ -1,6 +1,6 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
-import htsjdk.samtools.{CigarOperator, TextCigarCodec}
+import htsjdk.samtools.{Cigar, CigarOperator, SAMRecord, TextCigarCodec}
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
@@ -18,6 +18,14 @@ case class SampleBase(sample: Int,
 }
 
 object SampleBase {
+
+  def createBases(read: SAMRecord, contig: Int, sample: Int, umi: Option[Int]): List[(Position, SampleBase)] = {
+    if (read.getMateUnmappedFlag) Nil
+    else SampleBase.createBases(contig, read.getAlignmentStart, sample,
+      !read.getReadNegativeStrandFlag, read.getReadBases, read.getBaseQualities, read.getCigar,
+      umi)
+  }
+
   def createBases(contig: Int,
                   start: Long,
                   sample: Int,
@@ -26,11 +34,22 @@ object SampleBase {
                   quality: Array[Byte],
                   cigar: String,
                   umni: Option[Int]): List[(Position, SampleBase)] = {
+    createBases(contig, start, sample, strand, sequence, quality, TextCigarCodec.decode(cigar), umni)
+  }
+
+    def createBases(contig: Int,
+                  start: Long,
+                  sample: Int,
+                  strand: Boolean,
+                  sequence: Array[Byte],
+                  quality: Array[Byte],
+                  cigar: Cigar,
+                  umni: Option[Int]): List[(Position, SampleBase)] = {
     val seqIt = sequence.zip(quality).toList.toIterator
 
     val referenceBuffer = mutable.Map[Long, SampleBase]()
     var refPos = start
-    for (element <- TextCigarCodec.decode(cigar)) {
+    for (element <- cigar) {
       element.getOperator match {
         case CigarOperator.SOFT_CLIP =>
           seqIt.drop(element.getLength)

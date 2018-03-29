@@ -7,7 +7,6 @@ import htsjdk.variant.variantcontext.{
   VariantContext,
   VariantContextBuilder
 }
-import org.bdgenomics.adam.converters.VariantContextConverter
 
 import scala.collection.JavaConversions._
 
@@ -81,5 +80,43 @@ case class VariantCall(contig: Int,
       .alleles(alleles)
       .genotypes(genotypes)
       .make()
+  }
+}
+
+object VariantCall {
+  def createFromBases(position:Int, contig:Int, bases: List[SampleBase]): VariantCall = {
+    val end = position + allSamples.map(_._1.delBases).max
+    val refAllele = fastaReader
+      .getSubsequenceAt(
+        dict.value.getSequence(contig).getSequenceName,
+        position,
+        end)
+      .getBaseString
+      .toUpperCase
+    val oldAlleles =
+      allSamples.keys.map(x => (x.allele, x.delBases)).toList.distinct
+    val newAllelesMap = oldAlleles.map {
+      case (allele, delBases) =>
+        (allele, delBases) -> (if (delBases > 0 || !refAllele
+          .startsWith(allele)) {
+          if (allele.length == refAllele.length || delBases > 0)
+            allele
+          else
+            new String(
+              refAllele.zipWithIndex
+                .map(x =>
+                  allele
+                    .lift(x._2)
+                    .getOrElse(x._1))
+                .toArray)
+        } else refAllele)
+    }.toMap
+    val altAlleles =
+      newAllelesMap.values.filter(_ != refAllele).toArray.distinct
+    val allAlleles = Array(refAllele) ++ altAlleles
+
+    bases.groupBy(_.sample).map { case (sample, sampleBases) =>
+      sampleBases.groupBy(_.all)
+    }
   }
 }
