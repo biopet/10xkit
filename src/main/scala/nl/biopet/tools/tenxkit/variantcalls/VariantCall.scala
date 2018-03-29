@@ -1,5 +1,7 @@
 package nl.biopet.tools.tenxkit.variantcalls
 
+import cern.jet.random.Binomial
+import cern.jet.random.engine.RandomEngine
 import htsjdk.samtools.SAMSequenceDictionary
 import htsjdk.variant.variantcontext.{
   Allele,
@@ -17,7 +19,7 @@ case class VariantCall(contig: Int,
                        altAlleles: Array[String],
                        samples: Map[Int, Array[AlleleCount]]) {
   def hasNonReference: Boolean = {
-    samples.exists(_._2.length > 1)
+    altDepth > 0
   }
 
   def totalDepth: Int = {
@@ -50,11 +52,66 @@ case class VariantCall(contig: Int,
         .mkString("\t")}"
   }
 
+  def setAllelesToZeroDepth(minAlleleDepth: Int): VariantCall = {
+    val newSamples = samples.map {
+      case (s, a) =>
+        s -> a.map(a => if (a.totalReads > minAlleleDepth) a else AlleleCount())
+    }
+    this.copy(samples = newSamples)
+  }
+
+  def cleanupAlleles(): Option[VariantCall] = {
+    val keep = altAlleles.indices
+      .map(_ + 1)
+      .filter(i => samples.exists(_._2(i).totalReads > 0))
+    val newAltAlleles =
+      altAlleles.zipWithIndex.filter(x => keep.contains(x._2 - 1)).map(_._1)
+    if (newAltAlleles.isEmpty) None
+    else {
+      val newSamples = samples
+        .map {
+          case (s, a) =>
+            s -> a.zipWithIndex
+              .filter(x => keep.contains(x._2))
+              .map(_._1)
+        }
+        .filter(_._2.map(_.totalReads).sum > 0)
+      Some(this.copy(altAlleles = newAltAlleles, samples = newSamples))
+    }
+  }
+
+  def setAllelesToZeroPvalue(seqError: Float,
+                             cutoffPvalue: Float): VariantCall = {
+    val pvalues = createBinomialPvalues(seqError)
+    val newSamples = samples.map {
+      case (s, a) =>
+        s -> a.zipWithIndex.map(a =>
+          if (pvalues(s)(a._2) <= cutoffPvalue) a._1 else AlleleCount())
+    }
+    this.copy(samples = newSamples)
+  }
+
+  def createBinomialPvalues(seqError: Float): Map[Int, Array[Double]] = {
+    samples.map {
+      case (s, a) =>
+        val totalReads = a.map(_.totalReads).sum
+        if (totalReads > 1) {
+          val binomial =
+            new Binomial(totalReads, seqError, RandomEngine.makeDefault())
+          s -> a.map(b => 1.0 - binomial.cdf(b.totalReads))
+        } else s -> a.map(b => 1.0)
+    }
+  }
+
   def toVariantContext(sampleList: Array[String],
-                       dict: SAMSequenceDictionary): VariantContext = {
+                       dict: SAMSequenceDictionary,
+                       seqError: Float): VariantContext = {
+    val seqErrors = createBinomialPvalues(seqError)
+
     val genotypes = samples.map {
       case (sample, a) =>
         val attributes = Map(
+          "SEQ-ERR" -> seqErrors(sample).map(_.toString).mkString(","),
           "DP-READ" -> a.map(_.totalReads).sum.toString,
           "DPF" -> a.map(_.forwardUmi).sum.toString,
           "DPR" -> a.map(_.reverseUmi).sum.toString,

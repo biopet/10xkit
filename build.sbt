@@ -22,6 +22,8 @@ libraryDependencies += "com.github.biopet" %% "spark-utils" % "0.4-SNAPSHOT" cha
 libraryDependencies += "com.github.biopet" %% "tool-utils" % "0.4-SNAPSHOT" changing ()
 libraryDependencies += "com.github.biopet" %% "tool-test-utils" % "0.2.2" % Test
 
+libraryDependencies += "colt" % "colt" % "1.2.0"
+
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.8.7"
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.7"
 dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.7"

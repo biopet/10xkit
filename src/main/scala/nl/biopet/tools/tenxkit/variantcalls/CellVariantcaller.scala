@@ -2,7 +2,11 @@ package nl.biopet.tools.tenxkit.variantcalls
 
 import java.io.File
 
-import htsjdk.samtools.{SamReaderFactory, ValidationStringency}
+import htsjdk.samtools.{
+  SAMSequenceDictionary,
+  SamReaderFactory,
+  ValidationStringency
+}
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
 import htsjdk.tribble.index.IndexCreator
 import htsjdk.variant.variantcontext.writer.{
@@ -17,6 +21,7 @@ import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.ngs.intervals.BedRecordList
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.bdgenomics.adam.converters.VariantContextConverter
@@ -68,29 +73,33 @@ object CellVariantcaller extends ToolCommand[Args] {
       case _ => BedRecordList.fromReference(cmdArgs.reference)
     }).scatter(cmdArgs.binSize)
 
-    val variants = sc.parallelize(regions, regions.size).mapPartitions { it =>
-      it.flatMap { x =>
-        x.flatMap { region =>
-          val samReader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
-          val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
+    val allVariants = sc
+      .parallelize(regions, regions.size)
+      .mapPartitions { it =>
+        it.flatMap { x =>
+          x.flatMap { region =>
+            val samReader =
+              SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
+            val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
 
-          new ReadBam(samReader,
-                      cmdArgs.sampleTag,
-                      cmdArgs.umiTag,
-                      region,
-                      dict.value,
-                      fastaReader,
-                      correctCellsMap.value,
-                      cutoffs.value.minBaseQual)
-            .filter(
-              x =>
-                x.hasNonReference &&
-                  x.altDepth >= cutoffs.value.minAlternativeDepth &&
-                  x.totalDepth >= cutoffs.value.minTotalDepth &&
-                  x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
+            new ReadBam(samReader,
+                        cmdArgs.sampleTag,
+                        cmdArgs.umiTag,
+                        region,
+                        dict.value,
+                        fastaReader,
+                        correctCellsMap.value,
+                        cutoffs.value.minBaseQual)
+              .filter(
+                x =>
+                  x.hasNonReference &&
+                    x.altDepth >= cutoffs.value.minAlternativeDepth &&
+                    x.totalDepth >= cutoffs.value.minTotalDepth &&
+                    x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
+          }
         }
       }
-    }
+      .cache()
 
     val headerLines: Seq[VCFHeaderLine] = Seq(
       new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Umi dept"),
@@ -116,6 +125,10 @@ object CellVariantcaller extends ToolCommand[Args] {
                               1,
                               VCFHeaderLineType.Integer,
                               "Reverse umi"),
+      new VCFFormatHeaderLine("SEQ-ERR",
+                              VCFHeaderLineCount.R,
+                              VCFHeaderLineType.Float,
+                              "Seq error of possible allele"),
       new VCFFormatHeaderLine("AD",
                               VCFHeaderLineCount.R,
                               VCFHeaderLineType.Integer,
@@ -137,15 +150,47 @@ object CellVariantcaller extends ToolCommand[Args] {
     val vcfHeader =
       sc.broadcast(new VCFHeader(headerLines.toSet, correctCells.value.toSet))
 
-    val bla = variants
-      .map(_.toVariantContext(correctCells.value, dict.value))
+    val filteredVariants = allVariants
+      .flatMap(
+        _.setAllelesToZeroPvalue(cmdArgs.seqError, cmdArgs.cutoffs.maxPvalue)
+          .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
+          .cleanupAlleles())
+      .filter(
+        x =>
+          x.hasNonReference &&
+            x.altDepth >= cutoffs.value.minAlternativeDepth &&
+            x.totalDepth >= cutoffs.value.minTotalDepth &&
+            x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
 
-    val vcfDir = new File(cmdArgs.outputDir, "vcf")
-    vcfDir.mkdirs()
-    val outputFiles = bla
+    writeVcf(filteredVariants,
+             new File(cmdArgs.outputDir, "filter-vcf"),
+             correctCells,
+             dict,
+             vcfHeader,
+             cmdArgs.seqError)
+
+    writeVcf(allVariants,
+             new File(cmdArgs.outputDir, "raw-vcf"),
+             correctCells,
+             dict,
+             vcfHeader,
+             cmdArgs.seqError)
+
+    logger.info("Done")
+  }
+
+  def writeVcf(rdd: RDD[VariantCall],
+               outputDir: File,
+               correctCells: Broadcast[Array[String]],
+               dict: Broadcast[SAMSequenceDictionary],
+               vcfHeader: Broadcast[VCFHeader],
+               seqError: Float): Unit = {
+    outputDir.mkdirs()
+    val outputFiles = rdd
+      .map(_.toVariantContext(correctCells.value, dict.value, seqError))
       .mapPartitionsWithIndex {
         case (idx, it) =>
-          val outputFile = new File(vcfDir, s"$idx.vcf.gz")
+          val outputFile = new File(outputDir, s"$idx.vcf.gz")
           val writer =
             new VariantContextWriterBuilder()
               .unsetOption(Options.INDEX_ON_THE_FLY)
@@ -157,8 +202,6 @@ object CellVariantcaller extends ToolCommand[Args] {
           Iterator(outputFile)
       }
       .collect()
-
-    logger.info("Done")
   }
 
   case class Key(sample: Int, allele: String, delBases: Int, umi: Option[Int])

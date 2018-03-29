@@ -6,5 +6,6 @@ package object variantcalls {
   case class Cutoffs(minAlternativeDepth: Int = 2,
                      minCellAlternativeDepth: Int = 2,
                      minTotalDepth: Int = 5,
-                     minBaseQual: Byte = '*'.toByte)
+                     minBaseQual: Byte = '*'.toByte,
+                     maxPvalue: Float = 0.05f)
 }
