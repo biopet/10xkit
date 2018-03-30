@@ -4,35 +4,19 @@ import java.io.File
 
 import htsjdk.samtools._
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
-import htsjdk.tribble.index.IndexCreator
-import htsjdk.variant.variantcontext.writer.{
-  Options,
-  VariantContextWriterBuilder
-}
+import htsjdk.variant.variantcontext.writer.{Options, VariantContextWriterBuilder}
 import htsjdk.variant.vcf._
-import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
-import nl.biopet.utils.ngs
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.ngs.intervals.{BedRecord, BedRecordList}
-import org.apache.hadoop.conf.Configuration
+import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.bdgenomics.adam.converters.VariantContextConverter
-import org.bdgenomics.adam.models.{ReferenceRegion, VariantContext}
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.variant.VariantContextRDD
-import org.bdgenomics.adam.sql.{Variant, VariantCallingAnnotations}
-import org.bdgenomics.formats.avro.Sample
+import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.annotation.tailrec
 import scala.collection.JavaConversions._
-import scala.collection.immutable
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
 
 object CellVariantcaller extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
@@ -47,7 +31,6 @@ object CellVariantcaller extends ToolCommand[Args] {
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
-    import sparkSession.implicits._
     implicit val sc: SparkContext = sparkSession.sparkContext
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
@@ -61,16 +44,14 @@ object CellVariantcaller extends ToolCommand[Args] {
     val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
     val cutoffs = sc.broadcast(cmdArgs.cutoffs)
 
-//    val regions = (cmdArgs.intervals match {
-//      case Some(file) =>
-//        BedRecordList
-//          .fromFile(file)
-//          .combineOverlap
-//          .validateContigs(cmdArgs.reference)
-//      case _ => BedRecordList.fromReference(cmdArgs.reference)
-//    }).scatter(cmdArgs.binSize)
-
-    val regions = creatBamBins(cmdArgs.inputFile, 5000)
+    val regions = cmdArgs.intervals match {
+      case Some(file) =>
+        creatBamBins(BedRecordList
+          .fromFile(file)
+          .combineOverlap
+          .validateContigs(cmdArgs.reference).allRecords.toList, cmdArgs.inputFile, cmdArgs.partitions)
+      case _ => creatBamBins(cmdArgs.inputFile, cmdArgs.partitions)
+    }
 
     val allVariants = sc
       .parallelize(regions, regions.size)
@@ -210,30 +191,39 @@ object CellVariantcaller extends ToolCommand[Args] {
   def creatBamBins(bamFile: File, chunks: Int): List[List[BedRecord]] = {
     val samReader = SamReaderFactory.makeDefault().open(bamFile)
     val dict = samReader.getFileHeader.getSequenceDictionary
-    val index = samReader.indexing().getIndex
-    val chunksEachContig = for (seq <- dict.getSequences) yield {
-      seq -> index.getSpanOverlapping(seq.getSequenceIndex,
-                                      0,
-                                      seq.getSequenceLength)
-    }
-    val sizeEachContig = chunksEachContig.map(s =>
-      List(BedRecord(s._1.getSequenceName, 0, s._1.getSequenceLength)) -> s._2.getChunks
-        .map(c => c.getChunkEnd - c.getChunkStart)
-        .sum)
-    val totalSize = sizeEachContig.map(_._2).sum
-    val sizePerBin = totalSize / chunks
-    createBamBins(sizeEachContig.filter(_._2 > 0).toList,
-                  sizePerBin,
-                  dict,
-                  index).map(_._1)
+    samReader.close()
+    creatBamBins(BedRecordList.fromDict(dict).allRecords.toList, bamFile, chunks)
   }
 
+  def creatBamBins(regions: List[BedRecord], bamFile: File, chunks: Int): List[List[BedRecord]] = {
+    val samReader = SamReaderFactory.makeDefault().open(bamFile)
+    val dict = samReader.getFileHeader.getSequenceDictionary
+    val index = samReader.indexing().getIndex
+    val chunksEachRegion = for (region <- regions) yield {
+      region -> index.getSpanOverlapping(dict.getSequenceIndex(region.chr),
+        region.start,
+        region.end)
+    }
+    val sizeEachRegion = chunksEachRegion.map(s =>
+      List(s._1) -> s._2.getChunks
+        .map(c => c.getChunkEnd - c.getChunkStart)
+        .sum)
+    val totalSize = sizeEachRegion.map(_._2).sum
+    val sizePerBin = totalSize / chunks
+    createBamBins(sizeEachRegion.filter(_._2 > 0).toList,
+      sizePerBin,
+      dict,
+      index).map(_._1)
+
+  }
+
+  @tailrec
   private def createBamBins(
       regions: List[(List[BedRecord], Long)],
       sizePerBin: Long,
       dict: SAMSequenceDictionary,
       index: BAMIndex,
-      minSize: Int = 200): List[(List[BedRecord], Long)] = {
+      minSize: Int = 200, iterations: Int = 1): List[(List[BedRecord], Long)] = {
     val largeContigs = regions.filter(_._2 * 1.5 > sizePerBin)
     val rebin = largeContigs.filter(_._1.map(_.length).sum > minSize)
     val mediumContigs = regions.filter(c =>
@@ -241,11 +231,11 @@ object CellVariantcaller extends ToolCommand[Args] {
       .filter(_._1.map(_.length).sum <= minSize)
     val smallContigs = regions.filter(_._2 * 0.5 < sizePerBin)
 
-    if (rebin.nonEmpty) {
-      splitBins(rebin, sizePerBin, dict, index) ::: mediumContigs ::: combineBins(
+    if (rebin.nonEmpty && iterations > 0) {
+      val total = splitBins(rebin, sizePerBin, dict, index) ::: mediumContigs ::: combineBins(
         smallContigs,
         sizePerBin)
-      //createBamBins(total, sizePerBin, dict, index)
+      createBamBins(total, sizePerBin, dict, index, minSize, iterations - 1)
     } else mediumContigs ::: combineBins(smallContigs, sizePerBin)
   }
 

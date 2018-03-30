@@ -26,7 +26,7 @@ import java.io.File
 case class Args(inputFile: File = null,
                 reference: File = null,
                 intervals: Option[File] = None,
-                binSize: Int = 1000000,
+                partitions: Int = 5000,
                 seqError: Float = 0.005f,
                 cutoffs: Cutoffs = Cutoffs(),
                 outputDir: File = null,
