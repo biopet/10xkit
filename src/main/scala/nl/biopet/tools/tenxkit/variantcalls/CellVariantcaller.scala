@@ -46,6 +46,8 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     logger.info("Start")
 
+    creatBamBins(cmdArgs.inputFile)
+
     val sparkConf: SparkConf =
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
@@ -207,6 +209,16 @@ object CellVariantcaller extends ToolCommand[Args] {
   }
 
   case class Key(sample: Int, allele: String, delBases: Int, umi: Option[Int])
+
+  def creatBamBins(bamFile: File) = {
+    val samReader = SamReaderFactory.makeDefault().open(bamFile)
+    val dict = samReader.getFileHeader.getSequenceDictionary
+    val index = samReader.indexing().getIndex
+    val chunksEachContig = for (seq <- dict.getSequences) yield {
+      seq -> index.getSpanOverlapping(seq.getSequenceIndex, 0, seq.getSequenceLength).getChunks
+    }
+    ""
+  }
 
   def descriptionText: String =
     """
