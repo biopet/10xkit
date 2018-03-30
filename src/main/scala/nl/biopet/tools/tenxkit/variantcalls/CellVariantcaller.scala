@@ -19,6 +19,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import scala.collection.JavaConversions._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object CellVariantcaller extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
