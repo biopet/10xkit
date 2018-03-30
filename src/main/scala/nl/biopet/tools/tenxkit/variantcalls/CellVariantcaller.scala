@@ -2,11 +2,7 @@ package nl.biopet.tools.tenxkit.variantcalls
 
 import java.io.File
 
-import htsjdk.samtools.{
-  SAMSequenceDictionary,
-  SamReaderFactory,
-  ValidationStringency
-}
+import htsjdk.samtools._
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
 import htsjdk.tribble.index.IndexCreator
 import htsjdk.variant.variantcontext.writer.{
@@ -18,7 +14,7 @@ import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import nl.biopet.utils.ngs
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
-import nl.biopet.utils.ngs.intervals.BedRecordList
+import nl.biopet.utils.ngs.intervals.{BedRecord, BedRecordList}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -33,6 +29,7 @@ import org.bdgenomics.adam.sql.{Variant, VariantCallingAnnotations}
 import org.bdgenomics.formats.avro.Sample
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -45,8 +42,6 @@ object CellVariantcaller extends ToolCommand[Args] {
     val cmdArgs = cmdArrayToArgs(args)
 
     logger.info("Start")
-
-    creatBamBins(cmdArgs.inputFile)
 
     val sparkConf: SparkConf =
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
@@ -66,14 +61,16 @@ object CellVariantcaller extends ToolCommand[Args] {
     val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
     val cutoffs = sc.broadcast(cmdArgs.cutoffs)
 
-    val regions = (cmdArgs.intervals match {
-      case Some(file) =>
-        BedRecordList
-          .fromFile(file)
-          .combineOverlap
-          .validateContigs(cmdArgs.reference)
-      case _ => BedRecordList.fromReference(cmdArgs.reference)
-    }).scatter(cmdArgs.binSize)
+//    val regions = (cmdArgs.intervals match {
+//      case Some(file) =>
+//        BedRecordList
+//          .fromFile(file)
+//          .combineOverlap
+//          .validateContigs(cmdArgs.reference)
+//      case _ => BedRecordList.fromReference(cmdArgs.reference)
+//    }).scatter(cmdArgs.binSize)
+
+    val regions = creatBamBins(cmdArgs.inputFile, 5000)
 
     val allVariants = sc
       .parallelize(regions, regions.size)
@@ -210,14 +207,99 @@ object CellVariantcaller extends ToolCommand[Args] {
 
   case class Key(sample: Int, allele: String, delBases: Int, umi: Option[Int])
 
-  def creatBamBins(bamFile: File) = {
+  def creatBamBins(bamFile: File, chunks: Int): List[List[BedRecord]] = {
     val samReader = SamReaderFactory.makeDefault().open(bamFile)
     val dict = samReader.getFileHeader.getSequenceDictionary
     val index = samReader.indexing().getIndex
     val chunksEachContig = for (seq <- dict.getSequences) yield {
-      seq -> index.getSpanOverlapping(seq.getSequenceIndex, 0, seq.getSequenceLength).getChunks
+      seq -> index.getSpanOverlapping(seq.getSequenceIndex,
+                                      0,
+                                      seq.getSequenceLength)
     }
-    ""
+    val sizeEachContig = chunksEachContig.map(s =>
+      List(BedRecord(s._1.getSequenceName, 0, s._1.getSequenceLength)) -> s._2.getChunks
+        .map(c => c.getChunkEnd - c.getChunkStart)
+        .sum)
+    val totalSize = sizeEachContig.map(_._2).sum
+    val sizePerBin = totalSize / chunks
+    createBamBins(sizeEachContig.filter(_._2 > 0).toList,
+                  sizePerBin,
+                  dict,
+                  index).map(_._1)
+  }
+
+  private def createBamBins(
+      regions: List[(List[BedRecord], Long)],
+      sizePerBin: Long,
+      dict: SAMSequenceDictionary,
+      index: BAMIndex,
+      minSize: Int = 200): List[(List[BedRecord], Long)] = {
+    val largeContigs = regions.filter(_._2 * 1.5 > sizePerBin)
+    val rebin = largeContigs.filter(_._1.map(_.length).sum > minSize)
+    val mediumContigs = regions.filter(c =>
+      c._2 * 1.5 <= sizePerBin && c._2 * 0.5 >= sizePerBin) ::: largeContigs
+      .filter(_._1.map(_.length).sum <= minSize)
+    val smallContigs = regions.filter(_._2 * 0.5 < sizePerBin)
+
+    if (rebin.nonEmpty) {
+      splitBins(rebin, sizePerBin, dict, index) ::: mediumContigs ::: combineBins(
+        smallContigs,
+        sizePerBin)
+      //createBamBins(total, sizePerBin, dict, index)
+    } else mediumContigs ::: combineBins(smallContigs, sizePerBin)
+  }
+
+  private def combineBins(regions: List[(List[BedRecord], Long)],
+                          sizePerBin: Long): List[(List[BedRecord], Long)] = {
+    val result = regions
+      .sortBy(_._2)
+      .foldLeft((List[(List[BedRecord], Long)](),
+                 Option.empty[(List[BedRecord], Long)])) {
+        case ((r, current), newRecord) =>
+          current match {
+            case Some(c) =>
+              if ((c._2 + newRecord._2) > (sizePerBin * 1.5)) {
+                (c :: r, Some(newRecord))
+              } else {
+                (r, Some((c._1 ::: newRecord._1, c._2 + newRecord._2)))
+              }
+            case _ => (r, Some(newRecord))
+          }
+      }
+    result._1 ::: result._2.toList
+  }
+
+  private def splitBins(regions: List[(List[BedRecord], Long)],
+                        sizePerBin: Long,
+                        dict: SAMSequenceDictionary,
+                        index: BAMIndex): List[(List[BedRecord], Long)] = {
+    regions.flatMap {
+      case (r, size) =>
+        val chunks = {
+          val x = size / sizePerBin
+          if (x > 0) x else 1
+        }
+        val list = BedRecordList.fromList(r).combineOverlap
+        val refSize = list.length
+        val chunkSize = {
+          val x = refSize / chunks
+          if (x > refSize) refSize else if (x > 0) x else 1
+        }
+        list.scatter(chunkSize.toInt).map { x =>
+          val newSize = x
+            .map(
+              y =>
+                index
+                  .getSpanOverlapping(dict.getSequenceIndex(y.chr),
+                                      y.start,
+                                      y.end)
+                  .getChunks
+                  .map(z => z.getChunkEnd - z.getChunkStart)
+                  .sum)
+            .sum
+          (x, newSize)
+        }
+    }
   }
 
   def descriptionText: String =
