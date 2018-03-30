@@ -145,7 +145,8 @@ object VariantCall {
   def createFromBases(contig: Int,
                       position: Int,
                       bases: PositionBases,
-                      referenceRegion: ReferenceRegion): VariantCall = {
+                      referenceRegion: ReferenceRegion,
+                      minCellAlleleCoverage: Int): Option[VariantCall] = {
     val maxDel = bases.samples.flatMap(_._2.map(_._1.delBases)).max
     val end = position + maxDel
     val refAllele = new String(
@@ -172,15 +173,23 @@ object VariantCall {
       newAllelesMap.values.filter(_ != refAllele).toArray.distinct
     val allAlleles = Array(refAllele) ++ altAlleles
 
-    val samples = bases.samples.map {
-      case (sample, sampleBases) =>
-        val alleles =
-          sampleBases.map {
-            case (allele, alleleBases) =>
-              newAllelesMap(allele) -> alleleBases
-          }
-        sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
+    if (altAlleles.isEmpty) None
+    else {
+      val samples = bases.samples
+        .map {
+          case (sample, sampleBases) =>
+            val alleles =
+              sampleBases.map {
+                case (allele, alleleBases) =>
+                  newAllelesMap(allele) -> alleleBases
+              }
+            sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
+        }
+        .filter {
+          case (sample, alleles) =>
+            alleles.exists(_.total >= minCellAlleleCoverage)
+        }
+      Some(VariantCall(contig, position, refAllele, altAlleles, samples.toMap))
     }
-    VariantCall(contig, position, refAllele, altAlleles, samples.toMap)
   }
 }

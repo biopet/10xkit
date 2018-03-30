@@ -82,20 +82,22 @@ object CellVariantcaller extends ToolCommand[Args] {
               SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
             val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
 
-            new ReadBam(samReader,
-                        cmdArgs.sampleTag,
-                        cmdArgs.umiTag,
-                        region,
-                        dict.value,
-                        fastaReader,
-                        correctCellsMap.value,
-                        cutoffs.value.minBaseQual)
-              .filter(
-                x =>
-                  x.hasNonReference &&
-                    x.altDepth >= cutoffs.value.minAlternativeDepth &&
-                    x.totalDepth >= cutoffs.value.minTotalDepth &&
-                    x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
+            new ReadBam(
+              samReader,
+              cmdArgs.sampleTag,
+              cmdArgs.umiTag,
+              region,
+              dict.value,
+              fastaReader,
+              correctCellsMap.value,
+              cutoffs.value.minBaseQual,
+              cutoffs.value.minCellAlternativeDepth
+            ).filter(
+              x =>
+                x.hasNonReference &&
+                  x.altDepth >= cutoffs.value.minAlternativeDepth &&
+                  x.totalDepth >= cutoffs.value.minTotalDepth &&
+                  x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
           }
         }
       }

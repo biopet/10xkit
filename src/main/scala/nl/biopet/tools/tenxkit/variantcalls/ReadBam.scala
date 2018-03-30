@@ -24,7 +24,8 @@ class ReadBam(samReader: SamReader,
               dict: SAMSequenceDictionary,
               referenceFile: IndexedFastaSequenceFile,
               correctCells: Map[String, Int],
-              minBaseQual: Byte)
+              minBaseQual: Byte,
+              minCellAlleleCoverage: Int)
     extends Iterator[VariantCall]
     with AutoCloseable {
   private val contig = dict.getSequenceIndex(region.chr)
@@ -66,11 +67,11 @@ class ReadBam(samReader: SamReader,
       case Some(s) =>
         val umi = ReadBam.extractUmi(read, umiTag)
         val bases = SampleBase
-          .createBases(read, contig, s, umi)
+          .createBases(read)
           .filter(_._2.avgQual.exists(_ >= minBaseQual))
         bases.foreach {
           case (pos, base) =>
-            val position = pos.position.toInt
+            val position = pos
             if (position > region.start && position <= region.end) {
               if (!buffer.contains(position))
                 buffer += position -> PositionBases()
@@ -111,11 +112,14 @@ class ReadBam(samReader: SamReader,
     fillBuffer()
     if (position > region.end || buffer.isEmpty) None
     else {
-      val variantCall = Some(
-        VariantCall
-          .createFromBases(contig, position, buffer(position), referenceRegion))
+      val variantCall = VariantCall.createFromBases(contig,
+                                                    position,
+                                                    buffer(position),
+                                                    referenceRegion,
+                                                    minCellAlleleCoverage)
       buffer -= position
-      variantCall
+      if (variantCall.isEmpty) detectNext
+      else variantCall
     }
   }
 

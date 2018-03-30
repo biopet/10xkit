@@ -12,9 +12,9 @@ package object variantcalls {
                      maxPvalue: Float = 0.05f)
 
   case class PositionBases(
-                            samples: mutable.Map[Int, mutable.Map[SampleAllele, AlleleCount]] =
-                            mutable.Map(),
-                            umis: mutable.Set[Int] = mutable.Set())
+      samples: mutable.Map[Int, mutable.Map[SampleAllele, AlleleCount]] =
+        mutable.Map(),
+      umis: mutable.Set[Int] = mutable.Set())
 
   case class SampleAllele(allele: String, delBases: Int)
 
