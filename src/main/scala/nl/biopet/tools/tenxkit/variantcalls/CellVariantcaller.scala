@@ -139,22 +139,24 @@ object CellVariantcaller extends ToolCommand[Args] {
     val vcfHeader =
       sc.broadcast(new VCFHeader(headerLines.toSet, correctCells.value.toSet))
 
-    val filteredVariants = allVariants
-      .flatMap(
-        _.setAllelesToZeroPvalue(cmdArgs.seqError, cmdArgs.cutoffs.maxPvalue)
-          .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
-          .cleanupAlleles())
-      .filter(
-        x =>
-          x.hasNonReference &&
-            x.altDepth >= cutoffs.value.minAlternativeDepth &&
-            x.totalDepth >= cutoffs.value.minTotalDepth &&
-            x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
-      .sortBy(x => (x.contig, x.pos), numPartitions = 200)
-      .cache()
+    val filteredVariants = Future {
+      allVariants
+        .flatMap(
+          _.setAllelesToZeroPvalue(cmdArgs.seqError, cmdArgs.cutoffs.maxPvalue)
+            .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
+            .cleanupAlleles())
+        .filter(
+          x =>
+            x.hasNonReference &&
+              x.altDepth >= cutoffs.value.minAlternativeDepth &&
+              x.totalDepth >= cutoffs.value.minTotalDepth &&
+              x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
+        .sortBy(x => (x.contig, x.pos), numPartitions = 200)
+        .cache()
+    }
 
-    val writeFilterVcfFuture = Future {
-      writeVcf(filteredVariants,
+    val writeFilterVcfFuture = filteredVariants.map { rdd =>
+      writeVcf(rdd,
         new File(cmdArgs.outputDir, "filter-vcf"),
         correctCells,
         dict,
