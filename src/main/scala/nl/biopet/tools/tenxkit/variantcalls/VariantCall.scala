@@ -116,6 +116,8 @@ case class VariantCall(contig: Int,
           "DPF" -> a.map(_.forwardUmi).sum.toString,
           "DPR" -> a.map(_.reverseUmi).sum.toString,
           "AD-READ" -> a.map(_.totalReads).mkString(","),
+          "ADF-READ" -> a.map(_.forwardReads).mkString(","),
+          "ADR-READ" -> a.map(_.reverseReads).mkString(","),
           "ADF" -> a.map(_.forwardUmi).mkString(","),
           "ADR" -> a.map(_.reverseUmi).mkString(",")
         )
@@ -142,6 +144,22 @@ case class VariantCall(contig: Int,
 }
 
 object VariantCall {
+
+  def fromVariantContext(variant: VariantContext,
+                         dict: SAMSequenceDictionary,
+                         sampleMap: Map[String, Int]): VariantCall = {
+    val contig = dict.getSequenceIndex(variant.getContig)
+    val pos = variant.getStart
+    val refAllele = variant.getReference.getBaseString
+    val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toArray
+    val genotypes = variant.getGenotypes.map { g =>
+      g.getExtendedAttribute("ADR")
+      //sampleMap(g.getSampleName)
+
+    }
+    VariantCall(contig, pos, refAllele, altAlleles, ???)
+  }
+
   def createFromBases(contig: Int,
                       position: Int,
                       bases: PositionBases,

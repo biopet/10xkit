@@ -6,10 +6,12 @@ import htsjdk.samtools._
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
 import htsjdk.variant.variantcontext.writer.{Options, VariantContextWriterBuilder}
 import htsjdk.variant.vcf._
+import nl.biopet.tools.tenxkit
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
+import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.ngs.bam.IndexScattering._
-import nl.biopet.utils.ngs.intervals.BedRecordList
+import nl.biopet.utils.ngs.intervals.{BedRecord, BedRecordList}
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -40,39 +42,127 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val dict = sc.broadcast(bam.getDictFromBam(cmdArgs.inputFile))
 
-    val correctCells =
-      sc.broadcast(io.getLinesFromFile(cmdArgs.correctCells).toArray)
-    require(correctCells.value.length == correctCells.value.distinct.length,
-            "Duplicates cell barcodes found")
-    val correctCellsMap = sc.broadcast(correctCells.value.zipWithIndex.toMap)
+    val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
+    val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val cutoffs = sc.broadcast(cmdArgs.cutoffs)
-
-    val regions = cmdArgs.intervals match {
-      case Some(file) =>
-        creatBamBins(BedRecordList
-                       .fromFile(file)
-                       .combineOverlap
-                       .validateContigs(cmdArgs.reference)
-                       .allRecords
-                       .toList,
-                     cmdArgs.inputFile,
-                     cmdArgs.partitions)
-      case _ => creatBamBins(cmdArgs.inputFile, cmdArgs.partitions)
+    val partitions = {
+      val x = cmdArgs.partitions.getOrElse((cmdArgs.inputFile.length() / 10000000).toInt)
+      if (x > 0) x else 1
     }
 
-    val allVariants = sc
+    val result = totalRun(cmdArgs.inputFile, cmdArgs.outputDir, cmdArgs.reference, dict, partitions, cmdArgs.intervals, cmdArgs.sampleTag, cmdArgs.umiTag, correctCells, correctCellsMap, cutoffs, cmdArgs.seqError, true, true)
+
+    Await.result(result.totalFuture, Duration.Inf)
+
+    logger.info("Done")
+  }
+
+  case class Result(filteredVariants: Future[RDD[VariantCall]],
+                            allVariants: RDD[VariantCall],
+                            writeFilteredFuture: Option[Future[Unit]],
+                            writeRawFuture: Option[Future[Unit]]) {
+    def totalFuture: Future[List[Unit]] = Future.sequence(writeFilteredFuture.toList ::: writeRawFuture.toList)
+  }
+
+  def totalRun(inputFile: File,
+               outputDir: File,
+               reference: File,
+               dict: Broadcast[SAMSequenceDictionary],
+               partitions: Int,
+               intervals: Option[File],
+               sampleTag: String,
+               umiTag: Option[String],
+               correctCells: Broadcast[Array[String]],
+               correctCellsMap: Broadcast[Map[String, Int]],
+               cutoffs: Broadcast[Cutoffs],
+               seqError: Float,
+               writeRawVcf: Boolean = false,
+               writeFilteredVcf: Boolean = true)(implicit sc: SparkContext): Result = {
+    val regions = createRegions(inputFile, reference, partitions, intervals)
+
+    val allVariants = createAllVariants(inputFile, reference, regions, correctCellsMap, cutoffs, sampleTag, umiTag)
+
+    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
+
+    val filteredVariants = filterVariants(allVariants, seqError, cutoffs).map(_.cache())
+
+    val writeFilterVcfFuture = if (writeFilteredVcf) Some(filteredVariants.map { rdd =>
+      writeVcf(rdd.cache(),
+        new File(outputDir, "filter-vcf"),
+        correctCells,
+        dict,
+        vcfHeader,
+        seqError)
+    }) else None
+
+    val writeAllVcfFuture = {
+      if (writeRawVcf) Some(Future {
+        writeVcf(allVariants.cache(),
+          new File(outputDir, "raw-vcf"),
+          correctCells,
+          dict,
+          vcfHeader,
+          seqError)
+      }) else None
+    }
+
+    Result(filteredVariants, allVariants, writeFilterVcfFuture, writeAllVcfFuture)
+  }
+
+  def filterVariants(variants: RDD[VariantCall], seqError: Float = Args().seqError, cutoffs: Broadcast[Cutoffs]): Future[RDD[VariantCall]] = {
+    Future {
+      variants
+        .flatMap(
+          _.setAllelesToZeroPvalue(seqError, cutoffs.value.maxPvalue)
+            .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
+            .cleanupAlleles())
+        .filter(
+          x =>
+            x.hasNonReference &&
+              x.altDepth >= cutoffs.value.minAlternativeDepth &&
+              x.totalDepth >= cutoffs.value.minTotalDepth &&
+              x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
+        .sortBy(x => (x.contig, x.pos), numPartitions = 200)
+        .cache()
+    }
+  }
+
+  def createRegions(bamFile: File, reference: File, partitions: Int, intervals: Option[File] = None): List[List[BedRecord]] = {
+    intervals match {
+      case Some(file) =>
+        creatBamBins(BedRecordList
+          .fromFile(file)
+          .combineOverlap
+          .validateContigs(reference)
+          .allRecords
+          .toList,
+          bamFile,
+          partitions)
+      case _ => creatBamBins(bamFile, partitions)
+    }
+  }
+
+  def createAllVariants(inputFile: File, reference: File,
+                  regions: List[List[BedRecord]],
+                  correctCellsMap: Broadcast[Map[String, Int]],
+                  cutoffs: Broadcast[Cutoffs],
+                  sampleTag: String = Args().sampleTag,
+                  umiTag: Option[String] = Args().umiTag)(implicit sc: SparkContext): RDD[VariantCall] = {
+    val dict = sc.broadcast(bam.getDictFromBam(inputFile))
+
+    sc
       .parallelize(regions, regions.size)
       .mapPartitions { it =>
         it.flatMap { x =>
           x.flatMap { region =>
             val samReader =
-              SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
-            val fastaReader = new IndexedFastaSequenceFile(cmdArgs.reference)
+              SamReaderFactory.makeDefault().open(inputFile)
+            val fastaReader = new IndexedFastaSequenceFile(reference)
 
             new ReadBam(
               samReader,
-              cmdArgs.sampleTag,
-              cmdArgs.umiTag,
+              sampleTag,
+              umiTag,
               region,
               dict.value,
               fastaReader,
@@ -88,99 +178,8 @@ object CellVariantcaller extends ToolCommand[Args] {
           }
         }
       }
-      .cache()
-
-    val headerLines: Seq[VCFHeaderLine] = Seq(
-      new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Umi dept"),
-      new VCFInfoHeaderLine("DP-READ",
-                            1,
-                            VCFHeaderLineType.Integer,
-                            "Read dept"),
-      new VCFInfoHeaderLine("SN", 1, VCFHeaderLineType.Integer, "Sample count"),
-      new VCFFormatHeaderLine("GT",
-                              VCFHeaderLineCount.UNBOUNDED,
-                              VCFHeaderLineType.String,
-                              ""),
-      new VCFFormatHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Total umi"),
-      new VCFFormatHeaderLine("DP-READ",
-                              1,
-                              VCFHeaderLineType.Integer,
-                              "Total reads"),
-      new VCFFormatHeaderLine("DPF",
-                              1,
-                              VCFHeaderLineType.Integer,
-                              "Forward umi"),
-      new VCFFormatHeaderLine("DPR",
-                              1,
-                              VCFHeaderLineType.Integer,
-                              "Reverse umi"),
-      new VCFFormatHeaderLine("SEQ-ERR",
-                              VCFHeaderLineCount.R,
-                              VCFHeaderLineType.Float,
-                              "Seq error of possible allele"),
-      new VCFFormatHeaderLine("AD",
-                              VCFHeaderLineCount.R,
-                              VCFHeaderLineType.Integer,
-                              "Total umi count per allele"),
-      new VCFFormatHeaderLine("AD-READ",
-                              VCFHeaderLineCount.R,
-                              VCFHeaderLineType.Integer,
-                              "Total reads count per allele"),
-      new VCFFormatHeaderLine("ADF",
-                              VCFHeaderLineCount.R,
-                              VCFHeaderLineType.Integer,
-                              "Forward umi count per allele"),
-      new VCFFormatHeaderLine("ADR",
-                              VCFHeaderLineCount.R,
-                              VCFHeaderLineType.Integer,
-                              "Reverse umi count per allele")
-    )
-
-    val vcfHeader =
-      sc.broadcast(new VCFHeader(headerLines.toSet, correctCells.value.toSet))
-
-    val filteredVariants = Future {
-      allVariants
-        .flatMap(
-          _.setAllelesToZeroPvalue(cmdArgs.seqError, cmdArgs.cutoffs.maxPvalue)
-            .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
-            .cleanupAlleles())
-        .filter(
-          x =>
-            x.hasNonReference &&
-              x.altDepth >= cutoffs.value.minAlternativeDepth &&
-              x.totalDepth >= cutoffs.value.minTotalDepth &&
-              x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
-        .sortBy(x => (x.contig, x.pos), numPartitions = 200)
-        .cache()
-    }
-
-    val writeFilterVcfFuture = filteredVariants.map { rdd =>
-      writeVcf(rdd,
-        new File(cmdArgs.outputDir, "filter-vcf"),
-        correctCells,
-        dict,
-        vcfHeader,
-        cmdArgs.seqError)
-    }
-
-    val writeAllVcfFuture = Future {
-      writeVcf(allVariants,
-        new File(cmdArgs.outputDir, "raw-vcf"),
-        correctCells,
-        dict,
-        vcfHeader,
-        cmdArgs.seqError)
-    }
-
-    Await.result(writeAllVcfFuture, Duration.Inf)
-    Await.result(writeFilterVcfFuture, Duration.Inf)
-    allVariants.unpersist()
-
-    //TODO: Grouping
-
-    logger.info("Done")
   }
+
 
   def writeVcf(rdd: RDD[VariantCall],
                outputDir: File,

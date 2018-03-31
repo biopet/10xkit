@@ -19,7 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.variantcalls
+package nl.biopet.tools.tenxkit.cellgrouping
 
 import java.io.File
 
@@ -39,35 +39,13 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .required()
     .action((x, c) => c.copy(outputDir = x))
     .text("Output directory")
-  opt[File]("intervals")
-    .action((x, c) => c.copy(intervals = Some(x)))
-    .text("Regions to analyse, if not given whole genome is done")
-  opt[Int]("partitions")
-    .action((x, c) => c.copy(partitions = Some(x)))
-    .text("Number of partitions")
-  opt[Double]("seqError")
-    .action((x, c) => c.copy(seqError = x.toFloat))
-    .text(s"Seq error, default '${Args().seqError}'")
-  opt[Double]("maxPvalue")
-    .action((x, c) => c.copy(cutoffs = c.cutoffs.copy(maxPvalue = x.toFloat)))
-    .text("Maximum allowed pvalue on seq error")
   opt[File]("correctCells")
     .required()
     .action((x, c) => c.copy(correctCells = x))
     .text("List of correct cells")
-  opt[Int]("minAlternativeDepth")
-    .action((x, c) => c.copy(cutoffs = c.cutoffs.copy(minAlternativeDepth = x)))
-    .text("Min alternative depth")
-  opt[Int]("minCellAlternativeDepth")
-    .action((x, c) =>
-      c.copy(cutoffs = c.cutoffs.copy(minCellAlternativeDepth = x)))
-    .text("Min alternative depth for atleast 1 cell")
-  opt[Int]("minTotalDepth")
-    .action((x, c) => c.copy(cutoffs = c.cutoffs.copy(minTotalDepth = x)))
-    .text("Minimal total depth")
-  opt[Char]("minBaseQual")
-    .action((x, c) => c.copy(cutoffs = c.cutoffs.copy(minBaseQual = x.toByte)))
-    .text("Minimal base quality")
+  opt[File]("intervals")
+    .action((x, c) => c.copy(intervals = Some(x)))
+    .text("Regions to analyse, if not given whole genome is done")
   opt[String]('s', "sampleTag")
     .action((x, c) => c.copy(sampleTag = x))
     .text(
