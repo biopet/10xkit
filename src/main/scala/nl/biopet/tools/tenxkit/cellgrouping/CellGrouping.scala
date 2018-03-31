@@ -48,8 +48,12 @@ object CellGrouping extends ToolCommand[Args] {
         Await.result(result.filteredVariants, Duration.Inf)
       case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
         readVcfFile(cmdArgs, correctCellsMap)
-      case _ => throw new IllegalArgumentException("Input file must be a bam or vcf file")
+      case _ =>
+        throw new IllegalArgumentException(
+          "Input file must be a bam or vcf file")
     }).toDS()
+
+    println(variants.count())
 
     //TODO: Read vcf file
     //TODO: Grouping
@@ -59,26 +63,47 @@ object CellGrouping extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  def readVcfFile(cmdArgs: Args, sampleMap: Broadcast[Map[String, Int]])(implicit sc: SparkContext): RDD[VariantCall] = {
+  def readVcfFile(cmdArgs: Args, sampleMap: Broadcast[Map[String, Int]])(
+      implicit sc: SparkContext): RDD[VariantCall] = {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
-    val regions = BedRecordList.fromReference(cmdArgs.reference).scatter(50000000)
+    val regions =
+      BedRecordList.fromReference(cmdArgs.reference).scatter(50000000)
     sc.parallelize(regions).mapPartitions { it =>
       it.flatMap { list =>
-        vcf.loadRegions(cmdArgs.inputFile, list.iterator).map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+        vcf
+          .loadRegions(cmdArgs.inputFile, list.iterator)
+          .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
       }
     }
   }
 
-  def readBamFile(cmdArgs: Args, correctCells: Broadcast[Array[String]], correctCellsMap: Broadcast[Map[String, Int]])(implicit sc: SparkContext): CellVariantcaller.Result = {
+  def readBamFile(cmdArgs: Args,
+                  correctCells: Broadcast[Array[String]],
+                  correctCellsMap: Broadcast[Map[String, Int]])(
+      implicit sc: SparkContext): CellVariantcaller.Result = {
     logger.info(s"Starting variant calling on '${cmdArgs.inputFile}'")
-    logger.info(s"Using default parameters, to set different cutoffs please use the CellVariantcaller module")
+    logger.info(
+      s"Using default parameters, to set different cutoffs please use the CellVariantcaller module")
     val dict = sc.broadcast(bam.getDictFromBam(cmdArgs.inputFile))
     val partitions = {
       val x = (cmdArgs.inputFile.length() / 10000000).toInt
       if (x > 0) x else 1
     }
     val cutoffs = sc.broadcast(variantcalls.Cutoffs())
-    val result = CellVariantcaller.totalRun(cmdArgs.inputFile, cmdArgs.outputDir, cmdArgs.reference, dict, partitions, cmdArgs.intervals, cmdArgs.sampleTag, cmdArgs.umiTag, correctCells, correctCellsMap, cutoffs, variantcalls.Args().seqError)
+    val result = CellVariantcaller.totalRun(
+      cmdArgs.inputFile,
+      cmdArgs.outputDir,
+      cmdArgs.reference,
+      dict,
+      partitions,
+      cmdArgs.intervals,
+      cmdArgs.sampleTag,
+      cmdArgs.umiTag,
+      correctCells,
+      correctCellsMap,
+      cutoffs,
+      variantcalls.Args().seqError
+    )
 
     result
   }

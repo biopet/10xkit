@@ -152,12 +152,20 @@ object VariantCall {
     val pos = variant.getStart
     val refAllele = variant.getReference.getBaseString
     val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toArray
+    val alleleIndencies = (Array(refAllele) ++ altAlleles).zipWithIndex
     val genotypes = variant.getGenotypes.map { g =>
-      g.getExtendedAttribute("ADR")
-      //sampleMap(g.getSampleName)
-
+      val adr = g.getExtendedAttribute("ADR").toString.split(",").map(_.toInt)
+      val adf = g.getExtendedAttribute("ADF").toString.split(",").map(_.toInt)
+      val adrRead =
+        g.getExtendedAttribute("ADR-READ").toString.split(",").map(_.toInt)
+      val adfRead =
+        g.getExtendedAttribute("ADF-READ").toString.split(",").map(_.toInt)
+      val alleles = alleleIndencies.map {
+        case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
+      }
+      sampleMap(g.getSampleName) -> alleles
     }
-    VariantCall(contig, pos, refAllele, altAlleles, ???)
+    VariantCall(contig, pos, refAllele, altAlleles, genotypes.toMap)
   }
 
   def createFromBases(contig: Int,
