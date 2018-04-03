@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Biopet
+ * Copyright (c) 2018 Biopet
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -23,6 +23,7 @@ package nl.biopet.tools.tenxkit
 
 import java.io.File
 
+import nl.biopet.tools.tenxkit.cellreads.CellReads
 import nl.biopet.utils.test.tools.ToolTest
 import nl.biopet.utils.tool.multi
 import org.testng.annotations.Test
@@ -40,17 +41,19 @@ class TenxKitTest extends ToolTest[multi.Args] {
   def testCellReads(): Unit = {
     val outputFile = File.createTempFile("test.", ".csv")
     outputFile.delete()
+    outputFile.mkdirs()
     outputFile.deleteOnExit()
-    TenxKit.main(
-      Array("CellReads",
-            "-i",
+    val sampleTag = "NM"
+    CellReads.main(
+      Array("-i",
             resourcePath("/paired01.bam"),
             "--sparkMaster",
             "local[2]",
             "--sampleTag",
-            "NM",
+            sampleTag,
             "-o",
             outputFile.getAbsolutePath))
-    outputFile should exist
+    new File(outputFile, s"$sampleTag.csv") should exist
+    new File(outputFile, s"$sampleTag.duplicates.csv") should exist
   }
 }

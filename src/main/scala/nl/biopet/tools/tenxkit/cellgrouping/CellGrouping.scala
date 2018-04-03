@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2018 Biopet
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package nl.biopet.tools.tenxkit.cellgrouping
 
 import java.io.File
@@ -53,26 +74,50 @@ object CellGrouping extends ToolCommand[Args] {
           "Input file must be a bam or vcf file")
     }).toDS()
 
-    val sampleVariants = variants.flatMap(r => r.samples.map { case (sample, alleles) => SampleVariant(sample, r.contig, r.pos, alleles.head.total, alleles.tail.map(_.total))}).toDF()
-
-    val sampleCombinations = sc.parallelize(correctCellsMap.value.values.toList)
-      .flatMap(s1 => (s1 + 1).until(correctCells.value.length).map(s2 =>  SampleCombination(s1, s2)))
+    val sampleVariants = variants
+      .flatMap(r =>
+        r.samples.map {
+          case (sample, alleles) =>
+            SampleVariant(sample,
+                          r.contig,
+                          r.pos,
+                          alleles.head.total,
+                          alleles.tail.map(_.total))
+      })
       .toDF()
 
-    val sampleVariants1 = sampleVariants.withColumnRenamed("sample", "sample1")
+    val sampleCombinations = sc
+      .parallelize(correctCellsMap.value.values.toList)
+      .flatMap(
+        s1 =>
+          (s1 + 1)
+            .until(correctCells.value.length)
+            .map(s2 => SampleCombination(s1, s2)))
+      .toDF()
+
+    val sampleVariants1 = sampleVariants
+      .withColumnRenamed("sample", "sample1")
       .withColumnRenamed("contig", "contig1")
       .withColumnRenamed("pos", "pos1")
       .withColumnRenamed("refDepth", "refDepth1")
       .withColumnRenamed("altDepth", "altDepth1")
 
-    val sampleVariants2 = sampleVariants.withColumnRenamed("sample", "sample2")
+    val sampleVariants2 = sampleVariants
+      .withColumnRenamed("sample", "sample2")
       .withColumnRenamed("contig", "contig2")
       .withColumnRenamed("pos", "pos2")
       .withColumnRenamed("altDepth", "altDepth2")
 
-    val bla = sampleCombinations.toDF()
-      .join(sampleVariants1, sampleVariants1("sample1") === sampleCombinations("sample1"))
-      .join(sampleVariants2, sampleVariants2("sample2") === sampleCombinations("sample2") && sampleVariants1("contig1") === sampleVariants2("contig2") && sampleVariants1("pos1") === sampleVariants2("pos2"))
+    val bla = sampleCombinations
+      .toDF()
+      .join(sampleVariants1,
+            sampleVariants1("sample1") === sampleCombinations("sample1"))
+      .join(
+        sampleVariants2,
+        sampleVariants2("sample2") === sampleCombinations("sample2") && sampleVariants1(
+          "contig1") === sampleVariants2("contig2") && sampleVariants1("pos1") === sampleVariants2(
+          "pos2")
+      )
 
     val bla2 = bla.collect()
     //TODO: Grouping

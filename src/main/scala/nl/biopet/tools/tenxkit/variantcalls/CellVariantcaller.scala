@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2018 Biopet
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package nl.biopet.tools.tenxkit.variantcalls
 
 import java.io.File
@@ -10,6 +31,7 @@ import htsjdk.variant.variantcontext.writer.{
 }
 import htsjdk.variant.vcf._
 import nl.biopet.tools.tenxkit
+import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.ngs.fasta
@@ -249,16 +271,52 @@ object CellVariantcaller extends ToolCommand[Args] {
 
   def descriptionText: String =
     """
-      |
+      |This tool will call variants based on 10x data. Usually the output of cellranger is used.
+      |Each cell will be treated a separated sample.
     """.stripMargin
 
   def manualText: String =
     """
+      |The input data should have a tag to identify the sample. In cellranger output this is the 'CB' tag.
+      |The variantcalling can take umi information into account. For this the option '--umiTag' must be given. When given the duplicates are still used.
+      |If not given the reads marked as duplicate are ignored.
       |
+      |The tool require a list of correct cells to use in the variantcalling. This file is a text file where each line is 1 sample/cell ID.
     """.stripMargin
 
   def exampleText: String =
-    """
+    s"""
+      |Default run without umi:
+      |${TenxKit.sparkExample(
+         "CellVariantcaller",
+         "-i",
+         "<input bam file>",
+         "-o",
+         "<output_dir>",
+         "-R",
+         "<reference fasta>",
+         "--correctCells",
+         "<txt file>",
+         "--sparkMaster",
+         "<spark master>"
+       )}
+      |
+      |Run with umi aware:
+      |${TenxKit.sparkExample(
+         "CellVariantcaller",
+         "-i",
+         "<input bam file>",
+         "-o",
+         "<output_dir>",
+         "-R",
+         "<reference fasta>",
+         "--correctCells",
+         "<txt file>",
+         "--sparkMaster",
+         "<spark master>",
+         "-u",
+         "UB"
+       )}
       |
     """.stripMargin
 }

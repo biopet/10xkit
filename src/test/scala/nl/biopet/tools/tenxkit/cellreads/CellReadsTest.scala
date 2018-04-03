@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Biopet
+ * Copyright (c) 2018 Biopet
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -39,16 +39,19 @@ class CellReadsTest extends ToolTest[Args] {
   def testDefault(): Unit = {
     val outputFile = File.createTempFile("test.", ".csv")
     outputFile.delete()
+    outputFile.mkdirs()
     outputFile.deleteOnExit()
+    val sampleTag = "NM"
     CellReads.main(
       Array("-i",
             resourcePath("/paired01.bam"),
             "--sparkMaster",
             "local[2]",
             "--sampleTag",
-            "NM",
+            sampleTag,
             "-o",
             outputFile.getAbsolutePath))
-    outputFile should exist
+    new File(outputFile, s"$sampleTag.csv") should exist
+    new File(outputFile, s"$sampleTag.duplicates.csv") should exist
   }
 }
