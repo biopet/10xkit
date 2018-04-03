@@ -53,9 +53,28 @@ object CellGrouping extends ToolCommand[Args] {
           "Input file must be a bam or vcf file")
     }).toDS()
 
-    println(variants.count())
+    val sampleVariants = variants.flatMap(r => r.samples.map { case (sample, alleles) => SampleVariant(sample, r.contig, r.pos, alleles.head.total, alleles.tail.map(_.total))}).toDF()
 
-    //TODO: Read vcf file
+    val sampleCombinations = sc.parallelize(correctCellsMap.value.values.toList)
+      .flatMap(s1 => (s1 + 1).until(correctCells.value.length).map(s2 =>  SampleCombination(s1, s2)))
+      .toDF()
+
+    val sampleVariants1 = sampleVariants.withColumnRenamed("sample", "sample1")
+      .withColumnRenamed("contig", "contig1")
+      .withColumnRenamed("pos", "pos1")
+      .withColumnRenamed("refDepth", "refDepth1")
+      .withColumnRenamed("altDepth", "altDepth1")
+
+    val sampleVariants2 = sampleVariants.withColumnRenamed("sample", "sample2")
+      .withColumnRenamed("contig", "contig2")
+      .withColumnRenamed("pos", "pos2")
+      .withColumnRenamed("altDepth", "altDepth2")
+
+    val bla = sampleCombinations.toDF()
+      .join(sampleVariants1, sampleVariants1("sample1") === sampleCombinations("sample1"))
+      .join(sampleVariants2, sampleVariants2("sample2") === sampleCombinations("sample2") && sampleVariants1("contig1") === sampleVariants2("contig2") && sampleVariants1("pos1") === sampleVariants2("pos2"))
+
+    val bla2 = bla.collect()
     //TODO: Grouping
 
     Await.result(Future.sequence(futures), Duration.Inf)
