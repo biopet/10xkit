@@ -72,7 +72,7 @@ object CellGrouping extends ToolCommand[Args] {
       case _ =>
         throw new IllegalArgumentException(
           "Input file must be a bam or vcf file")
-    }).toDS().cache()
+    }).toDS()
 
     val sampleVariants = variants
       .flatMap(r =>
@@ -84,7 +84,7 @@ object CellGrouping extends ToolCommand[Args] {
                           alleles.head.total,
                           alleles.tail.map(_.total))
       })
-      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage)
+      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage).cache()
 
     val sampleCombinations = sc
       .parallelize(correctCellsMap.value.values.toList, correctCellsMap.value.size)
@@ -94,6 +94,7 @@ object CellGrouping extends ToolCommand[Args] {
             .until(correctCells.value.length)
             .map(s2 => SampleCombination(s1, s2)))
       .toDS().cache()
+    Await.result(Future.sequence(List(Future(sampleVariants.count()), Future(sampleCombinations.count()))), Duration.Inf)
 
     def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
       df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
