@@ -74,7 +74,7 @@ object CellGrouping extends ToolCommand[Args] {
           "Input file must be a bam or vcf file")
     }).toDS()
 
-    val sampleVariants = broadcast(variants
+    val sampleVariants = variants
       .flatMap(r =>
         r.samples.map {
           case (sample, alleles) =>
@@ -84,16 +84,16 @@ object CellGrouping extends ToolCommand[Args] {
                           alleles.head.total,
                           alleles.tail.map(_.total))
       })
-      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage).cache())
+      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage).cache()
 
-    val sampleCombinations = sc
+    val sampleCombinations = broadcast(sc
       .parallelize(correctCellsMap.value.values.toList, correctCellsMap.value.size)
       .flatMap(
         s1 =>
           (s1 + 1)
             .until(correctCells.value.length)
             .map(s2 => SampleCombination(s1, s2)))
-      .toDS().cache()
+      .toDS().cache())
     Await.result(Future.sequence(List(Future(sampleVariants.count()), Future(sampleCombinations.count()))), Duration.Inf)
     sampleVariants.queryExecution.analyzed.refresh()
     sampleCombinations.queryExecution.analyzed.refresh()
