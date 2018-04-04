@@ -185,17 +185,22 @@ object VariantCall {
     val refAllele = variant.getReference.getBaseString
     val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toArray
     val alleleIndencies = (Array(refAllele) ++ altAlleles).zipWithIndex
-    val genotypes = variant.getGenotypes.map { g =>
-      val adr = g.getExtendedAttribute("ADR").toString.split(",").map(_.toInt)
-      val adf = g.getExtendedAttribute("ADF").toString.split(",").map(_.toInt)
-      val adrRead =
-        g.getExtendedAttribute("ADR-READ").toString.split(",").map(_.toInt)
-      val adfRead =
-        g.getExtendedAttribute("ADF-READ").toString.split(",").map(_.toInt)
-      val alleles = alleleIndencies.map {
-        case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
+    val genotypes = variant.getGenotypes.flatMap { g =>
+      (Option(g.getExtendedAttribute("ADR"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("ADF"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("ADR-READ"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("ADF-READ"))
+         .map(_.toString.split(",").map(_.toInt))) match {
+        case (Some(adr), Some(adf), Some(adrRead), Some(adfRead)) =>
+          val alleles = alleleIndencies.map {
+            case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
+          }
+          Some(sampleMap(g.getSampleName) -> alleles)
+        case _ => None
       }
-      sampleMap(g.getSampleName) -> alleles
     }
     VariantCall(contig, pos, refAllele, altAlleles, genotypes.toMap)
   }
