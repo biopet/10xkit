@@ -25,7 +25,6 @@ import java.io.File
 
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.variantcalls
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.logger
 import nl.biopet.tools.tenxkit.variantcalls.{CellVariantcaller, VariantCall}
 import nl.biopet.utils.ngs.{bam, fasta, vcf}
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -95,6 +94,8 @@ object CellGrouping extends ToolCommand[Args] {
             .map(s2 => SampleCombination(s1, s2)))
       .toDS().cache()
     Await.result(Future.sequence(List(Future(sampleVariants.count()), Future(sampleCombinations.count()))), Duration.Inf)
+    sampleVariants.queryExecution.analyzed.refresh()
+    sampleCombinations.queryExecution.analyzed.refresh()
 
     def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
       df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
