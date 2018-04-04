@@ -129,7 +129,7 @@ object CellGrouping extends ToolCommand[Args] {
       implicit sc: SparkContext): RDD[VariantCall] = {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
     val regions =
-      BedRecordList.fromReference(cmdArgs.reference).scatter(5000000)
+      BedRecordList.fromReference(cmdArgs.reference).scatter(1000000)
     sc.parallelize(regions, regions.size).mapPartitions { it =>
       it.flatMap { list =>
         vcf
