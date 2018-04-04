@@ -87,7 +87,7 @@ object CellGrouping extends ToolCommand[Args] {
       .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage)
 
     val sampleCombinations = sc
-      .parallelize(correctCellsMap.value.values.toList)
+      .parallelize(correctCellsMap.value.values.toList, correctCellsMap.value.size)
       .flatMap(
         s1 =>
           (s1 + 1)
