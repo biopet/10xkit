@@ -151,8 +151,10 @@ case class VariantCall(contig: Int,
     val alleles = Allele.create(refAllele, true) :: altAlleles
       .map(Allele.create)
       .toList
+    val ad = alleles.indices.map(i => samples.map(_._2(i).total).sum)
+    val adRead = alleles.indices.map(i => samples.map(_._2(i).totalReads).sum)
     val attributes =
-      Map("DP" -> totalDepth, "DP-READ" -> totalReadDepth, "SN" -> samples.size)
+      Map("DP" -> totalDepth, "DP-READ" -> totalReadDepth, "SN" -> samples.size, "AD" -> ad.mkString(","), "AD-READ" -> adRead.mkString(","))
     new VariantContextBuilder()
       .chr(dict.getSequence(contig).getSequenceName)
       .start(pos)

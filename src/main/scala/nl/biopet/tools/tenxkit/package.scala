@@ -32,6 +32,8 @@ import scala.collection.JavaConversions._
 
 package object tenxkit {
   lazy val headerLines: Seq[VCFHeaderLine] = Seq(
+    new VCFInfoHeaderLine("AD", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Allele umi dept"),
+    new VCFInfoHeaderLine("AD-READ", VCFHeaderLineCount.R, VCFHeaderLineType.Integer, "Allele read dept"),
     new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Umi dept"),
     new VCFInfoHeaderLine("DP-READ", 1, VCFHeaderLineType.Integer, "Read dept"),
     new VCFInfoHeaderLine("SN", 1, VCFHeaderLineType.Integer, "Sample count"),

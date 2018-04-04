@@ -170,10 +170,11 @@ object CellVariantcaller extends ToolCommand[Args] {
                      cutoffs: Broadcast[Cutoffs]): Future[RDD[VariantCall]] = {
     Future {
       variants
-        .flatMap(
+        .map(
           _.setAllelesToZeroPvalue(seqError, cutoffs.value.maxPvalue)
             .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
-            .cleanupAlleles())
+            //.cleanupAlleles() //FIXME: Cleanup does remove to much
+        )
         .filter(
           x =>
             x.hasNonReference &&
