@@ -62,17 +62,20 @@ object CellGrouping extends ToolCommand[Args] {
 
     val futures: ListBuffer[Future[Any]] = ListBuffer()
 
-    val variants: Dataset[VariantCall] = (cmdArgs.inputFile.getName match {
-      case name if name.endsWith(".bam") =>
-        val result = readBamFile(cmdArgs, correctCells, correctCellsMap)
-        futures += result.totalFuture
-        Await.result(result.filteredVariants, Duration.Inf)
-      case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
-        readVcfFile(cmdArgs, correctCellsMap)
-      case _ =>
-        throw new IllegalArgumentException(
-          "Input file must be a bam or vcf file")
-    }).toDS().repartition().cache()
+    val variants: RDD[VariantCall] = {
+      val v = cmdArgs.inputFile.getName match {
+        case name if name.endsWith(".bam") =>
+          val result = readBamFile(cmdArgs, correctCells, correctCellsMap)
+          futures += result.totalFuture
+          Await.result(result.filteredVariants, Duration.Inf)
+        case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
+          readVcfFile(cmdArgs, correctCellsMap)
+        case _ =>
+          throw new IllegalArgumentException(
+            "Input file must be a bam or vcf file")
+      }
+      v.repartition(v.partitions.length).cache()
+    }
 
     val bla = variants.flatMap { variant =>
       val samples = variant.samples.filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage).keys
@@ -80,7 +83,7 @@ object CellGrouping extends ToolCommand[Args] {
         SampleCombination(variant.contig, variant.pos.toInt, s1, s2)
       }
     }
-    bla.groupBy("sample1", "sample2").count()
+    bla.toDS().groupBy("sample1", "sample2").count()
           .write
           .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
 
