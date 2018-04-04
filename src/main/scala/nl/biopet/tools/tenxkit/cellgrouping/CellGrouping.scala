@@ -72,54 +72,75 @@ object CellGrouping extends ToolCommand[Args] {
       case _ =>
         throw new IllegalArgumentException(
           "Input file must be a bam or vcf file")
-    }).toDS()
+    }).toDS().cache()
 
-    val sampleVariants = variants
-      .flatMap(r =>
-        r.samples.map {
-          case (sample, alleles) =>
-            SampleVariant(sample,
-                          r.contig,
-                          r.pos,
-                          alleles.head.total,
-                          alleles.tail.map(_.total))
-      })
-      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage).cache()
+    val bla = variants.flatMap { variant =>
+      val samples = variant.samples.filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage).keys
+      for (s1 <- samples; s2 <- samples if s2 > s1) yield {
+        SampleCombination(variant.contig, variant.pos.toInt, s1, s2)
+      }
+    }
+    bla.groupBy("sample1", "sample2").count()
+          .write
+          .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
 
-    val sampleCombinations = broadcast(sc
-      .parallelize(correctCellsMap.value.values.toList, correctCellsMap.value.size)
-      .flatMap(
-        s1 =>
-          (s1 + 1)
-            .until(correctCells.value.length)
-            .map(s2 => SampleCombination(s1, s2)))
-      .toDS().cache())
-    Await.result(Future.sequence(List(Future(sampleVariants.count()), Future(sampleCombinations.count()))), Duration.Inf)
-    sampleVariants.queryExecution.analyzed.refresh()
-    sampleCombinations.queryExecution.analyzed.refresh()
+//    val sampleVariants = {
+//      val ds = variants
+//        .flatMap(r =>
+//          r.samples.map {
+//            case (sample, alleles) =>
+//              SampleVariant(sample,
+//                r.contig,
+//                r.pos,
+//                alleles.head.total,
+//                alleles.tail.map(_.total))
+//          })
+//        .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage)
+//
+//        ds.repartition()
+//          .repartition(ds("contig"), ds("pos"))
+//          .sortWithinPartitions(ds("contig"), ds("pos"))
+//          .cache()
+//    }
+//
+//    val sampleCombinations = broadcast(sc
+//      .parallelize(correctCellsMap.value.values.toList, correctCellsMap.value.size)
+//      .flatMap(
+//        s1 =>
+//          (s1 + 1)
+//            .until(correctCells.value.length)
+//            .map(s2 => SampleCombination(s1, s2)))
+//      .toDS().cache())
+//    Await.result(Future.sequence(List(Future(sampleVariants.count()), Future(sampleCombinations.count()))), Duration.Inf)
+//    sampleVariants.queryExecution.analyzed.refresh()
+//    sampleCombinations.queryExecution.analyzed.refresh()
+//
+//    sampleVariants.mapPartitions { it =>
+//      it
+//    }
 
     def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
       df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
     }
 
-    val sampleVariants1 = sufixColumns(sampleVariants.toDF(), "1")
-    val sampleVariants2 = sufixColumns(sampleVariants.toDF(), "2")
-
-    val combinations = sampleCombinations
-      .join(sampleVariants1,
-            sampleVariants1("sample1") === sampleCombinations("s1"))
-      .join(
-        sampleVariants2,
-        sampleVariants2("sample2") === sampleCombinations("s2") && sampleVariants1(
-          "contig1") === sampleVariants2("contig2") && sampleVariants1("pos1") === sampleVariants2(
-          "pos2")
-      )
-
-    combinations
-      .groupBy("sample1", "sample2")
-      .count()
-      .write
-      .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
+//    val sampleVariants1 = sufixColumns(sampleVariants.toDF(), "1")
+//    val sampleVariants2 = sufixColumns(sampleVariants.toDF(), "2")
+//
+//    val combinations = sampleCombinations
+//      .join(sampleVariants1,
+//            sampleVariants1("sample1") === sampleCombinations("s1"))
+//      .join(
+//        sampleVariants2,
+//        sampleVariants2("sample2") === sampleCombinations("s2") && sampleVariants1(
+//          "contig1") === sampleVariants2("contig2") && sampleVariants1("pos1") === sampleVariants2(
+//          "pos2")
+//      )
+//
+//    combinations
+//      .groupBy("sample1", "sample2")
+//      .count()
+//      .write
+//      .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
 
     //TODO: Grouping
 
