@@ -130,7 +130,7 @@ object CellGrouping extends ToolCommand[Args] {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
     val regions =
       BedRecordList.fromReference(cmdArgs.reference).scatter(50000000)
-    sc.parallelize(regions).mapPartitions { it =>
+    sc.parallelize(regions, regions.size).mapPartitions { it =>
       it.flatMap { list =>
         vcf
           .loadRegions(cmdArgs.inputFile, list.iterator)
