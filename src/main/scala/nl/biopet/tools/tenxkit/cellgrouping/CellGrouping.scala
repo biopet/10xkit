@@ -112,8 +112,7 @@ object CellGrouping extends ToolCommand[Args] {
           "pos2")
       )
 
-    val count = combinations.count()
-    val bla2 = combinations
+    combinations
       .groupBy("sample1", "sample2")
       .count()
       .write
