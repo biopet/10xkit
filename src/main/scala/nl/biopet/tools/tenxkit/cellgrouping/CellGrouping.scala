@@ -72,7 +72,7 @@ object CellGrouping extends ToolCommand[Args] {
       case _ =>
         throw new IllegalArgumentException(
           "Input file must be a bam or vcf file")
-    }).toDS().cache()
+    }).toDS().repartition().cache()
 
     val bla = variants.flatMap { variant =>
       val samples = variant.samples.filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage).keys
@@ -153,7 +153,7 @@ object CellGrouping extends ToolCommand[Args] {
       implicit sc: SparkContext): RDD[VariantCall] = {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
     val regions =
-      BedRecordList.fromReference(cmdArgs.reference).scatter(1000000)
+      BedRecordList.fromReference(cmdArgs.reference).scatter(500000)
     sc.parallelize(regions, regions.size).mapPartitions { it =>
       it.flatMap { list =>
         vcf
