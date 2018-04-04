@@ -129,7 +129,7 @@ object CellGrouping extends ToolCommand[Args] {
       implicit sc: SparkContext): RDD[VariantCall] = {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
     val regions =
-      BedRecordList.fromReference(cmdArgs.reference).scatter(50000000)
+      BedRecordList.fromReference(cmdArgs.reference).scatter(5000000)
     sc.parallelize(regions, regions.size).mapPartitions { it =>
       it.flatMap { list =>
         vcf
@@ -148,7 +148,7 @@ object CellGrouping extends ToolCommand[Args] {
       s"Using default parameters, to set different cutoffs please use the CellVariantcaller module")
     val dict = sc.broadcast(bam.getDictFromBam(cmdArgs.inputFile))
     val partitions = {
-      val x = (cmdArgs.inputFile.length() / 1000000).toInt
+      val x = (cmdArgs.inputFile.length() / 10000000).toInt
       if (x > 0) x else 1
     }
     val cutoffs = sc.broadcast(variantcalls.Cutoffs())
