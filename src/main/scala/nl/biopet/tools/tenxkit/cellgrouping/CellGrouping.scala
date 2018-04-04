@@ -83,7 +83,8 @@ object CellGrouping extends ToolCommand[Args] {
                           r.pos,
                           alleles.head.total,
                           alleles.tail.map(_.total))
-      }).filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage)
+      })
+      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage)
 
     val sampleCombinations = sc
       .parallelize(correctCellsMap.value.values.toList)
@@ -95,7 +96,7 @@ object CellGrouping extends ToolCommand[Args] {
       .toDS()
 
     def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
-      df.columns.foldLeft(df)((a,b) => a.withColumnRenamed(b, b + sufix))
+      df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
     }
 
     val sampleVariants1 = sufixColumns(sampleVariants.toDF(), "1")
@@ -112,7 +113,11 @@ object CellGrouping extends ToolCommand[Args] {
       )
 
     val count = combinations.count()
-    val bla2 = combinations.groupBy("sample1", "sample2").count().write.csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
+    val bla2 = combinations
+      .groupBy("sample1", "sample2")
+      .count()
+      .write
+      .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
 
     //TODO: Grouping
 

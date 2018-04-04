@@ -33,6 +33,7 @@ import htsjdk.variant.variantcontext.{
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
 
 import scala.collection.JavaConversions._
+import scala.collection.immutable
 
 case class VariantCall(contig: Int,
                        pos: Long,
@@ -82,23 +83,22 @@ case class VariantCall(contig: Int,
   }
 
   def cleanupAlleles(): Option[VariantCall] = {
-    val keep = altAlleles.indices
-      .map(_ + 1)
-      .filter(i => samples.exists(_._2(i).totalReads > 0))
+    val ad = alleleDepth
+    val alleles = allAlleles
     val newAltAlleles =
-      altAlleles.zipWithIndex.filter(x => keep.contains(x._2 - 1)).map(_._1)
-    if (newAltAlleles.isEmpty) None
-    else {
-      val newSamples = samples
-        .map {
-          case (s, a) =>
-            s -> a.zipWithIndex
-              .filter(x => keep.contains(x._2))
-              .map(_._1)
-        }
-        .filter(_._2.map(_.totalReads).sum > 0)
+      alleles.zipWithIndex.tail.filter(i => ad(i._2) > 0).map(_._1)
+    val newSamples = samples
+      .map {
+        case (sample, a) =>
+          sample -> a.zipWithIndex
+            .filter(i => i._2 == 0 || ad(i._2) > 0)
+            .map(_._1)
+      }
+      .filter(_._2.exists(_.total > 0))
+
+    if (newSamples.nonEmpty)
       Some(this.copy(altAlleles = newAltAlleles, samples = newSamples))
-    }
+    else None
   }
 
   def setAllelesToZeroPvalue(seqError: Float,
@@ -123,6 +123,13 @@ case class VariantCall(contig: Int,
         } else s -> a.map(b => 1.0)
     }
   }
+
+  def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
+
+  def alleleDepth: Seq[Int] =
+    allAlleles.indices.map(i => samples.map(_._2(i).total).sum)
+  def alleleReadDepth: Seq[Int] =
+    allAlleles.indices.map(i => samples.map(_._2(i).totalReads).sum)
 
   def toVariantContext(sampleList: Array[String],
                        dict: SAMSequenceDictionary,
@@ -151,10 +158,12 @@ case class VariantCall(contig: Int,
     val alleles = Allele.create(refAllele, true) :: altAlleles
       .map(Allele.create)
       .toList
-    val ad = alleles.indices.map(i => samples.map(_._2(i).total).sum)
-    val adRead = alleles.indices.map(i => samples.map(_._2(i).totalReads).sum)
     val attributes =
-      Map("DP" -> totalDepth, "DP-READ" -> totalReadDepth, "SN" -> samples.size, "AD" -> ad.mkString(","), "AD-READ" -> adRead.mkString(","))
+      Map("DP" -> totalDepth,
+          "DP-READ" -> totalReadDepth,
+          "SN" -> samples.size,
+          "AD" -> alleleDepth.mkString(","),
+          "AD-READ" -> alleleReadDepth.mkString(","))
     new VariantContextBuilder()
       .chr(dict.getSequence(contig).getSequenceName)
       .start(pos)
