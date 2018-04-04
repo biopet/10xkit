@@ -33,7 +33,7 @@ import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Dataset, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
@@ -83,8 +83,7 @@ object CellGrouping extends ToolCommand[Args] {
                           r.pos,
                           alleles.head.total,
                           alleles.tail.map(_.total))
-      })
-      .toDF()
+      }).filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage)
 
     val sampleCombinations = sc
       .parallelize(correctCellsMap.value.values.toList)
@@ -93,33 +92,28 @@ object CellGrouping extends ToolCommand[Args] {
           (s1 + 1)
             .until(correctCells.value.length)
             .map(s2 => SampleCombination(s1, s2)))
-      .toDF()
+      .toDS()
 
-    val sampleVariants1 = sampleVariants
-      .withColumnRenamed("sample", "sample1")
-      .withColumnRenamed("contig", "contig1")
-      .withColumnRenamed("pos", "pos1")
-      .withColumnRenamed("refDepth", "refDepth1")
-      .withColumnRenamed("altDepth", "altDepth1")
+    def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
+      df.columns.foldLeft(df)((a,b) => a.withColumnRenamed(b, b + sufix))
+    }
 
-    val sampleVariants2 = sampleVariants
-      .withColumnRenamed("sample", "sample2")
-      .withColumnRenamed("contig", "contig2")
-      .withColumnRenamed("pos", "pos2")
-      .withColumnRenamed("altDepth", "altDepth2")
+    val sampleVariants1 = sufixColumns(sampleVariants.toDF(), "1")
+    val sampleVariants2 = sufixColumns(sampleVariants.toDF(), "2")
 
-    val bla = sampleCombinations
-      .toDF()
+    val combinations = sampleCombinations
       .join(sampleVariants1,
-            sampleVariants1("sample1") === sampleCombinations("sample1"))
+            sampleVariants1("sample1") === sampleCombinations("s1"))
       .join(
         sampleVariants2,
-        sampleVariants2("sample2") === sampleCombinations("sample2") && sampleVariants1(
+        sampleVariants2("sample2") === sampleCombinations("s2") && sampleVariants1(
           "contig1") === sampleVariants2("contig2") && sampleVariants1("pos1") === sampleVariants2(
           "pos2")
       )
 
-    val bla2 = bla.collect()
+    val count = combinations.count()
+    val bla2 = combinations.groupBy("sample1", "sample2").count().write.csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
+
     //TODO: Grouping
 
     Await.result(Future.sequence(futures), Duration.Inf)
