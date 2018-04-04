@@ -72,7 +72,7 @@ object CellGrouping extends ToolCommand[Args] {
       case _ =>
         throw new IllegalArgumentException(
           "Input file must be a bam or vcf file")
-    }).toDS()
+    }).toDS().cache()
 
     val sampleVariants = variants
       .flatMap(r =>
@@ -93,7 +93,7 @@ object CellGrouping extends ToolCommand[Args] {
           (s1 + 1)
             .until(correctCells.value.length)
             .map(s2 => SampleCombination(s1, s2)))
-      .toDS()
+      .toDS().cache()
 
     def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
       df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
