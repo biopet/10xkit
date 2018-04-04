@@ -34,6 +34,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
+import org.apache.spark.sql.functions.broadcast
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -73,7 +74,7 @@ object CellGrouping extends ToolCommand[Args] {
           "Input file must be a bam or vcf file")
     }).toDS()
 
-    val sampleVariants = variants
+    val sampleVariants = broadcast(variants
       .flatMap(r =>
         r.samples.map {
           case (sample, alleles) =>
@@ -83,7 +84,7 @@ object CellGrouping extends ToolCommand[Args] {
                           alleles.head.total,
                           alleles.tail.map(_.total))
       })
-      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage).cache()
+      .filter(v => v.totalDepth >= cmdArgs.minAlleleCoverage).cache())
 
     val sampleCombinations = sc
       .parallelize(correctCellsMap.value.values.toList, correctCellsMap.value.size)
