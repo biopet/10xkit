@@ -75,30 +75,44 @@ object CellGrouping extends ToolCommand[Args] {
             "Input file must be a bam or vcf file")
       }
       v.filter(_.totalAltRatio >= cmdArgs.minTotalAltRatio)
-        .repartition(v.partitions.length).cache()
+        .repartition(v.partitions.length)
+        .cache()
     }
 
-    val combinations = variants.flatMap { variant =>
-      val samples = variant.samples.filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage).keys
-      for (s1 <- samples; s2 <- samples if s2 > s1) yield {
-        SampleCombinationKey(s1, s2) -> SampleCombinationValue()
+    val combinations = variants
+      .flatMap { variant =>
+        val samples = variant.samples
+          .filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage)
+          .keys
+        for (s1 <- samples; s2 <- samples if s2 > s1) yield {
+          SampleCombinationKey(s1, s2) -> SampleCombinationValue()
+        }
       }
-    }
+      .groupByKey()
 
-    val counts = combinations.aggregateByKey(0L)((a,b) => a + 1, _ + _)
-    val f = counts.groupBy(_._1.sample1).map { case (s1, list) =>
-      val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
-      s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
-        map.get(s2)
-      })
-    }.repartition(1)
+    val counts = combinations.map(x => x._1 -> x._2.size)
+    val f = counts
+      .groupBy(_._1.sample1)
+      .map {
+        case (s1, list) =>
+          val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
+          s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
+            map.get(s2)
+          })
+      }
+      .repartition(1)
     f.foreachPartition { it =>
       val map = it.toMap
-      val writer = new PrintWriter(new File(cmdArgs.outputDir, "count.positions.csv"))
+      val writer =
+        new PrintWriter(new File(cmdArgs.outputDir, "count.positions.csv"))
       writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
       for (s1 <- correctCells.value.indices) {
         writer.print(s"${correctCells.value(s1)}\t")
-        writer.println(correctCells.value.indices.map(s2 => map.get(s1).flatMap(_.lift(s2))).map(x => x.flatten.getOrElse(".")).mkString("\t"))
+        writer.println(
+          correctCells.value.indices
+            .map(s2 => map.get(s1).flatMap(_.lift(s2)))
+            .map(x => x.flatten.getOrElse("."))
+            .mkString("\t"))
       }
       writer.close()
     }
