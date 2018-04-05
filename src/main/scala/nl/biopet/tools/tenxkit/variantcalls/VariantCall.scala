@@ -60,6 +60,10 @@ case class VariantCall(contig: Int,
     totalDepth - referenceDepth
   }
 
+  def totalAltRatio: Double = {
+    altDepth.toDouble / totalDepth
+  }
+
   def minSampleAltDepth(cutoff: Int): Boolean = {
     samples.values.exists(_.tail.exists(_.total >= cutoff))
   }
