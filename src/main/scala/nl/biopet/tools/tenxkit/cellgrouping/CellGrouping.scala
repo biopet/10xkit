@@ -21,7 +21,7 @@
 
 package nl.biopet.tools.tenxkit.cellgrouping
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.variantcalls
@@ -33,8 +33,8 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
-
 import org.apache.spark.sql.functions.broadcast
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -77,15 +77,34 @@ object CellGrouping extends ToolCommand[Args] {
       v.repartition(v.partitions.length).cache()
     }
 
-    val bla = variants.flatMap { variant =>
+    val combinations = variants.flatMap { variant =>
       val samples = variant.samples.filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage).keys
       for (s1 <- samples; s2 <- samples if s2 > s1) yield {
         SampleCombination(variant.contig, variant.pos.toInt, s1, s2)
       }
     }
-    bla.toDS().groupBy("sample1", "sample2").count()
-          .write
-          .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
+    val counts = combinations.toDS()
+      .groupBy("sample1", "sample2")
+      .count()
+    val f = counts.rdd.groupBy(_.getAs[Int](0)).map { case (s1, list) =>
+      val map = list.groupBy(_.getAs[Int](1)).map(x => x._1 -> x._2.head.getLong(2))
+      s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
+        map.get(s2)
+      })
+    }.sortByKey(numPartitions = 1)
+    f.foreachPartition { it =>
+      val map = it.toMap
+      val writer = new PrintWriter(new File(cmdArgs.outputDir, "count.positions.csv"))
+      writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
+      for (s1 <- correctCells.value.indices) {
+        writer.print(s"${correctCells.value(s1)}\t")
+        writer.println(correctCells.value.indices.map(s2 => map.get(s1).flatMap(_.lift(s2))).map(x => x.flatten.getOrElse(".")).mkString("\t"))
+      }
+      writer.close()
+    }
+//    counts.write
+//      .csv(new File(cmdArgs.outputDir, "counts.csv").getAbsolutePath)
+
 
 //    val sampleVariants = {
 //      val ds = variants
