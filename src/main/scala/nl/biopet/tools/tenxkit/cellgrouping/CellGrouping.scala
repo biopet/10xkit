@@ -65,18 +65,17 @@ object CellGrouping extends ToolCommand[Args] {
     val variants: RDD[VariantCall] = {
       val v = cmdArgs.inputFile.getName match {
         case name if name.endsWith(".bam") =>
-          val result = readBamFile(cmdArgs, correctCells, correctCellsMap)
+          val result =
+            readBamFile(cmdArgs, correctCells, correctCellsMap, cmdArgs.binSize)
           futures += result.totalFuture
           Await.result(result.filteredVariants, Duration.Inf)
         case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
-          readVcfFile(cmdArgs, correctCellsMap)
+          readVcfFile(cmdArgs, correctCellsMap, cmdArgs.binSize)
         case _ =>
           throw new IllegalArgumentException(
             "Input file must be a bam or vcf file")
       }
       v.filter(_.totalAltRatio >= cmdArgs.minTotalAltRatio)
-        .repartition(v.partitions.length)
-        .cache()
     }
 
     val combinations = variants
@@ -85,10 +84,13 @@ object CellGrouping extends ToolCommand[Args] {
           .filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage)
           .keys
         for (s1 <- samples; s2 <- samples if s2 > s1) yield {
-          SampleCombinationKey(s1, s2) -> SampleCombinationValue()
+          SampleCombinationKey(s1, s2) -> SampleCombinationValue(
+            variant.samples(s1).map(_.total),
+            variant.samples(s2).map(_.total))
         }
       }
       .groupByKey()
+      .cache()
 
     val counts = combinations.map(x => x._1 -> x._2.size)
     val f = counts
@@ -128,11 +130,12 @@ object CellGrouping extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  def readVcfFile(cmdArgs: Args, sampleMap: Broadcast[Map[String, Int]])(
-      implicit sc: SparkContext): RDD[VariantCall] = {
+  def readVcfFile(cmdArgs: Args,
+                  sampleMap: Broadcast[Map[String, Int]],
+                  binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
     val regions =
-      BedRecordList.fromReference(cmdArgs.reference).scatter(500000)
+      BedRecordList.fromReference(cmdArgs.reference).scatter(binsize)
     sc.parallelize(regions, regions.size).mapPartitions { it =>
       it.flatMap { list =>
         vcf
@@ -142,18 +145,17 @@ object CellGrouping extends ToolCommand[Args] {
     }
   }
 
-  def readBamFile(cmdArgs: Args,
-                  correctCells: Broadcast[Array[String]],
-                  correctCellsMap: Broadcast[Map[String, Int]])(
-      implicit sc: SparkContext): CellVariantcaller.Result = {
+  def readBamFile(
+      cmdArgs: Args,
+      correctCells: Broadcast[Array[String]],
+      correctCellsMap: Broadcast[Map[String, Int]],
+      binsize: Int)(implicit sc: SparkContext): CellVariantcaller.Result = {
     logger.info(s"Starting variant calling on '${cmdArgs.inputFile}'")
     logger.info(
       s"Using default parameters, to set different cutoffs please use the CellVariantcaller module")
     val dict = sc.broadcast(bam.getDictFromBam(cmdArgs.inputFile))
-    val partitions = {
-      val x = (cmdArgs.inputFile.length() / 10000000).toInt
-      if (x > 0) x else 1
-    }
+    val partitions =
+      (dict.value.getReferenceLength.toDouble / binsize).ceil.toInt
     val cutoffs = sc.broadcast(variantcalls.Cutoffs())
     val result = CellVariantcaller.totalRun(
       cmdArgs.inputFile,
