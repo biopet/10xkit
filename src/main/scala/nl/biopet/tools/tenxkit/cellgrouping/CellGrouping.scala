@@ -76,6 +76,7 @@ object CellGrouping extends ToolCommand[Args] {
             "Input file must be a bam or vcf file")
       }
       v.filter(_.totalAltRatio >= cmdArgs.minTotalAltRatio)
+        .repartition(v.partitions.length)
     }
 
     val combinations = variants
@@ -91,6 +92,9 @@ object CellGrouping extends ToolCommand[Args] {
       }
       .groupByKey()
       .cache()
+
+    val totalCombinations = combinations.count()
+    logger.info(s"Total number of samples combinations: $totalCombinations")
 
     val counts = combinations.map(x => x._1 -> x._2.size)
     val f = counts
