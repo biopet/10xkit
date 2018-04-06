@@ -96,29 +96,35 @@ object CellGrouping extends ToolCommand[Args] {
     val totalCombinations = combinations.count()
     logger.info(s"Total number of samples combinations: $totalCombinations")
 
-    val fractionPairs = combinations.map { case (key, alleles) =>
-      key -> alleles.map { pos =>
-        val total1 = pos.ad1.sum
-        val total2 = pos.ad2.sum
-        //TODO: Filter alleles
-        val fractions1 = pos.ad1.map(_.toDouble / total1)
-        val fractions2 = pos.ad2.map(_.toDouble / total2)
-        fractions1.zip(fractions2).map(x => FractionPairDistance(x._1, x._2))
-      }
+    val fractionPairs = combinations.map {
+      case (key, alleles) =>
+        key -> alleles.map { pos =>
+          val total1 = pos.ad1.sum
+          val total2 = pos.ad2.sum
+          //TODO: Filter alleles
+          val fractions1 = pos.ad1.map(_.toDouble / total1)
+          val fractions2 = pos.ad2.map(_.toDouble / total2)
+          fractions1.zip(fractions2).map(x => FractionPairDistance(x._1, x._2))
+        }
     }
 
     def combinationDistance(power: Int = 1): Future[Unit] = {
-      val rdd: RDD[(SampleCombinationKey, Double)] = if (power == 1)
-        fractionPairs.map(x => x._1 -> x._2.map(_.map(_.distance).sum).sum)
-      else fractionPairs.map(x => x._1 -> x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum)
+      val rdd: RDD[(SampleCombinationKey, Double)] =
+        if (power == 1)
+          fractionPairs.map(x => x._1 -> x._2.map(_.map(_.distance).sum).sum)
+        else
+          fractionPairs.map(x =>
+            x._1 -> x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum)
 
-      rdd.groupBy(_._1.sample1).map {
-        case (s1, list) =>
-          val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
-          s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
-            map.get(s2)
-          })
-      }
+      rdd
+        .groupBy(_._1.sample1)
+        .map {
+          case (s1, list) =>
+            val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
+            s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
+              map.get(s2)
+            })
+        }
         .repartition(1)
         .foreachPartitionAsync { it =>
           val map = it.toMap
@@ -144,46 +150,48 @@ object CellGrouping extends ToolCommand[Args] {
 
     if (cmdArgs.writeScatters) {
       val scatterDir = new File(cmdArgs.outputDir, "scatters")
-      futures += fractionPairs.foreachAsync { case (c,b) =>
-        val sample1 = correctCells.value(c.sample1)
-        val sample2 = correctCells.value(c.sample2)
-        val dir = new File(scatterDir, sample1)
-        dir.mkdirs()
-        val writer = new PrintWriter(new File(dir, sample2 + ".tsv"))
-        writer.println(s"#$sample1\t$sample2\tDistance")
-        b.flatten.foreach(x => writer.println(x.f1 + "\t" + x.f2 + "\t" + x.distance))
-        writer.close()
+      futures += fractionPairs.foreachAsync {
+        case (c, b) =>
+          val sample1 = correctCells.value(c.sample1)
+          val sample2 = correctCells.value(c.sample2)
+          val dir = new File(scatterDir, sample1)
+          dir.mkdirs()
+          val writer = new PrintWriter(new File(dir, sample2 + ".tsv"))
+          writer.println(s"#$sample1\t$sample2\tDistance")
+          b.flatten.foreach(x =>
+            writer.println(x.f1 + "\t" + x.f2 + "\t" + x.distance))
+          writer.close()
       }
     }
 
     //TODO: calculate distance
 
     futures += combinations
-        .map(x => x._1 -> x._2.size)
-        .groupBy(_._1.sample1)
-        .map {
-          case (s1, list) =>
-            val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
-            s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
-              map.get(s2)
-            })
+      .map(x => x._1 -> x._2.size)
+      .groupBy(_._1.sample1)
+      .map {
+        case (s1, list) =>
+          val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
+          s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
+            map.get(s2)
+          })
+      }
+      .repartition(1)
+      .foreachPartitionAsync { it =>
+        val map = it.toMap
+        val writer =
+          new PrintWriter(new File(cmdArgs.outputDir, "count.positions.csv"))
+        writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
+        for (s1 <- correctCells.value.indices) {
+          writer.print(s"${correctCells.value(s1)}\t")
+          writer.println(
+            correctCells.value.indices
+              .map(s2 => map.get(s1).flatMap(_.lift(s2)))
+              .map(x => x.flatten.getOrElse("."))
+              .mkString("\t"))
         }
-        .repartition(1)
-        .foreachPartitionAsync { it =>
-          val map = it.toMap
-          val writer =
-            new PrintWriter(new File(cmdArgs.outputDir, "count.positions.csv"))
-          writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
-          for (s1 <- correctCells.value.indices) {
-            writer.print(s"${correctCells.value(s1)}\t")
-            writer.println(
-              correctCells.value.indices
-                .map(s2 => map.get(s1).flatMap(_.lift(s2)))
-                .map(x => x.flatten.getOrElse("."))
-                .mkString("\t"))
-          }
-          writer.close()
-        }
+        writer.close()
+      }
 
     def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
       df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))

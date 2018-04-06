@@ -27,5 +27,4 @@ case class Args(bamFiles: Map[String, File] = Map(),
                 barcodes: Map[String, File] = Map(),
                 outputBam: File = null,
                 outputBarcodes: File = null,
-                sampleTag: String = "CB",
-                sparkMaster: String = null)
+                sampleTag: String = "CB")

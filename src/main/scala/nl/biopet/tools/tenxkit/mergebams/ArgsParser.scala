@@ -29,6 +29,7 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     extends AbstractOptParser[Args](toolCommand) {
   opt[(String, File)]('i', "inputBam")
     .required()
+    .unbounded()
     .action {
       case ((sample, bamfile), c) =>
         c.copy(bamFiles = c.bamFiles + (sample -> bamfile))
@@ -36,6 +37,7 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .text("Input bam file")
   opt[(String, File)]("inputBarcode")
     .required()
+    .unbounded()
     .action {
       case ((sample, file), c) =>
         c.copy(barcodes = c.bamFiles + (sample -> file))
@@ -53,8 +55,4 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .action((x, c) => c.copy(sampleTag = x))
     .text(
       s"Tag where to find the sample barcode, default '${Args().sampleTag}'")
-  opt[String]("sparkMaster")
-    .required()
-    .action((x, c) => c.copy(sparkMaster = x))
-    .text("Spark master")
 }
