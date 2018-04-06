@@ -40,7 +40,7 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .unbounded()
     .action {
       case ((sample, file), c) =>
-        c.copy(barcodes = c.bamFiles + (sample -> file))
+        c.copy(barcodes = c.barcodes + (sample -> file))
     }
     .text("Input barcodes file")
   opt[File]('o', "outputBam")
