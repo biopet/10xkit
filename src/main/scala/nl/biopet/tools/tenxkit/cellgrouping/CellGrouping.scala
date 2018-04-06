@@ -30,7 +30,7 @@ import nl.biopet.utils.ngs.{bam, fasta, vcf}
 import nl.biopet.utils.ngs.intervals.BedRecordList
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{FutureAction, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.functions.broadcast
@@ -103,9 +103,44 @@ object CellGrouping extends ToolCommand[Args] {
         //TODO: Filter alleles
         val fractions1 = pos.ad1.map(_.toDouble / total1)
         val fractions2 = pos.ad2.map(_.toDouble / total2)
-        fractions1.zip(fractions2).map(x => FractionPair(x._1, x._2))
+        fractions1.zip(fractions2).map(x => FractionPairDistance(x._1, x._2))
       }
     }
+
+    def combinationDistance(power: Int = 1): Future[Unit] = {
+      val rdd: RDD[(SampleCombinationKey, Double)] = if (power == 1)
+        fractionPairs.map(x => x._1 -> x._2.map(_.map(_.distance).sum).sum)
+      else fractionPairs.map(x => x._1 -> x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum)
+
+      rdd.groupBy(_._1.sample1).map {
+        case (s1, list) =>
+          val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
+          s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
+            map.get(s2)
+          })
+      }
+        .repartition(1)
+        .foreachPartitionAsync { it =>
+          val map = it.toMap
+          val writer =
+            new PrintWriter(new File(cmdArgs.outputDir, s"distance.$power.csv"))
+          writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
+          for (s1 <- correctCells.value.indices) {
+            writer.print(s"${correctCells.value(s1)}\t")
+            writer.println(
+              correctCells.value.indices
+                .map(s2 => map.get(s1).flatMap(_.lift(s2)))
+                .map(x => x.flatten.getOrElse("."))
+                .mkString("\t"))
+          }
+          writer.close()
+        }
+    }
+
+    futures += combinationDistance()
+    futures += combinationDistance(2)
+    futures += combinationDistance(3)
+    futures += combinationDistance(4)
 
     if (cmdArgs.writeScatters) {
       val scatterDir = new File(cmdArgs.outputDir, "scatters")
