@@ -14,12 +14,13 @@ class PrefixIterator(bamReaders: Map[String, SamReader],
   def hasNext: Boolean = its.values.exists(_.hasNext)
 
   def next(): SAMRecord = {
-    val sample = its
+    val nextRecords = its
       .filter(_._2.hasNext)
       .map(x => x._1 -> x._2.head)
       .toList
-      .minBy(x =>
-        (dict.getSequenceIndex(x._2.getContig), x._2.getAlignmentStart))
+   val sample = nextRecords.minBy{x =>
+        val contig = dict.getSequenceIndex(x._2.getContig)
+        (if (contig >= 0) contig else Int.MaxValue, x._2.getAlignmentStart)}
       ._1
     val record = its(sample).next()
     Option(record.getAttribute(sampleTag)).foreach(x =>
