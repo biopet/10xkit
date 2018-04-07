@@ -89,8 +89,7 @@ object CellVariantcaller extends ToolCommand[Args] {
       correctCellsMap,
       cutoffs,
       cmdArgs.seqError,
-      true,
-      true
+      writeRawVcf = true
     )
 
     Await.result(result.totalFuture, Duration.Inf)
@@ -138,12 +137,13 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val writeFilterVcfFuture =
       if (writeFilteredVcf) Some(filteredVariants.map { rdd =>
-        writeVcf(rdd.cache(),
-                 new File(outputDir, "filter-vcf"),
-                 correctCells,
-                 dict,
-                 vcfHeader,
-                 seqError)
+        writeVcf(
+          rdd.cache().sortBy(x => (x.contig, x.pos), numPartitions = 200),
+          new File(outputDir, "filter-vcf"),
+          correctCells,
+          dict,
+          vcfHeader,
+          seqError)
       })
       else None
 
@@ -173,7 +173,7 @@ object CellVariantcaller extends ToolCommand[Args] {
         .flatMap(
           _.setAllelesToZeroPvalue(seqError, cutoffs.value.maxPvalue)
             .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
-            .cleanupAlleles() //FIXME: Cleanup does remove to much
+            .cleanupAlleles()
         )
         .filter(
           x =>
@@ -181,8 +181,6 @@ object CellVariantcaller extends ToolCommand[Args] {
               x.altDepth >= cutoffs.value.minAlternativeDepth &&
               x.totalDepth >= cutoffs.value.minTotalDepth &&
               x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
-        .sortBy(x => (x.contig, x.pos), numPartitions = 200)
-        .cache()
     }
   }
 
