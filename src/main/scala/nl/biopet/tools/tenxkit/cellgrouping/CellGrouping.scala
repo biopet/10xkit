@@ -24,7 +24,7 @@ package nl.biopet.tools.tenxkit.cellgrouping
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.variantcalls
+import nl.biopet.tools.tenxkit.{DistanceMatrix, variantcalls}
 import nl.biopet.tools.tenxkit.variantcalls.{CellVariantcaller, VariantCall}
 import nl.biopet.utils.ngs.{bam, fasta, vcf}
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -128,18 +128,13 @@ object CellGrouping extends ToolCommand[Args] {
         .repartition(1)
         .foreachPartitionAsync { it =>
           val map = it.toMap
-          val writer =
-            new PrintWriter(new File(cmdArgs.outputDir, s"distance.$power.csv"))
-          writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
-          for (s1 <- correctCells.value.indices) {
-            writer.print(s"${correctCells.value(s1)}\t")
-            writer.println(
-              correctCells.value.indices
-                .map(s2 => map.get(s1).flatMap(_.lift(s2)))
-                .map(x => x.flatten.getOrElse("."))
-                .mkString("\t"))
+          val values = for (s1 <- correctCells.value.indices.toArray) yield {
+            for (s2 <- correctCells.value.indices.toArray) yield {
+              map.get(s1).flatMap(_.lift(s2)).flatten
+            }
           }
-          writer.close()
+          val matrix = DistanceMatrix(values, correctCells.value)
+          matrix.writeFile(new File(cmdArgs.outputDir, s"distance.$power.csv"))
         }
     }
 
@@ -163,8 +158,6 @@ object CellGrouping extends ToolCommand[Args] {
           writer.close()
       }
     }
-
-    //TODO: calculate distance
 
     futures += combinations
       .map(x => x._1 -> x._2.size)
