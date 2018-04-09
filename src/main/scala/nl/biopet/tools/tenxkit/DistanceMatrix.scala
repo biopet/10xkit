@@ -9,6 +9,34 @@ import scala.io.Source
 case class DistanceMatrix(values: Array[Array[Option[Double]]],
                           samples: Array[String])
     extends Logging {
+
+  def overlapSamples(sample: Int, cutoff: Double): Array[String] = {
+    samples.zipWithIndex
+      .filter {
+        case (name, idx) =>
+          val v1 = values(sample)(idx)
+          val v2 = values(idx)(sample)
+          (v1, v2) match {
+            case (Some(v), _) => v <= cutoff
+            case (_, Some(v)) => v <= cutoff
+            case _            => false
+          }
+      }
+      .map(_._1)
+  }
+
+  def extractSamples(extractSamples: List[String]): DistanceMatrix = {
+    val newSamples =
+      samples.zipWithIndex.filter(x => extractSamples.contains(x._1))
+    val idxs = newSamples.map(_._2)
+    val newValues = for (s1 <- idxs) yield {
+      for (s2 <- idxs) yield {
+        values(s1)(s2)
+      }
+    }
+    DistanceMatrix(newValues, newSamples.map(_._1))
+  }
+
   def writeFile(file: File): Unit = {
     val writer =
       new PrintWriter(file)

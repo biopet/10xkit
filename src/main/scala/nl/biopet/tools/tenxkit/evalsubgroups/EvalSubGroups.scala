@@ -41,9 +41,12 @@ object EvalSubGroups extends ToolCommand[Args] {
     for ((name, file) <- cmdArgs.groups) {
       logger.info(s"Making histograms for '$name'")
 
-      val subgroupHistogram = distanceMatrix.subgroupHistograms(
-        name,
-        Source.fromFile(file).getLines().toList)
+      val samples = Source.fromFile(file).getLines().toList
+
+      val subMatrix = distanceMatrix.extractSamples(samples)
+      subMatrix.writeFile(new File(cmdArgs.outputDir, s"$name.matrix.tsv"))
+
+      val subgroupHistogram = distanceMatrix.subgroupHistograms(name, samples)
 
       subgroupHistogram.group.writeHistogramToTsv(
         new File(cmdArgs.outputDir, s"$name.histogram.tsv"))
