@@ -21,7 +21,7 @@
 
 package nl.biopet.tools.tenxkit
 
-import nl.biopet.tools.tenxkit.cellgrouping.CellGrouping
+import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
 import nl.biopet.tools.tenxkit.cellreads.CellReads
 import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
 import nl.biopet.tools.tenxkit.mergebams.MergeBams
@@ -35,7 +35,7 @@ object TenxKit extends MultiToolCommand {
     Map(
       "Tools" -> List(CellReads,
                       CellVariantcaller,
-                      CellGrouping,
+                      CalulateDistance,
                       MergeBams,
                       EvalSubGroups))
 

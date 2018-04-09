@@ -1,6 +1,6 @@
 package nl.biopet.tools.tenxkit
 
-package object cellgrouping {
+package object calculatedistance {
   case class SampleCombinationKey(sample1: Int, sample2: Int)
   case class AlleleDepth(ad1: Array[Int], ad2: Array[Int])
 

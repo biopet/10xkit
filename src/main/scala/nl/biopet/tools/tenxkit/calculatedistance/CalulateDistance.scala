@@ -19,7 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.cellgrouping
+package nl.biopet.tools.tenxkit.calculatedistance
 
 import java.io.{File, PrintWriter}
 
@@ -40,7 +40,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object CellGrouping extends ToolCommand[Args] {
+object CalulateDistance extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
   def emptyArgs: Args = Args()
 

@@ -19,17 +19,19 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.cellgrouping
+package nl.biopet.tools.tenxkit.calculatedistance
 
-import nl.biopet.utils.test.tools.ToolTest
-import org.testng.annotations.Test
+import java.io.File
 
-class CellGroupingTest extends ToolTest[Args] {
-  def toolCommand: CellGrouping.type = CellGrouping
-  @Test
-  def testNoArgs(): Unit = {
-    intercept[IllegalArgumentException] {
-      CellGrouping.main(Array())
-    }
-  }
-}
+case class Args(inputFile: File = null,
+                reference: File = null,
+                outputDir: File = null,
+                intervals: Option[File] = None,
+                correctCells: File = null,
+                writeScatters: Boolean = false,
+                binSize: Int = 500000,
+                minTotalAltRatio: Double = 0.01,
+                minAlleleCoverage: Int = 5,
+                sampleTag: String = "CB",
+                umiTag: Option[String] = None,
+                sparkMaster: String = null)

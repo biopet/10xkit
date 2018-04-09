@@ -19,7 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.cellgrouping
+package nl.biopet.tools.tenxkit.calculatedistance
 
 case class SampleVariant(sample: Int,
                          contig: Int,
