@@ -19,32 +19,9 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.groupdistance
 
-import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
-import nl.biopet.tools.tenxkit.cellreads.CellReads
-import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
-import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
-import nl.biopet.tools.tenxkit.mergebams.MergeBams
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.utils.tool.ToolCommand
-import nl.biopet.utils.tool.multi.MultiToolCommand
+import java.io.File
 
-object TenxKit extends MultiToolCommand {
-
-  def subTools: Map[String, List[ToolCommand[_]]] =
-    Map(
-      "Tools" -> List(CellReads,
-                      CellVariantcaller,
-                      CalulateDistance,
-                      GroupDistance,
-                      MergeBams,
-                      EvalSubGroups))
-
-  def descriptionText: String = extendedDescriptionText
-
-  def manualText: String = extendedManualText
-
-  def exampleText: String = extendedExampleText
-
-}
+case class Args(inputFile: File = null,
+                outputDir: File = null)

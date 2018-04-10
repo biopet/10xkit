@@ -10,19 +10,24 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
                           samples: Array[String])
     extends Logging {
 
-  def overlapSamples(sample: Int, cutoff: Double): Array[String] = {
-    samples.zipWithIndex
-      .filter {
-        case (name, idx) =>
-          val v1 = values(sample)(idx)
-          val v2 = values(idx)(sample)
-          (v1, v2) match {
-            case (Some(v), _) => v <= cutoff
-            case (_, Some(v)) => v <= cutoff
-            case _            => false
-          }
-      }
-      .map(_._1)
+  def overlapSample(s1: Int, s2: Int, cutoff: Double): Boolean = {
+    val v1 = values(s1)(s2)
+    val v2 = values(s2)(s1)
+    (v1, v2) match {
+      case (Some(v), _) => v <= cutoff
+      case (_, Some(v)) => v <= cutoff
+      case _            => true
+    }
+  }
+
+  def overlapSamples(sample: Int, cutoff: Double): Array[Int] = {
+    samples.indices
+      .filter(overlapSample(sample, _, cutoff)).toArray
+  }
+
+  def wrongSamples(sample: Int, cutoff: Double): Array[Int] = {
+    samples.indices
+      .filterNot(overlapSample(sample, _, cutoff)).toArray
   }
 
   def extractSamples(extractSamples: List[String]): DistanceMatrix = {
@@ -57,25 +62,22 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
   case class SubgroupHistogram(group: DistanceHistogram,
                                nonGroup: DistanceHistogram)
 
-  def subgroupHistograms(name: String,
-                         barcodes: List[String]): SubgroupHistogram = {
-    logger.info(s"Making histograms for '$name'")
+  def subgroupHistograms(name1: String,
+                         barcodes1: List[Int],
+                         name2: String,
+                         barcodes2: List[Int]): DistanceHistogram = {
+    logger.info(s"Making histograms for '$name1 - $name2'")
 
-    val barcodesIdx = barcodes.map(samples.indexOf).toSet
-    val sampleHistogram = new DistanceHistogram
-    val notSampleHistogram = new DistanceHistogram
+    val histogram = new DistanceHistogram
 
     for {
-      (list, s1) <- values.zipWithIndex
-      (value, s2) <- list.zipWithIndex
-      c1 = barcodesIdx.contains(s1)
-      c2 = barcodesIdx.contains(s2)
-      if c1 || c2
+      s1 <- barcodes1
+      s2 <- barcodes2
     } {
-      if (c1 && c2) value.foreach(sampleHistogram.add)
-      else value.foreach(notSampleHistogram.add)
+      values.lift(s1).foreach(_.lift(s2).flatten.foreach(histogram.add))
+      values.lift(s2).foreach(_.lift(s1).flatten.foreach(histogram.add))
     }
-    SubgroupHistogram(sampleHistogram, notSampleHistogram)
+    histogram
   }
 }
 

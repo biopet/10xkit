@@ -109,12 +109,21 @@ object CalulateDistance extends ToolCommand[Args] {
     }
 
     def combinationDistance(power: Int = 1): Future[Unit] = {
-      val rdd: RDD[(SampleCombinationKey, Double)] =
-        if (power == 1)
-          fractionPairs.map(x => x._1 -> x._2.map(_.map(_.distance).sum).sum)
-        else
-          fractionPairs.map(x =>
-            x._1 -> x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum)
+      val rdd: RDD[(SampleCombinationKey, Double)] = {
+        fractionPairs.map { x =>
+          val total = x._2.size
+          val distance = if (power == 1) {
+            x._2.map(_.map(_.distance).sum).sum
+          } else x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum
+          x._1 -> (distance / total)
+        }
+
+//        val distance = if (power == 1)
+//          fractionPairs.map(x => x._1 -> x._2.map(_.map(_.distance).sum).sum)
+//        else
+//          fractionPairs.map(x =>
+//            x._1 -> x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum)
+      }
 
       rdd
         .groupBy(_._1.sample1)

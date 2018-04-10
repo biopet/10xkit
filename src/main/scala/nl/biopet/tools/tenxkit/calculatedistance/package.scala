@@ -5,6 +5,7 @@ package object calculatedistance {
   case class AlleleDepth(ad1: Array[Int], ad2: Array[Int])
 
   case class FractionPairDistance(f1: Double, f2: Double, distance: Double)
+
   object FractionPairDistance {
     def apply(f1: Double, f2: Double): FractionPairDistance =
       FractionPairDistance(f1, f2, distanceMidle(f1, f2))
