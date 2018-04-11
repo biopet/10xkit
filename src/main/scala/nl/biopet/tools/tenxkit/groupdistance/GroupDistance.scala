@@ -1,9 +1,11 @@
 package nl.biopet.tools.tenxkit.groupdistance
 
-import nl.biopet.tools.tenxkit.DistanceMatrix
+import nl.biopet.tools.tenxkit
+import nl.biopet.tools.tenxkit.{DistanceMatrix, VariantCall}
 import nl.biopet.utils.tool.ToolCommand
 
 import scala.collection.mutable
+import scala.util.Random
 
 object GroupDistance extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -17,34 +19,53 @@ object GroupDistance extends ToolCommand[Args] {
     logger.info("Reading input data")
     val distanceMatrix = DistanceMatrix.fromFile(cmdArgs.inputFile)
 
+    val variants = VariantCall.fromVcfFile(cmdArgs.inputFile)
+
     logger.info("Calculate stats")
 //    val totalHistogram = distanceMatrix.totalHistogram
 //    val totalStats = totalHistogram.aggregateStats
 //    val cutoff: Double = totalStats("mean").toString.toDouble
-    val cutoff = 1.0
+    val cutoff = 0.00684343775694701
 
     logger.info(s"Mean of $cutoff is found")
+
+    val numberGroups = 5
+    val seed = 0
+
+
+
+    val random = new Random(seed)
+//    val randomGroups = random.shuffle(distanceMatrix.samples.indices).grouped(distanceMatrix.samples.length / numberGroups + 1)
+
+
 
     val overlap = distanceMatrix.samples.zipWithIndex.map { case (_, idx) =>
       idx -> distanceMatrix.overlapSamples(idx, cutoff).toSet
     }.toMap
     val mOverlap = mutable.Map(overlap.toList:_*)
 
-    val totalCounts = mutable.Map(distanceMatrix.samples.indices.map(s => s -> 0):_*)
-    overlap.foreach(_._2.foreach(s => totalCounts(s) += 1))
-    val s1 = totalCounts.toList.minBy(_._2)._1
+    val matchAll = distanceMatrix.samples.indices.filter(i => mOverlap.values.forall(_.contains(i)))
 
-    val bla = for (s2 <- overlap(s1).toList) yield {
-      s2 -> overlap(s1).count(s => overlap(s2).contains(s))
+    val minInitSize = 400
+
+    def findInitGroups(todoSamples: List[Int], iterations: Int, result: List[List[Int]] = Nil): (List[List[Int]], List[Int]) = {
+      val totalCounts = mutable.Map(todoSamples.map(s => s -> 0):_*)
+      mOverlap.foreach(_._2.foreach(s => totalCounts(s) += 1))
+
+      totalCounts.toList.sortBy(_._2).headOption match {
+        case Some((s1, _))  if iterations > 0 =>
+          val possibleSamples = mOverlap(s1)
+          val newTodo = todoSamples.filterNot(possibleSamples.contains)
+          possibleSamples.foreach(mOverlap -= _)
+          mOverlap.map{ case (k, v) => mOverlap += k -> v.diff(possibleSamples)}
+
+          findInitGroups(newTodo, iterations - 1, possibleSamples.toList :: result)
+        case _ => (result, todoSamples)
+      }
     }
 
-//    val bla = overlap.map { case (s1, set1) =>
-//      s1 -> overlap.map { case (s2, set2) =>
-//        s2 -> (set2.count(set1.contains).toDouble / set1.size)
-//      }
-//    }
-
-//    val counts = distanceMatrix.samples.map{ sample => sample -> overlap.count(_._2.contains(sample))}.toMap
+    val (initGroup, leftover) = findInitGroups(distanceMatrix.samples.indices.toList, numberGroups)
+    val groups = initGroup.map(_.map(distanceMatrix.samples).groupBy(_.split("-").head))
 
     logger.info("Done")
   }

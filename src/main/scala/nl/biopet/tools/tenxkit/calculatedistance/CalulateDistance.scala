@@ -24,8 +24,8 @@ package nl.biopet.tools.tenxkit.calculatedistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{DistanceMatrix, variantcalls}
-import nl.biopet.tools.tenxkit.variantcalls.{CellVariantcaller, VariantCall}
+import nl.biopet.tools.tenxkit.{DistanceMatrix, VariantCall, variantcalls}
+import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.ngs.{bam, fasta, vcf}
 import nl.biopet.utils.ngs.intervals.BedRecordList
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
@@ -70,7 +70,7 @@ object CalulateDistance extends ToolCommand[Args] {
           futures += result.totalFuture
           Await.result(result.filteredVariants, Duration.Inf)
         case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
-          readVcfFile(cmdArgs, correctCellsMap, cmdArgs.binSize)
+          VariantCall.fromVcfFile(cmdArgs.inputFile, cmdArgs.reference, correctCellsMap, cmdArgs.binSize)
         case _ =>
           throw new IllegalArgumentException(
             "Input file must be a bam or vcf file")
@@ -204,21 +204,6 @@ object CalulateDistance extends ToolCommand[Args] {
     Await.result(Future.sequence(futures), Duration.Inf)
 
     logger.info("Done")
-  }
-
-  def readVcfFile(cmdArgs: Args,
-                  sampleMap: Broadcast[Map[String, Int]],
-                  binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
-    val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
-    val regions =
-      BedRecordList.fromReference(cmdArgs.reference).scatter(binsize)
-    sc.parallelize(regions, regions.size).mapPartitions { it =>
-      it.flatMap { list =>
-        vcf
-          .loadRegions(cmdArgs.inputFile, list.iterator)
-          .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
-      }
-    }
   }
 
   def readBamFile(

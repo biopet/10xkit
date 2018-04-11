@@ -10,14 +10,18 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
                           samples: Array[String])
     extends Logging {
 
-  def overlapSample(s1: Int, s2: Int, cutoff: Double): Boolean = {
+  def apply(s1: Int, s2: Int): Option[Double] = {
     val v1 = values(s1)(s2)
     val v2 = values(s2)(s1)
     (v1, v2) match {
-      case (Some(v), _) => v <= cutoff
-      case (_, Some(v)) => v <= cutoff
-      case _            => true
+      case (Some(v), _) => Some(v)
+      case (_, Some(v)) => Some(v)
+      case _            => None
     }
+  }
+
+  def overlapSample(s1: Int, s2: Int, cutoff: Double): Boolean = {
+    this(s1, s2).forall(_ <= cutoff)
   }
 
   def overlapSamples(sample: Int, cutoff: Double): Array[Int] = {

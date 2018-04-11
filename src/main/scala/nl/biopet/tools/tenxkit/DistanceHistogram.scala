@@ -13,6 +13,6 @@ class DistanceHistogram extends Histogram[Double] {
 
 object DistanceHistogram {
   def getBin(value: Double): Double = {
-    (value * 10).round.toDouble / 10
+    (value * 1000).round.toDouble / 1000
   }
 }

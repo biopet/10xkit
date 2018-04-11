@@ -25,13 +25,10 @@ import java.io.File
 
 import htsjdk.samtools._
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
-import htsjdk.variant.variantcontext.writer.{
-  Options,
-  VariantContextWriterBuilder
-}
+import htsjdk.variant.variantcontext.writer.{Options, VariantContextWriterBuilder}
 import htsjdk.variant.vcf._
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.TenxKit
+import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.ngs.fasta

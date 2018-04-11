@@ -19,21 +19,23 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.variantcalls
+package nl.biopet.tools.tenxkit
+
+import java.io.File
 
 import cern.jet.random.Binomial
 import cern.jet.random.engine.RandomEngine
 import htsjdk.samtools.SAMSequenceDictionary
-import htsjdk.variant.variantcontext.{
-  Allele,
-  GenotypeBuilder,
-  VariantContext,
-  VariantContextBuilder
-}
+import htsjdk.variant.variantcontext.{Allele, GenotypeBuilder, VariantContext, VariantContextBuilder}
+import nl.biopet.tools.tenxkit.variantcalls.{AlleleCount, PositionBases, SampleAllele}
+import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
+import nl.biopet.utils.ngs.intervals.BedRecordList
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConversions._
-import scala.collection.immutable
 
 case class VariantCall(contig: Int,
                        pos: Long,
@@ -257,6 +259,22 @@ object VariantCall {
             alleles.exists(_.total >= minCellAlleleCoverage)
         }
       Some(VariantCall(contig, position, refAllele, altAlleles, samples.toMap))
+    }
+  }
+
+  def fromVcfFile(inputFile: File,
+                  reference: File,
+                  sampleMap: Broadcast[Map[String, Int]],
+                  binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
+    val dict = sc.broadcast(fasta.getCachedDict(reference))
+    val regions =
+      BedRecordList.fromReference(reference).scatter(binsize)
+    sc.parallelize(regions, regions.size).mapPartitions { it =>
+      it.flatMap { list =>
+        vcf
+          .loadRegions(inputFile, list.iterator)
+          .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+      }
     }
   }
 }

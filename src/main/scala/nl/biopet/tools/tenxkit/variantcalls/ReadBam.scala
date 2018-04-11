@@ -24,12 +24,8 @@ package nl.biopet.tools.tenxkit.variantcalls
 import java.io.File
 
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
-import htsjdk.samtools.{
-  SAMRecord,
-  SAMSequenceDictionary,
-  SamReader,
-  SamReaderFactory
-}
+import htsjdk.samtools.{SAMRecord, SAMSequenceDictionary, SamReader, SamReaderFactory}
+import nl.biopet.tools.tenxkit.VariantCall
 import nl.biopet.utils.ngs.intervals.BedRecord
 import nl.biopet.utils.ngs
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
