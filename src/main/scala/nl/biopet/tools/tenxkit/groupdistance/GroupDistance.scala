@@ -1,12 +1,15 @@
 package nl.biopet.tools.tenxkit.groupdistance
 
+import java.io.{File, PrintWriter}
+
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.logger
+import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
 import nl.biopet.tools.tenxkit.{DistanceMatrix, VariantCall}
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.ml.linalg.{Matrix, Vectors}
+import org.apache.spark.mllib.linalg.{Matrix, Vectors}
 import org.apache.spark.ml.stat.Correlation
+import org.apache.spark.mllib.clustering.KMeans
 import org.apache.spark.sql.{Row, SparkSession}
 
 object GroupDistance extends ToolCommand[Args] {
@@ -32,40 +35,55 @@ object GroupDistance extends ToolCommand[Args] {
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val variants = if (cmdArgs.inputFile.isDirectory) {
       VariantCall
-        .fromPartitionedVcf(cmdArgs.inputFile, cmdArgs.reference, correctCellsMap)
+        .fromPartitionedVcf(cmdArgs.inputFile,
+                            cmdArgs.reference,
+                            correctCellsMap)
     } else {
       VariantCall
-        .fromVcfFile(cmdArgs.inputFile, cmdArgs.reference, correctCellsMap, 50000000)
+        .fromVcfFile(cmdArgs.inputFile,
+                     cmdArgs.reference,
+                     correctCellsMap,
+                     50000000)
     }
 
-    val df = variants.flatMap { v =>
-      val alleles = 0 :: v.altAlleles.indices.map(_ + 1).toList
-      correctCells.value.indices.map { sample =>
-        val sa = v.samples.get(sample) match {
-          case Some(a) => alleles.map(a(_).total.toDouble)
-          case _ => alleles.map(_ => 0.0)
+    val vectors = variants
+      .flatMap { v =>
+        val alleles = 0 :: v.altAlleles.indices.map(_ + 1).toList
+        correctCells.value.indices.map { sample =>
+          val sa = v.samples.get(sample) match {
+            case Some(a) => alleles.map(a(_).total.toDouble)
+            case _       => alleles.map(_ => 0.0)
+          }
+          sample -> sa
         }
-        sample -> sa
+      }
+      .groupByKey //(correctCells.value.size)
+      .map { x =>
+        (x._1, Vectors.dense(x._2.flatten.toArray))
+      }.cache()
+//    val df = vectors.toDF("sample", "features").cache()
+//    val bla1 = vectors.count()
+//    val bla2 = df.count()
+//    val bla3 = variants.count()
+
+    // Cluster the data into two classes using KMeans
+    val numClusters = 5
+    val numIterations = 20
+    val clusters = KMeans.train(vectors.map(_._2), numClusters, numIterations)
+
+    val c = vectors.groupBy(x => clusters.predict(x._2)).map(x => x._1 -> x._2.map(s => correctCells.value(s._1))).collectAsMap()
+
+//    val Row(coeff1: Matrix) = Correlation.corr(df, "features").head
+//    println(s"Pearson correlation matrix:\n $coeff1")
+//
+//    val Row(coeff2: Matrix) = Correlation.corr(df, "features", "spearman").head
+//    println(s"Spearman correlation matrix:\n $coeff2")
+
+    c.foreach { case (idx, samples) =>
+      val writer = new PrintWriter(new File(cmdArgs.outputDir, s"cluster.$idx.txt"))
+      samples.foreach(writer.println)
+      writer.close()
     }
-  }.groupByKey//(correctCells.value.size)
-      .map{x =>
-      (x._1, Vectors.dense(x._2.flatten.toArray))
-    }
-      .toDF("sample", "features").cache()
-    val bla2 = df.head()
-
-//    val data = Seq(
-//      Vectors.sparse(4, Seq((0, 1.0), (3, -2.0))),
-//      Vectors.dense(4.0, 5.0, 0.0, 3.0),
-//      Vectors.dense(6.0, 7.0, 0.0, 8.0),
-//      Vectors.sparse(4, Seq((0, 9.0), (3, 1.0)))
-//    )
-
-    val Row(coeff1: Matrix) = Correlation.corr(df, "features").head
-    println(s"Pearson correlation matrix:\n $coeff1")
-
-    val Row(coeff2: Matrix) = Correlation.corr(df, "features", "spearman").head
-    println(s"Spearman correlation matrix:\n $coeff2")
 
     logger.info("Done")
   }
