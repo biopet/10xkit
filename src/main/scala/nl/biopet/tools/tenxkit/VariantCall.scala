@@ -298,7 +298,7 @@ object VariantCall {
       .listFiles()
       .filter(_.getName.endsWith(".vcf.gz"))
       .map(_.getAbsoluteFile)
-    sc.parallelize(files)
+    sc.parallelize(files, files.size)
       .mapPartitions { it =>
         it.flatMap { file =>
           new VCFFileReader(file)
