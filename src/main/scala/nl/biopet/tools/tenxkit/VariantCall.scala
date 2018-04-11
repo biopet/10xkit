@@ -27,6 +27,7 @@ import cern.jet.random.Binomial
 import cern.jet.random.engine.RandomEngine
 import htsjdk.samtools.SAMSequenceDictionary
 import htsjdk.variant.variantcontext.{Allele, GenotypeBuilder, VariantContext, VariantContextBuilder}
+import htsjdk.variant.vcf.VCFFileReader
 import nl.biopet.tools.tenxkit.variantcalls.{AlleleCount, PositionBases, SampleAllele}
 import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
@@ -274,6 +275,20 @@ object VariantCall {
         vcf
           .loadRegions(inputFile, list.iterator)
           .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+      }
+    }
+  }
+
+  def fromPartitionedVcf(directory: File,
+                         reference: File,
+                         sampleMap: Broadcast[Map[String, Int]])(implicit sc: SparkContext): RDD[VariantCall] = {
+    val dict = sc.broadcast(fasta.getCachedDict(reference))
+    require(directory.isDirectory, s"'$directory' is not a directory")
+    val files = directory.listFiles().filter(_.getName.endsWith(".vcf.gz")).map(_.getAbsoluteFile)
+    sc.parallelize(files)
+      .mapPartitions { it =>
+      it.flatMap { file =>
+        new VCFFileReader(file).iterator().map(fromVariantContext(_, dict.value, sampleMap.value))
       }
     }
   }
