@@ -26,12 +26,14 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
 
   def overlapSamples(sample: Int, cutoff: Double): Array[Int] = {
     samples.indices
-      .filter(overlapSample(sample, _, cutoff)).toArray
+      .filter(overlapSample(sample, _, cutoff))
+      .toArray
   }
 
   def wrongSamples(sample: Int, cutoff: Double): Array[Int] = {
     samples.indices
-      .filterNot(overlapSample(sample, _, cutoff)).toArray
+      .filterNot(overlapSample(sample, _, cutoff))
+      .toArray
   }
 
   def extractSamples(extractSamples: List[String]): DistanceMatrix = {

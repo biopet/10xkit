@@ -70,7 +70,10 @@ object CalulateDistance extends ToolCommand[Args] {
           futures += result.totalFuture
           Await.result(result.filteredVariants, Duration.Inf)
         case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
-          VariantCall.fromVcfFile(cmdArgs.inputFile, cmdArgs.reference, correctCellsMap, cmdArgs.binSize)
+          VariantCall.fromVcfFile(cmdArgs.inputFile,
+                                  cmdArgs.reference,
+                                  correctCellsMap,
+                                  cmdArgs.binSize)
         case _ =>
           throw new IllegalArgumentException(
             "Input file must be a bam or vcf file")

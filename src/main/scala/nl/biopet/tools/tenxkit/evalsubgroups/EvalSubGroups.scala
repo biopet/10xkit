@@ -40,15 +40,17 @@ object EvalSubGroups extends ToolCommand[Args] {
                                       "Total")
 
     logger.info("Reading groups")
-    val groups = cmdArgs.groups.map { case (sample, file) =>
-      sample -> Source.fromFile(file).getLines().map(sampleMap).toList
+    val groups = cmdArgs.groups.map {
+      case (sample, file) =>
+        sample -> Source.fromFile(file).getLines().map(sampleMap).toList
     }
 
     for (((name1, list1), idx1) <- groups.zipWithIndex) {
       for (((name2, list2), idx2) <- groups.zipWithIndex if idx2 >= idx1) {
         //TODO: subMatrix
 
-        val subgroupHistogram = distanceMatrix.subgroupHistograms(name1, list1, name2, list2)
+        val subgroupHistogram =
+          distanceMatrix.subgroupHistograms(name1, list1, name2, list2)
         subgroupHistogram.writeHistogramToTsv(
           new File(cmdArgs.outputDir, s"$name1-$name2.histogram.tsv"))
         subgroupHistogram.writeAggregateToTsv(
@@ -56,10 +58,10 @@ object EvalSubGroups extends ToolCommand[Args] {
 
         val sampleBinnedHistogram = subgroupHistogram.binned
         sampleBinnedHistogram.writeFilesAndPlot(cmdArgs.outputDir,
-          s"$name1-$name2.binned",
-          "Distance",
-          "Count",
-          s"$name1-$name2")
+                                                s"$name1-$name2.binned",
+                                                "Distance",
+                                                "Count",
+                                                s"$name1-$name2")
       }
     }
 

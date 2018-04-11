@@ -43,4 +43,8 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .required()
     .action((x, c) => c.copy(correctCells = x))
     .text("List of correct cells")
+  opt[String]("sparkMaster")
+    .required()
+    .action((x, c) => c.copy(sparkMaster = x))
+    .text("Spark master")
 }

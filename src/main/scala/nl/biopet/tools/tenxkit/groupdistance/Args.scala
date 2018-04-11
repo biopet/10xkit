@@ -26,4 +26,5 @@ import java.io.File
 case class Args(inputFile: File = null,
                 outputDir: File = null,
                 reference: File = null,
-                correctCells: File = null)
+                correctCells: File = null,
+                sparkMaster: String = null)
