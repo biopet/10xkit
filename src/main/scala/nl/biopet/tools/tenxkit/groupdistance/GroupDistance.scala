@@ -57,7 +57,7 @@ object GroupDistance extends ToolCommand[Args] {
           sample -> sa
         }
       }
-      .groupByKey //(correctCells.value.size)
+      .groupByKey(correctCells.value.size)
       .map { x =>
         (x._1, Vectors.dense(x._2.flatten.toArray))
       }.cache()
