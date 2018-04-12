@@ -27,4 +27,7 @@ case class Args(inputFile: File = null,
                 outputDir: File = null,
                 reference: File = null,
                 correctCells: File = null,
+                numClusters: Int = null,
+                numIterations: Int = 20,
+                seed: Long = 0,
                 sparkMaster: String = null)

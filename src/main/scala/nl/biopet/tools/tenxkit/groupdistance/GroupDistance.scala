@@ -70,9 +70,7 @@ object GroupDistance extends ToolCommand[Args] {
 //    val bla3 = variants.count()
 
     // Cluster the data into two classes using KMeans
-    val numClusters = 5
-    val numIterations = 20
-    val clusters = KMeans.train(vectors.map(_._2), numClusters, numIterations)
+    val clusters = KMeans.train(vectors.map(_._2), cmdArgs.numClusters, cmdArgs.numIterations, "k-means||", cmdArgs.seed)
 
     val c = vectors.groupBy(x => clusters.predict(x._2)).map(x => x._1 -> x._2.map(s => correctCells.value(s._1))).collectAsMap()
 
