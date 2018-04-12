@@ -51,7 +51,9 @@ object GroupDistance extends ToolCommand[Args] {
         val alleles = 0 :: v.altAlleles.indices.map(_ + 1).toList
         correctCells.value.indices.map { sample =>
           val sa = v.samples.get(sample) match {
-            case Some(a) => alleles.map(a(_).total.toDouble)
+            case Some(a) =>
+              val total = a.map(_.total).sum
+              alleles.map(a(_).total.toDouble / total)
             case _       => alleles.map(_ => 0.0)
           }
           sample -> sa
