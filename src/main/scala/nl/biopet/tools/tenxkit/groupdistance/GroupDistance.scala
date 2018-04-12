@@ -56,12 +56,13 @@ object GroupDistance extends ToolCommand[Args] {
               alleles.map(a(_).total.toDouble / total)
             case _       => alleles.map(_ => 0.0)
           }
-          sample -> sa
+          sample -> (v.contig, v.pos, sa)
         }
       }
-      .groupByKey(correctCells.value.size)
-      .map { x =>
-        (x._1, Vectors.dense(x._2.flatten.toArray))
+      .groupByKey(correctCells.value.length)
+      .map { case (sample, list) =>
+        val sorted = list.toList.sortBy(y => (y._1, y._2))
+        (sample, Vectors.dense(sorted.flatMap(_._3).toArray))
       }.cache()
 //    val df = vectors.toDF("sample", "features").cache()
 //    val bla1 = vectors.count()
