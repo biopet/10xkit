@@ -3,13 +3,11 @@ package nl.biopet.tools.tenxkit.groupdistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
+import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans, KMeansModel}
 import nl.biopet.tools.tenxkit.{DistanceMatrix, VariantCall}
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.mllib.linalg.{Matrix, Vectors}
-import org.apache.spark.ml.stat.Correlation
-import org.apache.spark.mllib.clustering.KMeans
 import org.apache.spark.sql.{Row, SparkSession}
 
 object GroupDistance extends ToolCommand[Args] {
@@ -70,9 +68,11 @@ object GroupDistance extends ToolCommand[Args] {
 //    val bla3 = variants.count()
 
     // Cluster the data into two classes using KMeans
-    val clusters = KMeans.train(vectors.map(_._2), cmdArgs.numClusters, cmdArgs.numIterations, "k-means||", cmdArgs.seed)
+    //val model = KMeans.train(vectors.map(_._2), cmdArgs.numClusters, cmdArgs.numIterations, "k-means||", cmdArgs.seed)
+    val bkm = new BisectingKMeans().setK(6).setMaxIterations(cmdArgs.numIterations).setSeed(cmdArgs.seed)
+    val model = bkm.run(vectors.map(_._2))
 
-    val c = vectors.groupBy(x => clusters.predict(x._2)).map(x => x._1 -> x._2.map(s => correctCells.value(s._1))).collectAsMap()
+    val c = vectors.groupBy(x => model.predict(x._2)).map(x => x._1 -> x._2.map(s => correctCells.value(s._1))).collectAsMap()
 
 //    val Row(coeff1: Matrix) = Correlation.corr(df, "features").head
 //    println(s"Pearson correlation matrix:\n $coeff1")
