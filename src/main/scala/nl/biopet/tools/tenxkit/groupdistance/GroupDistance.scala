@@ -34,6 +34,7 @@ object GroupDistance extends ToolCommand[Args] {
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     logger.info("Reading input data")
+    val distanceMatrix = sc.broadcast(DistanceMatrix.fromFile(cmdArgs.distanceMatrix))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val vectors = (if (cmdArgs.inputFile.isDirectory) {
@@ -50,73 +51,40 @@ object GroupDistance extends ToolCommand[Args] {
                                                       50000000),
                                        correctCells)
                    } else {
-                     distanceMatrixToVectors(cmdArgs.inputFile, correctCells)
+                     distanceMatrixToVectors(distanceMatrix.value, correctCells)
                    }).toDF("sample", "features").cache()
 
-//    val bla1 = vectors.count()
-//    val bla2 = df.count()
-//    val bla3 = variants.count()
-
-    val pca = new PCA()
-      .setInputCol("features")
-      .setOutputCol("pcaFeatures")
-      .setK(2)
-
-    // Cluster the data into two classes using KMeans
-    //val model = KMeans.train(vectors.map(_._2), cmdArgs.numClusters, cmdArgs.numIterations, "k-means||", cmdArgs.seed)
-    val kmeans = new KMeans()
-      .setK(cmdArgs.numClusters)
-      .setMaxIter(cmdArgs.numIterations)
-      .setSeed(cmdArgs.seed)
 
     val bkm = new BisectingKMeans()
       .setK(cmdArgs.numClusters)
       //.setMaxIter(cmdArgs.numIterations)
       .setSeed(cmdArgs.seed)
 
-    val lda = new LDA()
-      .setK(cmdArgs.numClusters)
-      //.setMaxIter(cmdArgs.numIterations)
-      .setSeed(cmdArgs.seed)
-
-    val gmm = new GaussianMixture()
-      .setK(cmdArgs.numClusters)
-      //.setMaxIter(cmdArgs.numIterations)
-      .setSeed(cmdArgs.seed)
-
-    val lr = new LogisticRegression()
-      .setMaxIter(10)
-
-    val pipeline = new Pipeline()
-      .setStages(Array(pca, bkm))
-
-    val model = lr.fit(vectors)
+    val model = bkm.fit(vectors)
 
     val predictions = model
       .transform(vectors)
       .select("sample", "prediction")
       .as[Prediction]
-      .collect()
+      .rdd
       .groupBy(_.prediction)
+      .repartition(cmdArgs.numClusters)
       .map(x => x._1 -> x._2.map(s => s.sample))
+      .cache()
 
     predictions.foreach {
       case (idx, samples) =>
+        val name = s"cluster.$idx"
+        val histogram = distanceMatrix.value.subgroupHistograms(name, samples.toList, name, samples.toList)
+        val distance = histogram.totalDistance / samples.size
         val writer =
-          new PrintWriter(new File(cmdArgs.outputDir, s"cluster.$idx.txt"))
+          new PrintWriter(new File(cmdArgs.outputDir, s"$name.txt"))
+        writer.println(s"#distance: $distance")
         samples.foreach(s => writer.println(correctCells.value(s)))
         writer.close()
     }
 
-//    val cluster1 = sc.parallelize(predictions(1)).toDF("sample2")
-//    val df2 = cluster1.join(vectors, cluster1("sample2") === vectors("sample"))
-//    val model2 = kmeans.setK(2).fit(df2)
-//
-//    val predictions2 = model2.transform(df2)
-//      .select("sample", "prediction").as[Prediction].collect()
-//      .groupBy(_.prediction)
-//      .map(x => x._1 -> x._2.map(s => s.sample))
-
+    sc.stop()
     logger.info("Done")
   }
 
@@ -146,10 +114,9 @@ object GroupDistance extends ToolCommand[Args] {
       }
   }
 
-  def distanceMatrixToVectors(inputFile: File,
+  def distanceMatrixToVectors(matrix: DistanceMatrix,
                               correctSamples: Broadcast[Array[String]])(
       implicit sc: SparkContext): RDD[(Int, linalg.Vector)] = {
-    val matrix = DistanceMatrix.fromFile(inputFile)
     require(matrix.samples sameElements correctSamples.value)
     val samples = matrix.samples.indices.toList
     val samplesFiltered = samples.filter(s1 =>

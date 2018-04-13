@@ -9,6 +9,8 @@ class DistanceHistogram extends Histogram[Double] {
       histogram.addMulti(DistanceHistogram.getBin(x._1), x._2))
     histogram
   }
+
+  def totalDistance: Double = counts.map{ case (k,v) => k * v }.sum
 }
 
 object DistanceHistogram {
