@@ -160,8 +160,7 @@ object GroupDistance extends ToolCommand[Args] {
       val removecosts = calculateSampleMoveCosts(groupBy.map(x => x._1 -> x._2.toList), distanceMatrix)
 
       if (numberOfGroups > expectedGroups) {
-        val removeCosts = removecosts.groupBy(_._1.group).map(x => x._1 -> x._2.map(_._2.addCost).sum)
-        val removeGroup = removeCosts.collect().minBy(_._2)._1
+        val removeGroup = removecosts.groupBy(_._1.group).map(x => x._1 -> x._2.map(_._2.addCost).sum).collect().minBy(_._2)._1
         removecosts.map { case (current, moveTo) =>
           if (current.group == removeGroup) {
             GroupSample(moveTo.group, current.sample)
@@ -174,7 +173,7 @@ object GroupDistance extends ToolCommand[Args] {
   }
 
   def splitCluster(group: List[Int],
-                   distanceMatrix: Broadcast[DistanceMatrix])(implicit sc: SparkContext): List[List[Int]] = {
+                   distanceMatrix: Broadcast[DistanceMatrix]): List[List[Int]] = {
     val sampleSplit = group.map { s1 =>
       val maxDistance = group.flatMap(s2 => distanceMatrix.value(s1, s2).map(s2 -> _)).maxBy(_._2)
       s1 -> maxDistance
