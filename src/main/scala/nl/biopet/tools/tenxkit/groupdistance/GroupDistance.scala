@@ -161,13 +161,16 @@ object GroupDistance extends ToolCommand[Args] {
 
       if (numberOfGroups > expectedGroups) {
         val removeGroup = removecosts.groupBy(_._1.group).map(x => x._1 -> x._2.map(_._2.addCost).sum).collect().minBy(_._2)._1
-        removecosts.map { case (current, moveTo) =>
+        reCluster(removecosts.map { case (current, moveTo) =>
           if (current.group == removeGroup) {
             GroupSample(moveTo.group, current.sample)
           } else current
-        }
+        }, distanceMatrix, expectedGroups, maxIterations - 1)
       } else {
-        groups
+        reCluster(removecosts.map { case (current, moveCost) =>
+          if (moveCost.removeCost > moveCost.addCost) GroupSample(moveCost.group, current.sample)
+          else current
+        }, distanceMatrix, expectedGroups, maxIterations - 1)
       }
     }
   }
