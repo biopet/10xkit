@@ -68,12 +68,8 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
   case class SubgroupHistogram(group: DistanceHistogram,
                                nonGroup: DistanceHistogram)
 
-  def subgroupHistograms(name1: String,
-                         barcodes1: List[Int],
-                         name2: String,
+  def subgroupHistograms(barcodes1: List[Int],
                          barcodes2: List[Int]): DistanceHistogram = {
-    logger.info(s"Making histograms for '$name1 - $name2'")
-
     val histogram = new DistanceHistogram
 
     for {
@@ -84,6 +80,13 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
       values.lift(s2).foreach(_.lift(s1).flatten.foreach(histogram.add))
     }
     histogram
+  }
+
+  def subGroupDistance(samples: List[Int]): Double = {
+    (for {
+      s1 <- samples
+      s2 <- samples
+    } yield this(s1, s2)).flatten.sum / samples.size
   }
 }
 

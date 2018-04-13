@@ -48,7 +48,7 @@ object EvalSubGroups extends ToolCommand[Args] {
         //TODO: subMatrix
 
         val subgroupHistogram =
-          distanceMatrix.subgroupHistograms(name1, list1, name2, list2)
+          distanceMatrix.subgroupHistograms(list1, list2)
         subgroupHistogram.writeHistogramToTsv(
           new File(cmdArgs.outputDir, s"$name1-$name2.histogram.tsv"))
         subgroupHistogram.writeAggregateToTsv(
