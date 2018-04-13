@@ -17,8 +17,6 @@ object EvalSubGroups extends ToolCommand[Args] {
 
     logger.info("Start")
 
-    val readerIt = Source.fromFile(cmdArgs.inputFile).getLines()
-
     logger.info("Reading input data")
 
     val distanceMatrix = DistanceMatrix.fromFile(cmdArgs.inputFile)
