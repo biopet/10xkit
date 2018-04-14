@@ -86,7 +86,7 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
     (for {
       s1 <- samples
       s2 <- samples
-    } yield this(s1, s2)).flatten.sum / (samples.size * samples.size)
+    } yield this(s1, s2)).flatten.sum / samples.size
   }
 }
 
