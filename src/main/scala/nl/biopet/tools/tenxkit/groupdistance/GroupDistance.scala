@@ -72,24 +72,30 @@ object GroupDistance extends ToolCommand[Args] {
       .map(x => x._1 -> x._2.map(s => s.sample))
       .cache()
 
-    val (groups, trashRdd) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD)
-    val trash = trashRdd.collect()
+    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD)
+    sc.clearJobGroup()
+
+    writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
+
+    sc.stop()
+    logger.info("Done")
+  }
+
+  def writeGroups(groups: RDD[GroupSample], trash: RDD[Int], outputDir: File, correctCells: Broadcast[Array[String]]): Unit = {
+    val trashData = trash.collect()
 
     val writer =
-      new PrintWriter(new File(cmdArgs.outputDir, s"trash.txt"))
-    trash.foreach(s => writer.println(correctCells.value(s)))
+      new PrintWriter(new File(outputDir, s"trash.txt"))
+    trashData.foreach(s => writer.println(correctCells.value(s)))
     writer.close()
 
     groups.groupBy(_.group).foreach {
       case (idx, samples) =>
         val writer =
-          new PrintWriter(new File(cmdArgs.outputDir, s"cluster.$idx.txt"))
+          new PrintWriter(new File(outputDir, s"cluster.$idx.txt"))
         samples.foreach(s => writer.println(correctCells.value(s.sample)))
         writer.close()
     }
-
-    sc.stop()
-    logger.info("Done")
   }
 
   case class Prediction(sample: Int, prediction: Int)
@@ -119,10 +125,20 @@ object GroupDistance extends ToolCommand[Args] {
                 expectedGroups: Int,
                 maxIterations: Int,
                 trash: RDD[Int],
+                outputDir: File,
+                correctCells: Broadcast[Array[String]],
                 iteration: Int = 1)(implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys.filter(_ < iteration - 1).foreach(cache(_).foreach(_.unpersist()))
     cache += (iteration - 1) -> (groups.cache() :: cache.getOrElse(iteration - 1, Nil))
     cache += (iteration - 1) -> (trash.cache() :: cache.getOrElse(iteration - 1, Nil))
+
+    {
+      val iterationDir = new File(outputDir, s"iteration-${iteration - 1}")
+      iterationDir.mkdir()
+      writeGroups(groups, trash, iterationDir, correctCells)
+    }
+
+    sc.setJobGroup(s"Iteration $iteration", s"Iteration $iteration")
 
     val groupBy = groups.groupBy(_.group).map(x => x._1 -> x._2.map(_.sample))
     cache += iteration -> (groupBy.cache() :: cache.getOrElse(iteration, Nil))
