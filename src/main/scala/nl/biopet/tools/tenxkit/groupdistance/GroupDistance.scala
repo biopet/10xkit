@@ -115,14 +115,13 @@ object GroupDistance extends ToolCommand[Args] {
                 expectedGroups: Int,
                 maxIterations: Int,
                 trash: RDD[Int])(implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
+    groups.cache()
     val groupBy = groups.groupBy(_.group).map(x => x._1 -> x._2.map(_.sample))
     val ids = groupBy.keys.collect()
     val numberOfGroups = ids.length
 
     if (maxIterations <= 0 && numberOfGroups == expectedGroups) (groups, trash) else {
 
-      val groupBy = groups.groupBy(_.group).map(x => x._1 -> x._2.map(_.sample))
-      val numberOfGroups = groupBy.count()
       val groupDistances = sc.broadcast(groupBy.map { case (idx, samples) =>
         val histogram = distanceMatrix.value.subgroupHistograms(samples.toList, samples.toList)
         idx -> histogram.totalDistance / samples.size
