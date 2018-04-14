@@ -72,7 +72,7 @@ object GroupDistance extends ToolCommand[Args] {
       .map(x => x._1 -> x._2.map(s => s.sample))
       .cache()
 
-    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD)
+    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, cmdArgs.outputDir, correctCells, sc.emptyRDD)
     sc.clearJobGroup()
 
     writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
