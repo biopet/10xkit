@@ -88,6 +88,10 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
       s2 <- samples
     } yield this(s1, s2)).flatten.sum / samples.size
   }
+
+  def subGroupDistance(sample: Int, samples: List[Int]): Double = {
+    samples.flatMap(this(_, sample)).sum / samples.size
+  }
 }
 
 object DistanceMatrix extends Logging {

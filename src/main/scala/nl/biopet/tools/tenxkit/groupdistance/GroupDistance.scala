@@ -35,6 +35,9 @@ object GroupDistance extends ToolCommand[Args] {
 
     logger.info("Reading input data")
     val distanceMatrix = sc.broadcast(DistanceMatrix.fromFile(cmdArgs.distanceMatrix))
+    val distanceHistogram = distanceMatrix.value.totalHistogram
+    val distanceStats = distanceHistogram.aggregateStats
+    val distanceMean = distanceStats("mean").toString.toDouble
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val vectors = (if (cmdArgs.inputFile.isDirectory) {
@@ -72,7 +75,7 @@ object GroupDistance extends ToolCommand[Args] {
       .map(x => x._1 -> x._2.map(s => s.sample))
       .cache()
 
-    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD, cmdArgs.outputDir, correctCells)
+    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD, cmdArgs.outputDir, correctCells, distanceMean)
     sc.clearJobGroup()
 
     writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
@@ -110,9 +113,9 @@ object GroupDistance extends ToolCommand[Args] {
     val total = distanceMatrix.value.samples.length
     predictions.flatMap(a => a._2).repartition(total).map { sample =>
       val group = groups.value.find(_._2.contains(sample)).map(_._1).get
-      val removeCost: Double = groupDistances.value(group) - distanceMatrix.value.subGroupDistance(groups.value(group).filterNot(_ == sample))
+      val removeCost: Double = groupDistances.value(group) - distanceMatrix.value.subGroupDistance(sample, groups.value(group).filterNot(_ == sample))
       GroupSample(group, sample) -> groups.value.filter(_._1 != group).map { case (a,b) =>
-        val addCost = distanceMatrix.value.subGroupDistance(sample :: b) - groupDistances.value(a)
+        val addCost = distanceMatrix.value.subGroupDistance(sample, sample :: b) - groupDistances.value(a)
         MoveFromCost(a, addCost, removeCost)
       }.minBy(_.addCost)
     }
@@ -127,6 +130,7 @@ object GroupDistance extends ToolCommand[Args] {
                 trash: RDD[Int],
                 outputDir: File,
                 correctCells: Broadcast[Array[String]],
+                distanceMean: Double,
                 iteration: Int = 1)(implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys.filter(_ < iteration - 1).foreach(cache(_).foreach(_.unpersist()))
     cache += (iteration - 1) -> (groups.cache() :: cache.getOrElse(iteration - 1, Nil))
@@ -161,7 +165,7 @@ object GroupDistance extends ToolCommand[Args] {
             List(samples.toList)
           }
         }.collect().zipWithIndex.flatMap(x => x._1.map(GroupSample(x._2, _)))
-        reCluster(sc.parallelize(bla), distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, iteration + 1)
+        reCluster(sc.parallelize(bla), distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, distanceMean, iteration + 1)
       } else {
         if (numberOfGroups > expectedGroups) {
           val removecosts = calculateSampleMoveCosts(groupBy.map(x => x._1 -> x._2.toList), distanceMatrix)
@@ -172,8 +176,9 @@ object GroupDistance extends ToolCommand[Args] {
             if (current.group == removeGroup) {
               GroupSample(moveTo.group, current.sample)
             } else current
-          }, distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, iteration + 1)
+          }, distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, distanceMean, iteration + 1)
         } else {
+          //FIXME: method does not work correctly yet
           val newGroups = divedeTrash(groups, trash, distanceMatrix, groupDistances)
           val removecosts = calculateSampleMoveCosts(newGroups.groupBy(_.group).map(x => x._1 -> x._2.map(_.sample).toList), distanceMatrix)
           cache += iteration -> (removecosts.cache() :: cache.getOrElse(iteration, Nil))
@@ -183,14 +188,14 @@ object GroupDistance extends ToolCommand[Args] {
             if (moveCost.removeCost > moveCost.addCost) None
             else Some(current)
           }
-          reCluster(newGroups2, distanceMatrix, expectedGroups, maxIterations, newTrash, outputDir, correctCells, iteration + 1)
+          reCluster(newGroups2, distanceMatrix, expectedGroups, maxIterations, newTrash, outputDir, correctCells, distanceMean, iteration + 1)
         }
       }
     }
   }
 
   def calculateNewCost(sample: Int, groups: Map[Int, List[Int]], distanceMatrix: DistanceMatrix): Map[Int, Double] = {
-    groups.map{ case (group, list) => group -> distanceMatrix.subGroupDistance(sample :: list)}
+    groups.map{ case (group, list) => group -> distanceMatrix.subGroupDistance(sample, sample :: list)}
   }
 
   def divedeTrash(groups: RDD[GroupSample],
