@@ -109,13 +109,12 @@ object GroupDistance extends ToolCommand[Args] {
   def calculateSampleMoveCosts(predictions: RDD[(Int, List[Int])],
                               distanceMatrix: Broadcast[DistanceMatrix])(implicit sc: SparkContext): RDD[(GroupSample, MoveFromCost)] = {
     val groups = sc.broadcast(predictions.collectAsMap())
-    val groupDistances = sc.broadcast(groups.value.map(x => x._1 -> distanceMatrix.value.subGroupDistance(x._2)))
     val total = distanceMatrix.value.samples.length
     predictions.flatMap(a => a._2).repartition(total).map { sample =>
       val group = groups.value.find(_._2.contains(sample)).map(_._1).get
-      val removeCost: Double = groupDistances.value(group) - distanceMatrix.value.subGroupDistance(sample, groups.value(group).filterNot(_ == sample))
+      val removeCost: Double = distanceMatrix.value.subGroupDistance(sample, groups.value(group).filterNot(_ == sample))
       GroupSample(group, sample) -> groups.value.filter(_._1 != group).map { case (a,b) =>
-        val addCost = distanceMatrix.value.subGroupDistance(sample, sample :: b) - groupDistances.value(a)
+        val addCost = distanceMatrix.value.subGroupDistance(sample, sample :: b)
         MoveFromCost(a, addCost, removeCost)
       }.minBy(_.addCost)
     }
