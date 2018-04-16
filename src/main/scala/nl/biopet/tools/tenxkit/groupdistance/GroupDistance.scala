@@ -35,9 +35,9 @@ object GroupDistance extends ToolCommand[Args] {
 
     logger.info("Reading input data")
     val distanceMatrix = sc.broadcast(DistanceMatrix.fromFile(cmdArgs.distanceMatrix))
-    val distanceHistogram = distanceMatrix.value.totalHistogram
-    val distanceStats = distanceHistogram.aggregateStats
-    val distanceMean = distanceStats("mean").toString.toDouble
+//    val distanceHistogram = distanceMatrix.value.totalHistogram
+//    val distanceStats = distanceHistogram.aggregateStats
+//    val distanceMean = distanceStats("mean").toString.toDouble
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val vectors = (if (cmdArgs.inputFile.isDirectory) {
@@ -75,7 +75,7 @@ object GroupDistance extends ToolCommand[Args] {
       .map(x => x._1 -> x._2.map(s => s.sample))
       .cache()
 
-    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD, cmdArgs.outputDir, correctCells, distanceMean)
+    val (groups, trash) = reCluster(predictions.flatMap(x => x._2.map(GroupSample(x._1, _))), distanceMatrix, cmdArgs.numClusters, cmdArgs.numIterations, sc.emptyRDD, cmdArgs.outputDir, correctCells)
     sc.clearJobGroup()
 
     writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
@@ -130,7 +130,6 @@ object GroupDistance extends ToolCommand[Args] {
                 trash: RDD[Int],
                 outputDir: File,
                 correctCells: Broadcast[Array[String]],
-                distanceMean: Double,
                 iteration: Int = 1)(implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys.filter(_ < iteration - 1).foreach(cache(_).foreach(_.unpersist()))
     cache += (iteration - 1) -> (groups.cache() :: cache.getOrElse(iteration - 1, Nil))
@@ -165,7 +164,7 @@ object GroupDistance extends ToolCommand[Args] {
             List(samples.toList)
           }
         }.collect().zipWithIndex.flatMap(x => x._1.map(GroupSample(x._2, _)))
-        reCluster(sc.parallelize(bla), distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, distanceMean, iteration + 1)
+        reCluster(sc.parallelize(bla), distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, iteration + 1)
       } else {
         if (numberOfGroups > expectedGroups) {
           val removecosts = calculateSampleMoveCosts(groupBy.map(x => x._1 -> x._2.toList), distanceMatrix)
@@ -176,7 +175,7 @@ object GroupDistance extends ToolCommand[Args] {
             if (current.group == removeGroup) {
               GroupSample(moveTo.group, current.sample)
             } else current
-          }, distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, distanceMean, iteration + 1)
+          }, distanceMatrix, expectedGroups, maxIterations, trash, outputDir, correctCells, iteration + 1)
         } else {
           //FIXME: method does not work correctly yet
           val newGroups = divedeTrash(groups, trash, distanceMatrix, groupDistances)
@@ -188,7 +187,7 @@ object GroupDistance extends ToolCommand[Args] {
             if (moveCost.removeCost > moveCost.addCost) None
             else Some(current)
           }
-          reCluster(newGroups2, distanceMatrix, expectedGroups, maxIterations, newTrash, outputDir, correctCells, distanceMean, iteration + 1)
+          reCluster(newGroups2, distanceMatrix, expectedGroups, maxIterations, newTrash, outputDir, correctCells, iteration + 1)
         }
       }
     }
