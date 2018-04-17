@@ -266,7 +266,7 @@ object CalulateDistance extends ToolCommand[Args] {
   def exampleText: String =
     s"""
       |Default run with bam file:
-      |${TenxKit.example(
+      |${TenxKit.sparkExample(
          "CalulateDistance",
          "-i",
          "<bam file>",

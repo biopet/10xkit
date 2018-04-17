@@ -24,7 +24,7 @@ package nl.biopet.tools.tenxkit.groupdistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{DistanceMatrix, VariantCall}
+import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.clustering._
@@ -403,16 +403,37 @@ object GroupDistance extends ToolCommand[Args] {
 
   def descriptionText: String =
     """
+      |This tool we try to group distances together. The result should be a clusters of 1 single sample.
       |
+      |This tool will execute multiple iterations to find the groups.
     """.stripMargin
 
   def manualText: String =
     """
-      |
+      |This tool will require the distance matrix and the expected number of samples and a list of correct cells.
+      |The tool will require a spark cluster up and running.
     """.stripMargin
 
   def exampleText: String =
-    """
+    s"""
+      |Default run with 5 expected samples:
+      |${TenxKit.sparkExample(
+         "GroupDistance",
+         "--sparkMaster",
+         "<spark master>",
+         "-R",
+         "<reference fasta>",
+         "-i",
+         "<distance matrix>",
+         "-d",
+         "<distance matrix>",
+         "-o",
+         "<output directory>",
+         "--numClusters",
+         "5",
+         "--correctCells",
+         "<correct cells file>"
+       )}
       |
     """.stripMargin
 
