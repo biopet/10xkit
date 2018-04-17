@@ -24,26 +24,19 @@ package nl.biopet.tools.tenxkit.calculatedistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{
-  DistanceMatrix,
-  TenxKit,
-  VariantCall,
-  variantcalls
-}
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.utils.ngs.{bam, fasta, vcf}
-import nl.biopet.utils.ngs.intervals.BedRecordList
+import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall, variantcalls}
+import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.{FutureAction, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
-import org.apache.spark.sql.functions.broadcast
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object CalulateDistance extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
@@ -57,7 +50,6 @@ object CalulateDistance extends ToolCommand[Args] {
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
-    import sparkSession.implicits._
     implicit val sc: SparkContext = sparkSession.sparkContext
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
@@ -125,12 +117,6 @@ object CalulateDistance extends ToolCommand[Args] {
           } else x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum
           x._1 -> (distance / total)
         }
-
-//        val distance = if (power == 1)
-//          fractionPairs.map(x => x._1 -> x._2.map(_.map(_.distance).sum).sum)
-//        else
-//          fractionPairs.map(x =>
-//            x._1 -> x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum)
       }
 
       rdd

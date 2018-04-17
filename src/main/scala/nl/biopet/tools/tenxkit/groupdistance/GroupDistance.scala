@@ -398,7 +398,7 @@ object GroupDistance extends ToolCommand[Args] {
       s1 =>
         s1 -> Vectors.dense(
           samplesFiltered.map(s2 => matrix(s1, s2).getOrElse(0.0)).toArray))
-    sc.parallelize(vectors) //, vectors.size)
+    sc.parallelize(vectors)
   }
 
   def descriptionText: String =
