@@ -16,6 +16,8 @@ developers += Developer(id = "ffinfo",
                         email = "pjrvanthof@gmail.com",
                         url = url("https://github.com/ffinfo"))
 
+fork in Test := true
+
 scalaVersion := "2.11.12"
 
 libraryDependencies += "com.github.biopet" %% "spark-utils" % "0.4-SNAPSHOT" changing ()
