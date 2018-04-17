@@ -12,7 +12,7 @@ node('local') {
 
         stage('Build & Test') {
             sh "#!/bin/bash\n" +
-                    "set -e -o pipefail\n" +
+                    "set -e -v -o pipefail\n" +
                     "${tool name: 'sbt 1.0.4', type: 'org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation'}/bin/sbt -no-colors clean evicted biopetTest 'set test in assembly := {}' assembly | tee sbt.log"
             //sh "java -jar target/scala-2.11/*-assembly-*.jar -h" // Not possible for spark tools
             sh 'n=`grep -ce "\\* com.github.biopet" sbt.log || true`; if [ "$n" -ne \"0\" ]; then echo "ERROR: Found conflicting dependencies inside biopet"; exit 1; fi'
