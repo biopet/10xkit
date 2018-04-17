@@ -47,7 +47,7 @@ class CellVariantcallerTest extends ToolTest[Args] {
         "-o",
         outputDir.getAbsolutePath,
         "--sparkMaster",
-        "local[2]",
+        "local[1]",
         "-R",
         resourcePath("/reference.fasta"),
         "--correctCells",
