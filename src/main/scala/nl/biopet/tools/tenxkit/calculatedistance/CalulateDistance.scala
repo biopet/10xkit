@@ -25,7 +25,12 @@ import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall, variantcalls}
+import nl.biopet.tools.tenxkit.{
+  DistanceMatrix,
+  TenxKit,
+  VariantCall,
+  variantcalls
+}
 import nl.biopet.utils.ngs.bam
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
