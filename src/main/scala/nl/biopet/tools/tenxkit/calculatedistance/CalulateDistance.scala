@@ -24,7 +24,7 @@ package nl.biopet.tools.tenxkit.calculatedistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{DistanceMatrix, VariantCall, variantcalls}
+import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall, variantcalls}
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.ngs.{bam, fasta, vcf}
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -247,16 +247,21 @@ object CalulateDistance extends ToolCommand[Args] {
 
   def descriptionText: String =
     """
-      |
+      |This tool will calculate for each cell combination a sum of distances.
+      |The distances are the relative distance to the middle line for each allele divided by the total coverage on that position.
     """.stripMargin
 
   def manualText: String =
     """
-      |
+      |The input file can be a bam file or a vcf file.
+      |When a bam file is given the variantcall step is execute before and execute everything in memory.
+      |This is faster then running it separately but does not give control to all option of the variantcalling step.
     """.stripMargin
 
   def exampleText: String =
-    """
+    s"""
+      |Default run with bam file:
+      |${TenxKit.example("CalulateDistance", "-i", "<bam file>", "-R", "<reference fasta>", "-o", "<output directory>", "--correctCells", "<correctCells.txt>", "--sparkMaster", "<spark master>")}
       |
     """.stripMargin
 
