@@ -3,6 +3,7 @@ package nl.biopet.tools.tenxkit.mergebams
 import java.io.{File, PrintWriter}
 
 import htsjdk.samtools.{SAMFileHeader, SAMFileWriterFactory, SamReaderFactory}
+import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.io
 
@@ -53,23 +54,27 @@ object MergeBams extends ToolCommand[Args] {
       case (sample, file) =>
         io.getLinesFromFile(file)
           .map(sample + "-" + _)
-          .foreach(writer.println(_))
+          .foreach(writer.println)
     }
     writer.close()
   }
 
   def descriptionText: String =
     """
-      |
+      |This tool can merge separated 10x experiments into a single bam file. This is used to simulate a mixed run.
+      |This is used as a control for the GroupDistance tool.
     """.stripMargin
 
   def manualText: String =
     """
-      |
+      |This tool need at least two bam files and each bam file should also come with a barcode file.
+      |The cell barcodes will be prefixed by the sample name.
     """.stripMargin
 
   def exampleText: String =
-    """
+    s"""
+      |A default run:
+      |${TenxKit.example("MergeBams", "-i", "<sample1>=<input bamfile 1>", "--inputBarcode", "<sample1>=<barcodes 1>", "-i", "<sample2>=<input bamfile 2>", "--inputBarcode", "<sample2>=<barcodes 2>", "-o", "<output bam file>", "-b", "<output barcodes>")}
       |
     """.stripMargin
 
