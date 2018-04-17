@@ -15,9 +15,31 @@ Each cell will be treated a separated sample.
     
         
 
-#### Tools - CellGrouping
+#### Tools - CalulateDistance
+
+This tool will calculate for each cell combination a sum of distances.
+The distances are the relative distance to the middle line for each allele divided by the total coverage on that position.
+    
+        
+
+#### Tools - GroupDistance
 
 
+    
+        
+
+#### Tools - MergeBams
+
+This tool can merge separated 10x experiments into a single bam file. This is used to simulate a mixed run.
+This is used as a control for the GroupDistance tool.
+    
+        
+
+#### Tools - EvalSubGroups
+
+This tool will compare all given groups.
+The histogram for a Correct match should be a steep histogram starting at 0.
+When multiple peaks are seen this might be a mixture of samples.
     
         
 

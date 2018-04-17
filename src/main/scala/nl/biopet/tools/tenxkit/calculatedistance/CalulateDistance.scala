@@ -24,7 +24,12 @@ package nl.biopet.tools.tenxkit.calculatedistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall, variantcalls}
+import nl.biopet.tools.tenxkit.{
+  DistanceMatrix,
+  TenxKit,
+  VariantCall,
+  variantcalls
+}
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.ngs.{bam, fasta, vcf}
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -261,7 +266,19 @@ object CalulateDistance extends ToolCommand[Args] {
   def exampleText: String =
     s"""
       |Default run with bam file:
-      |${TenxKit.example("CalulateDistance", "-i", "<bam file>", "-R", "<reference fasta>", "-o", "<output directory>", "--correctCells", "<correctCells.txt>", "--sparkMaster", "<spark master>")}
+      |${TenxKit.example(
+         "CalulateDistance",
+         "-i",
+         "<bam file>",
+         "-R",
+         "<reference fasta>",
+         "-o",
+         "<output directory>",
+         "--correctCells",
+         "<correctCells.txt>",
+         "--sparkMaster",
+         "<spark master>"
+       )}
       |
     """.stripMargin
 
