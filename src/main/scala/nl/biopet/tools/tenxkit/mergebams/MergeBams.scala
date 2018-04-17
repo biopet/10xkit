@@ -54,7 +54,10 @@ object MergeBams extends ToolCommand[Args] {
     val dict = {
       val dicts = oldHeaders.map(_.getSequenceDictionary)
       dicts.tail.foreach(_.assertSameDictionary(dicts.head))
-      dicts.head
+      dicts.headOption match {
+        case Some(d) => d
+        case _       => throw new IllegalStateException("No dicts found")
+      }
     }
     val header = new SAMFileHeader()
     header.setSequenceDictionary(dict)

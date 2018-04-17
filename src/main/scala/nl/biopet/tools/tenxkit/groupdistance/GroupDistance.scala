@@ -59,22 +59,21 @@ object GroupDistance extends ToolCommand[Args] {
       sc.broadcast(DistanceMatrix.fromFile(cmdArgs.distanceMatrix))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
-    val vectors = (if (cmdArgs.inputFile.isDirectory) {
-                     variantsToVectors(VariantCall
-                                         .fromPartitionedVcf(cmdArgs.inputFile,
-                                                             cmdArgs.reference,
-                                                             correctCellsMap),
-                                       correctCells)
-                   } else if (cmdArgs.inputFile.getName.endsWith(".vcf.gz")) {
-                     variantsToVectors(VariantCall
-                                         .fromVcfFile(cmdArgs.inputFile,
-                                                      cmdArgs.reference,
-                                                      correctCellsMap,
-                                                      50000000),
-                                       correctCells)
-                   } else {
-                     distanceMatrixToVectors(distanceMatrix.value, correctCells)
-                   }).toDF("sample", "features").cache()
+
+    //TODO: add variants to clustering
+//    val variants = if (cmdArgs.inputFile.isDirectory) {
+//      VariantCall
+//        .fromPartitionedVcf(cmdArgs.inputFile,
+//          cmdArgs.reference,
+//          correctCellsMap)
+//    } else {
+//      VariantCall
+//        .fromVcfFile(cmdArgs.inputFile,
+//          cmdArgs.reference,
+//          correctCellsMap,
+//          50000000)
+//    }
+    val vectors = distanceMatrixToVectors(distanceMatrix.value, correctCells).toDF("sample", "features").cache()
 
     val bkm = new BisectingKMeans()
       .setK(cmdArgs.numClusters)
@@ -141,7 +140,7 @@ object GroupDistance extends ToolCommand[Args] {
     val groups = sc.broadcast(predictions.collectAsMap())
     val total = distanceMatrix.value.samples.length
     predictions.flatMap{ case (_,l) => l}.repartition(total).map { sample =>
-      val group = groups.value.find{ case (_, v) => v.contains(sample)}.map{ case (k, _) => k }.get
+      val group = groups.value.find{ case (_, v) => v.contains(sample)}.map{ case (k, _) => k }.getOrElse(0)
       val removeCost: Double = distanceMatrix.value
         .subGroupDistance(sample, groups.value(group).filterNot(_ == sample))
       GroupSample(group, sample) -> groups.value

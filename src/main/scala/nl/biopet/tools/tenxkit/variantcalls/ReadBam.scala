@@ -21,23 +21,15 @@
 
 package nl.biopet.tools.tenxkit.variantcalls
 
-import java.io.File
-
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
-import htsjdk.samtools.{
-  SAMRecord,
-  SAMSequenceDictionary,
-  SamReader,
-  SamReaderFactory
-}
+import htsjdk.samtools.{SAMRecord, SAMSequenceDictionary, SamReader}
 import nl.biopet.tools.tenxkit.VariantCall
-import nl.biopet.utils.ngs.intervals.BedRecord
 import nl.biopet.utils.ngs
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
+import nl.biopet.utils.ngs.intervals.BedRecord
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 class ReadBam(samReader: SamReader,
               sampleTag: String,
@@ -90,7 +82,7 @@ class ReadBam(samReader: SamReader,
         val umi = ReadBam.extractUmi(read, umiTag)
         val bases = SampleBase
           .createBases(read)
-          .filter(_._2.avgQual.exists(_ >= minBaseQual))
+          .filter { case (_, base) => base.avgQual.exists(_ >= minBaseQual) }
         bases.foreach {
           case (pos, base) =>
             val position = pos
