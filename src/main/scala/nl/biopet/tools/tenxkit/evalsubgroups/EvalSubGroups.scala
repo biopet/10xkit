@@ -63,41 +63,6 @@ object EvalSubGroups extends ToolCommand[Args] {
       }
     }
 
-//    for ((name, file) <- cmdArgs.groups) {
-//      logger.info(s"Making histograms for '$name'")
-//
-//      val samples = Source.fromFile(file).getLines().toList
-//
-//      val subMatrix = distanceMatrix.extractSamples(samples)
-//      subMatrix.writeFile(new File(cmdArgs.outputDir, s"$name.matrix.tsv"))
-//
-//      val subgroupHistogram = distanceMatrix.subgroupHistograms(name, samples)
-//
-//      subgroupHistogram.group.writeHistogramToTsv(
-//        new File(cmdArgs.outputDir, s"$name.histogram.tsv"))
-//      subgroupHistogram.group.writeAggregateToTsv(
-//        new File(cmdArgs.outputDir, s"$name.aggregate.tsv"))
-//
-//      subgroupHistogram.nonGroup.writeHistogramToTsv(
-//        new File(cmdArgs.outputDir, s"not_$name.histogram.tsv"))
-//      subgroupHistogram.nonGroup.writeAggregateToTsv(
-//        new File(cmdArgs.outputDir, s"not_$name.aggregate.tsv"))
-//
-//      val sampleBinnedHistogram = subgroupHistogram.group.binned
-//      sampleBinnedHistogram.writeFilesAndPlot(cmdArgs.outputDir,
-//                                              s"$name.binned",
-//                                              "Distance",
-//                                              "Count",
-//                                              name)
-//
-//      val notSampleBinnedHistogram = subgroupHistogram.nonGroup.binned
-//      notSampleBinnedHistogram.writeFilesAndPlot(cmdArgs.outputDir,
-//                                                 s"not_$name.binned",
-//                                                 "Distance",
-//                                                 "Count",
-//                                                 s"Not $name")
-//    }
-
     logger.info("Done")
   }
 
