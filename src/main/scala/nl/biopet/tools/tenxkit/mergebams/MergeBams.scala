@@ -43,8 +43,9 @@ object MergeBams extends ToolCommand[Args] {
 
     logger.info("Start")
     prefixBarcodes(cmdArgs.barcodes, cmdArgs.outputBarcodes)
-    val bamReaders = cmdArgs.bamFiles.map { case (key, file) =>
-      key -> SamReaderFactory.makeDefault().open(file)
+    val bamReaders = cmdArgs.bamFiles.map {
+      case (key, file) =>
+        key -> SamReaderFactory.makeDefault().open(file)
     }
     val oldHeaders = bamReaders.values.map(_.getFileHeader)
     require(

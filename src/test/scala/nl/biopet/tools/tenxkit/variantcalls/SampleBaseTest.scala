@@ -33,7 +33,7 @@ class SampleBaseTest extends BiopetTest {
                                        seq.getBytes,
                                        "AAAAAAAAAA".getBytes,
                                        "3M1D3M1I3M")
-    val sortedBases = bases.sortBy{ case (x, _) => x}
+    val sortedBases = bases.sortBy { case (x, _) => x }
     sortedBases.size shouldBe seq.length
     sortedBases.map { case (_, x) => x.allele }.mkString shouldBe "AATTCCGGAA"
     sortedBases(2)._2.delBases shouldBe 1

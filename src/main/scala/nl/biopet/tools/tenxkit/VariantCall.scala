@@ -102,15 +102,17 @@ case class VariantCall(contig: Int,
     val ad = alleleDepth
     val alleles = allAlleles
     val newAltAlleles =
-      alleles.zipWithIndex.tail.filter { case (_,i) => ad(i) > 0 }.map{ case (allele, _) => allele }
+      alleles.zipWithIndex.tail.filter { case (_, i) => ad(i) > 0 }.map {
+        case (allele, _) => allele
+      }
     val newSamples = samples
       .map {
         case (sample, a) =>
           sample -> a.zipWithIndex
-            .filter { case (_,i) =>i == 0 || ad(i) > 0 }
-            .map{ case (allele, _) => allele }
+            .filter { case (_, i) => i == 0 || ad(i) > 0 }
+            .map { case (allele, _) => allele }
       }
-      .filter{ case (idx, list) => list.exists(_.total > 0)}
+      .filter { case (idx, list) => list.exists(_.total > 0) }
 
     if (newSamples.nonEmpty)
       Some(this.copy(altAlleles = newAltAlleles, samples = newSamples))
@@ -122,8 +124,9 @@ case class VariantCall(contig: Int,
     val pvalues = createBinomialPvalues(seqError)
     val newSamples = samples.map {
       case (s, a) =>
-        s -> a.zipWithIndex.map { case (al, i) =>
-          if (pvalues(s)(i) <= cutoffPvalue) al else AlleleCount()
+        s -> a.zipWithIndex.map {
+          case (al, i) =>
+            if (pvalues(s)(i) <= cutoffPvalue) al else AlleleCount()
         }
     }
     this.copy(samples = newSamples)
@@ -143,11 +146,13 @@ case class VariantCall(contig: Int,
 
   def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
 
-  def alleleDepth: Seq[Int] ={
-    allAlleles.indices.map(i => samples.values.flatMap(_.lift(i).map(_.total)).sum)
+  def alleleDepth: Seq[Int] = {
+    allAlleles.indices.map(i =>
+      samples.values.flatMap(_.lift(i).map(_.total)).sum)
   }
   def alleleReadDepth: Seq[Int] = {
-    allAlleles.indices.map(i => samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
+    allAlleles.indices.map(i =>
+      samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
   }
   def toVariantContext(sampleList: Array[String],
                        dict: SAMSequenceDictionary,
@@ -242,12 +247,12 @@ object VariantCall {
                                                  a.allele
                                                else
                                                  new String(
-                                                   refAllele.zipWithIndex
-                                                     .map{ case (nuc, idx) =>
+                                                   refAllele.zipWithIndex.map {
+                                                     case (nuc, idx) =>
                                                        a.allele
                                                          .lift(idx)
-                                                         .getOrElse(nuc)}
-                                                     .toArray)
+                                                         .getOrElse(nuc)
+                                                   }.toArray)
                                              } else refAllele)
     }.toMap
     val altAlleles =

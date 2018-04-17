@@ -83,8 +83,8 @@ object SampleBase {
           referenceBuffer.get(refPos - 1) match {
             case Some(b) =>
               referenceBuffer += (refPos - 1) -> b.copy(
-                allele = b.allele ++ seq.map { case (x, _) => x.toChar},
-                qual = b.qual ++ seq.map{ case (_, x) => x.toByte})
+                allele = b.allele ++ seq.map { case (x, _) => x.toChar },
+                qual = b.qual ++ seq.map { case (_, x)     => x.toByte })
             case _ =>
               throw new IllegalStateException(
                 "Insertion without a base found, cigar start with I (or after the S/H)")

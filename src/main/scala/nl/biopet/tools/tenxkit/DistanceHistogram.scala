@@ -26,8 +26,9 @@ import nl.biopet.utils.Histogram
 class DistanceHistogram extends Histogram[Double] {
   def binned: DistanceHistogram = {
     val histogram = new DistanceHistogram
-    counts.foreach { case (value, count) =>
-      histogram.addMulti(DistanceHistogram.getBin(value), count)
+    counts.foreach {
+      case (value, count) =>
+        histogram.addMulti(DistanceHistogram.getBin(value), count)
     }
     histogram
   }

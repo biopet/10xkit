@@ -59,8 +59,10 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
 
   def extractSamples(extractSamples: List[String]): DistanceMatrix = {
     val newSamples =
-      samples.zipWithIndex.filter { case (name, idx) => extractSamples.contains(name) }
-    val idxs = newSamples.map{ case (_, idx) => idx }
+      samples.zipWithIndex.filter {
+        case (name, idx) => extractSamples.contains(name)
+      }
+    val idxs = newSamples.map { case (_, idx) => idx }
     val newValues = for (s1 <- idxs) yield {
       for (s2 <- idxs) yield {
         values(s1)(s2)

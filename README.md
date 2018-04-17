@@ -24,7 +24,9 @@ The distances are the relative distance to the middle line for each allele divid
 
 #### Tools - GroupDistance
 
+This tool we try to group distances together. The result should be a clusters of 1 single sample.
 
+This tool will execute multiple iterations to find the groups.
     
         
 
