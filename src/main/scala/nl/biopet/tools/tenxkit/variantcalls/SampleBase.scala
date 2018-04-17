@@ -83,8 +83,8 @@ object SampleBase {
           referenceBuffer.get(refPos - 1) match {
             case Some(b) =>
               referenceBuffer += (refPos - 1) -> b.copy(
-                allele = b.allele ++ seq.map(_._1.toChar),
-                qual = b.qual ++ seq.map(_._2.toByte))
+                allele = b.allele ++ seq.map { case (x, _) => x.toChar},
+                qual = b.qual ++ seq.map{ case (_, x) => x.toByte})
             case _ =>
               throw new IllegalStateException(
                 "Insertion without a base found, cigar start with I (or after the S/H)")
@@ -106,6 +106,6 @@ object SampleBase {
       }
     }
     require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
-    referenceBuffer.map(x => x._1 -> x._2).toList
+    referenceBuffer.toList
   }
 }

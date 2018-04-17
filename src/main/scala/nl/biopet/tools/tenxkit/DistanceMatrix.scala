@@ -59,14 +59,14 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
 
   def extractSamples(extractSamples: List[String]): DistanceMatrix = {
     val newSamples =
-      samples.zipWithIndex.filter(x => extractSamples.contains(x._1))
-    val idxs = newSamples.map(_._2)
+      samples.zipWithIndex.filter { case (name, idx) => extractSamples.contains(name) }
+    val idxs = newSamples.map{ case (_, idx) => idx }
     val newValues = for (s1 <- idxs) yield {
       for (s2 <- idxs) yield {
         values(s1)(s2)
       }
     }
-    DistanceMatrix(newValues, newSamples.map(_._1))
+    DistanceMatrix(newValues, newSamples.map { case (name, _) => name })
   }
 
   def writeFile(file: File): Unit = {

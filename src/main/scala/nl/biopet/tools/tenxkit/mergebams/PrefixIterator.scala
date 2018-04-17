@@ -36,13 +36,13 @@ class PrefixIterator(bamReaders: Map[String, SamReader],
 
   def next(): SAMRecord = {
     val nextRecords = its
-      .filter(_._2.hasNext)
-      .map(x => x._1 -> x._2.head)
+      .filter { case(_, x) => x.hasNext }
+      .map { case (key, it) => key -> it.head}
       .toList
-    val sample = nextRecords.minBy { x =>
-      val contig = dict.getSequenceIndex(x._2.getContig)
-      (if (contig >= 0) contig else Int.MaxValue, x._2.getAlignmentStart)
-    }._1
+    val (sample, _) = nextRecords.minBy { case (_, r) =>
+      val contig = dict.getSequenceIndex(r.getContig)
+      (if (contig >= 0) contig else Int.MaxValue, r.getAlignmentStart)
+    }
     val record = its(sample).next()
     Option(record.getAttribute(sampleTag)).foreach(x =>
       record.setAttribute(sampleTag, sample + "-" + x.toString))

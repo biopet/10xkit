@@ -68,7 +68,7 @@ object CellReads extends ToolCommand[Args] {
 
     val histogramDuplicates = new Histogram[Long]()
     val histogram = new Histogram[Long]()
-    groups.groupBy(_._1._2).foreach {
+    groups.groupBy { case ((_, x), _) => x }.foreach {
       case (key, map) =>
         val dup = map.getOrElse((true, key), 0L)
         val nonDup = map.getOrElse((false, key), 0L)

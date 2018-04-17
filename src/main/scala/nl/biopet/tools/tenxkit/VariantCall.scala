@@ -57,15 +57,15 @@ case class VariantCall(contig: Int,
   }
 
   def totalDepth: Int = {
-    samples.map(_._2.map(_.total).sum).sum
+    samples.values.flatMap(_.map(_.total)).sum
   }
 
   def totalReadDepth: Int = {
-    samples.map(_._2.map(_.totalReads).sum).sum
+    samples.values.flatMap(_.map(_.totalReads)).sum
   }
 
   def referenceDepth: Int = {
-    samples.map(_._2.headOption.map(_.total).getOrElse(0)).sum
+    samples.values.flatMap(_.headOption.map(_.total)).sum
   }
 
   def altDepth: Int = {
@@ -102,15 +102,15 @@ case class VariantCall(contig: Int,
     val ad = alleleDepth
     val alleles = allAlleles
     val newAltAlleles =
-      alleles.zipWithIndex.tail.filter(i => ad(i._2) > 0).map(_._1)
+      alleles.zipWithIndex.tail.filter { case (_,i) => ad(i) > 0 }.map{ case (allele, _) => allele }
     val newSamples = samples
       .map {
         case (sample, a) =>
           sample -> a.zipWithIndex
-            .filter(i => i._2 == 0 || ad(i._2) > 0)
-            .map(_._1)
+            .filter { case (_,i) =>i == 0 || ad(i) > 0 }
+            .map{ case (allele, _) => allele }
       }
-      .filter(_._2.exists(_.total > 0))
+      .filter{ case (idx, list) => list.exists(_.total > 0)}
 
     if (newSamples.nonEmpty)
       Some(this.copy(altAlleles = newAltAlleles, samples = newSamples))
@@ -122,8 +122,9 @@ case class VariantCall(contig: Int,
     val pvalues = createBinomialPvalues(seqError)
     val newSamples = samples.map {
       case (s, a) =>
-        s -> a.zipWithIndex.map(a =>
-          if (pvalues(s)(a._2) <= cutoffPvalue) a._1 else AlleleCount())
+        s -> a.zipWithIndex.map { case (al, i) =>
+          if (pvalues(s)(i) <= cutoffPvalue) al else AlleleCount()
+        }
     }
     this.copy(samples = newSamples)
   }
@@ -142,11 +143,12 @@ case class VariantCall(contig: Int,
 
   def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
 
-  def alleleDepth: Seq[Int] =
-    allAlleles.indices.map(i => samples.map(_._2(i).total).sum)
-  def alleleReadDepth: Seq[Int] =
-    allAlleles.indices.map(i => samples.map(_._2(i).totalReads).sum)
-
+  def alleleDepth: Seq[Int] ={
+    allAlleles.indices.map(i => samples.values.flatMap(_.lift(i).map(_.total)).sum)
+  }
+  def alleleReadDepth: Seq[Int] = {
+    allAlleles.indices.map(i => samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
+  }
   def toVariantContext(sampleList: Array[String],
                        dict: SAMSequenceDictionary,
                        seqError: Float): VariantContext = {
@@ -226,13 +228,13 @@ object VariantCall {
                       bases: PositionBases,
                       referenceRegion: ReferenceRegion,
                       minCellAlleleCoverage: Int): Option[VariantCall] = {
-    val maxDel = bases.samples.flatMap(_._2.map(_._1.delBases)).max
+    val maxDel = bases.samples.values.flatMap(_.keys.map(_.delBases)).max
     val end = position + maxDel
     val refAllele = new String(
       referenceRegion.sequence.slice(
         position - referenceRegion.start,
         position - referenceRegion.start + maxDel + 1)).toUpperCase
-    val oldAlleles = bases.samples.flatMap(_._2.keySet)
+    val oldAlleles = bases.samples.values.flatMap(_.keySet)
     val newAllelesMap = oldAlleles.map { a =>
       SampleAllele(a.allele, a.delBases) -> (if (a.delBases > 0 || !refAllele
                                                    .startsWith(a.allele)) {
@@ -241,10 +243,10 @@ object VariantCall {
                                                else
                                                  new String(
                                                    refAllele.zipWithIndex
-                                                     .map(x =>
+                                                     .map{ case (nuc, idx) =>
                                                        a.allele
-                                                         .lift(x._2)
-                                                         .getOrElse(x._1))
+                                                         .lift(idx)
+                                                         .getOrElse(nuc)}
                                                      .toArray)
                                              } else refAllele)
     }.toMap

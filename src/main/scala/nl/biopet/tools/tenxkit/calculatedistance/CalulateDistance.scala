@@ -87,7 +87,7 @@ object CalulateDistance extends ToolCommand[Args] {
     val combinations = variants
       .flatMap { variant =>
         val samples = variant.samples
-          .filter(_._2.map(_.total).sum > cmdArgs.minAlleleCoverage)
+          .filter { case (_ ,alleles) => alleles.map(_.total).sum > cmdArgs.minAlleleCoverage }
           .keys
         for (s1 <- samples; s2 <- samples if s2 > s1) yield {
           SampleCombinationKey(s1, s2) -> AlleleDepth(
@@ -109,26 +109,26 @@ object CalulateDistance extends ToolCommand[Args] {
           //TODO: Filter alleles
           val fractions1 = pos.ad1.map(_.toDouble / total1)
           val fractions2 = pos.ad2.map(_.toDouble / total2)
-          fractions1.zip(fractions2).map(x => FractionPairDistance(x._1, x._2))
+          fractions1.zip(fractions2).map { case (f1, f2) => FractionPairDistance(f1, f2) }
         }
     }
 
     def combinationDistance(power: Int = 1): Future[Unit] = {
       val rdd: RDD[(SampleCombinationKey, Double)] = {
-        fractionPairs.map { x =>
-          val total = x._2.size
+        fractionPairs.map { case (key, list) =>
+          val total = list.size
           val distance = if (power == 1) {
-            x._2.map(_.map(_.distance).sum).sum
-          } else x._2.map(_.map(y => math.pow(y.distance, power)).sum).sum
-          x._1 -> (distance / total)
+            list.map(_.map(_.distance).sum).sum
+          } else list.map(_.map(y => math.pow(y.distance, power)).sum).sum
+          key -> (distance / total)
         }
       }
 
       rdd
-        .groupBy(_._1.sample1)
+        .groupBy { case (key, _) => key.sample1 }
         .map {
           case (s1, list) =>
-            val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
+            val map = list.groupBy { case (key, _) => key.sample2 }.map { case (key, l) => key -> l.headOption.map { case (_,d) => d }.getOrElse(0.0) }
             s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
               map.get(s2)
             })
@@ -174,11 +174,11 @@ object CalulateDistance extends ToolCommand[Args] {
     }
 
     futures += combinations
-      .map(x => x._1 -> x._2.size)
-      .groupBy(_._1.sample1)
+      .map { case (key, list) => key -> list.size }
+      .groupBy { case (key, _) => key.sample1 }
       .map {
         case (s1, list) =>
-          val map = list.groupBy(_._1.sample2).map(x => x._1 -> x._2.head._2)
+          val map = list.groupBy { case (key, _) => key.sample2 }.map { case (key, l) => key -> l.headOption.map { case (_, d) => d }.getOrElse(0)}
           s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
             map.get(s2)
           })

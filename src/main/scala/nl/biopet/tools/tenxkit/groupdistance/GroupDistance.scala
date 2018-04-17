@@ -90,11 +90,11 @@ object GroupDistance extends ToolCommand[Args] {
       .rdd
       .groupBy(_.prediction)
       .repartition(cmdArgs.numClusters)
-      .map(x => x._1 -> x._2.map(s => s.sample))
+      .map { case (group, list) => group -> list.map(_.sample) }
       .cache()
 
     val (groups, trash) = reCluster(
-      predictions.flatMap(x => x._2.map(GroupSample(x._1, _))),
+      predictions.flatMap{case (g,l) => l.map(GroupSample(g, _))},
       distanceMatrix,
       cmdArgs.numClusters,
       cmdArgs.numIterations,
@@ -140,12 +140,12 @@ object GroupDistance extends ToolCommand[Args] {
       implicit sc: SparkContext): RDD[(GroupSample, MoveFromCost)] = {
     val groups = sc.broadcast(predictions.collectAsMap())
     val total = distanceMatrix.value.samples.length
-    predictions.flatMap(a => a._2).repartition(total).map { sample =>
-      val group = groups.value.find(_._2.contains(sample)).map(_._1).get
+    predictions.flatMap{ case (_,l) => l}.repartition(total).map { sample =>
+      val group = groups.value.find{ case (_, v) => v.contains(sample)}.map{ case (k, _) => k }.get
       val removeCost: Double = distanceMatrix.value
         .subGroupDistance(sample, groups.value(group).filterNot(_ == sample))
       GroupSample(group, sample) -> groups.value
-        .filter(_._1 != group)
+        .filter { case (g, _) => g != group }
         .map {
           case (a, b) =>
             val addCost =
@@ -183,7 +183,7 @@ object GroupDistance extends ToolCommand[Args] {
 
     sc.setJobGroup(s"Iteration $iteration", s"Iteration $iteration")
 
-    val groupBy = groups.groupBy(_.group).map(x => x._1 -> x._2.map(_.sample))
+    val groupBy = groups.groupBy(_.group).map { case (g, list) => g -> list.map(_.sample)}
     cache += iteration -> (groupBy.cache() :: cache.getOrElse(iteration, Nil))
     val ids = groupBy.keys.collect()
     val numberOfGroups = ids.length
@@ -218,7 +218,7 @@ object GroupDistance extends ToolCommand[Args] {
           }
           .collect()
           .zipWithIndex
-          .flatMap(x => x._1.map(GroupSample(x._2, _)))
+          .flatMap { case (l, i) => l.map(GroupSample(i, _)) }
         reCluster(sc.parallelize(bla),
                   distanceMatrix,
                   expectedGroups,
@@ -230,17 +230,16 @@ object GroupDistance extends ToolCommand[Args] {
       } else {
         if (numberOfGroups > expectedGroups) {
           val removecosts = calculateSampleMoveCosts(
-            groupBy.map(x => x._1 -> x._2.toList),
+            groupBy.map { case (g, l) => g -> l.toList },
             distanceMatrix)
           cache += iteration -> (removecosts
             .cache() :: cache.getOrElse(iteration, Nil))
 
-          val removeGroup = removecosts
-            .groupBy(_._1.group)
-            .map(x => x._1 -> x._2.map(_._2.addCost).sum)
+          val (_, removeGroup) = removecosts
+            .groupBy { case (x, _) => x.group}
+            .map { case (g,l) => g -> l.map { case (_, x) => x.addCost }.sum }
             .collect()
-            .minBy(_._2)
-            ._1
+            .minBy{ case (_,x) => x }
           reCluster(
             removecosts.map {
               case (current, moveTo) =>
@@ -263,7 +262,7 @@ object GroupDistance extends ToolCommand[Args] {
           val removecosts = calculateSampleMoveCosts(
             newGroups
               .groupBy(_.group)
-              .map(x => x._1 -> x._2.map(_.sample).toList),
+              .map { case (g, l) => g -> l.map(_.sample).toList},
             distanceMatrix)
           cache += iteration -> (removecosts
             .cache() :: cache.getOrElse(iteration, Nil))
@@ -271,8 +270,7 @@ object GroupDistance extends ToolCommand[Args] {
           val newTrash = removecosts
             .filter {
               case (current, moveCost) => moveCost.removeCost > moveCost.addCost
-            }
-            .map(_._1.sample)
+            }.keys.map(_.sample)
           val newGroups2 = removecosts.flatMap {
             case (current, moveCost) =>
               if (moveCost.removeCost > moveCost.addCost) None
@@ -308,7 +306,7 @@ object GroupDistance extends ToolCommand[Args] {
     val groupsBroadcast = sc.broadcast(
       groups
         .groupBy(_.group)
-        .map(x => x._1 -> x._2.map(_.sample).toList)
+        .map{case (g,l) => g -> l.map(_.sample).toList}
         .collectAsMap()
         .toMap)
     trash.map { s =>
@@ -326,10 +324,10 @@ object GroupDistance extends ToolCommand[Args] {
     val sampleSplit = group.map { s1 =>
       val maxDistance = group
         .flatMap(s2 => distanceMatrix.value(s1, s2).map(s2 -> _))
-        .maxBy(_._2)
+        .maxBy { case (_, x) => x }
       s1 -> maxDistance
     }
-    val max = sampleSplit.maxBy(_._2._2)
+    val (maxS1, (maxS2, maxDistance)) = sampleSplit.maxBy{ case (_, (_, x)) => x }
 
     def grouping(samples: List[Int],
                  g1: List[Int],
@@ -339,13 +337,14 @@ object GroupDistance extends ToolCommand[Args] {
           s1 -> g1.flatMap(s2 => distanceMatrix.value(s1, s2)).sum / g1.size)
         val distances2 = samples.map(s1 =>
           s1 -> g2.flatMap(s2 => distanceMatrix.value(s1, s2)).sum / g2.size)
-        val sample = distances1
+        val (_, sample) = distances1
           .zip(distances2)
-          .map(x => (x._1._2 - x._2._2).abs)
+          .map { case ((_, v1),(_, v2)) => (v1 - v2).abs }
           .zipWithIndex
-          .maxBy(_._1)
-          ._2
-        if (distances1(sample)._2 > distances2(sample)._2) {
+          .maxBy{ case (x, _) => x }
+        val (_, d1) = distances1(sample)
+        val (_, d2) = distances2(sample)
+        if (d1 > d2) {
           grouping(samples.filter(_ != samples(sample)),
                    g1,
                    samples(sample) :: g2)
@@ -357,9 +356,9 @@ object GroupDistance extends ToolCommand[Args] {
       } else List(g1, g2)
     }
 
-    grouping(group.filter(_ != max._1).filter(_ != max._2._1),
-             max._1 :: Nil,
-             max._2._1 :: Nil)
+    grouping(group.filter(_ != maxS1).filter(_ != maxS2),
+      maxS1 :: Nil,
+      maxS2 :: Nil)
   }
 
   def variantsToVectors(
@@ -381,8 +380,8 @@ object GroupDistance extends ToolCommand[Args] {
       .groupByKey(correctCells.value.length)
       .map {
         case (sample, list) =>
-          val sorted = list.toList.sortBy(y => (y._1, y._2))
-          (sample, Vectors.dense(sorted.flatMap(_._3).toArray))
+          val sorted = list.toList.sortBy { case (y1, y2, _) => (y1, y2) }
+          (sample, Vectors.dense(sorted.flatMap{ case (_, _, x) => x }.toArray))
       }
   }
 

@@ -43,9 +43,10 @@ object MergeBams extends ToolCommand[Args] {
 
     logger.info("Start")
     prefixBarcodes(cmdArgs.barcodes, cmdArgs.outputBarcodes)
-    val bamReaders = cmdArgs.bamFiles.map(x =>
-      x._1 -> SamReaderFactory.makeDefault().open(x._2))
-    val oldHeaders = bamReaders.map(x => x._2.getFileHeader)
+    val bamReaders = cmdArgs.bamFiles.map { case (key, file) =>
+      key -> SamReaderFactory.makeDefault().open(file)
+    }
+    val oldHeaders = bamReaders.values.map(_.getFileHeader)
     require(
       oldHeaders.forall(_.getSortOrder == SAMFileHeader.SortOrder.coordinate),
       "Not all files are coordinate sorted")
@@ -64,7 +65,7 @@ object MergeBams extends ToolCommand[Args] {
     it.foreach(writer.addAlignment)
 
     writer.close()
-    bamReaders.foreach(_._2.close())
+    bamReaders.values.foreach(_.close())
     logger.info("Done")
   }
 
