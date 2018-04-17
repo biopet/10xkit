@@ -35,9 +35,6 @@ object GroupDistance extends ToolCommand[Args] {
 
     logger.info("Reading input data")
     val distanceMatrix = sc.broadcast(DistanceMatrix.fromFile(cmdArgs.distanceMatrix))
-//    val distanceHistogram = distanceMatrix.value.totalHistogram
-//    val distanceStats = distanceHistogram.aggregateStats
-//    val distanceMean = distanceStats("mean").toString.toDouble
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val vectors = (if (cmdArgs.inputFile.isDirectory) {
@@ -156,6 +153,7 @@ object GroupDistance extends ToolCommand[Args] {
 
       val avgDistance = groupDistances.value.values.sum / groupDistances.value.size
       if (groupDistances.value.values.exists(_ >= (avgDistance * 2))) {
+        // Split groups where the distance to big
         val bla = groupBy.flatMap { case (group, samples) =>
           if (groupDistances.value(group) >= (avgDistance * 2)) {
             splitCluster(samples.toList, distanceMatrix)
