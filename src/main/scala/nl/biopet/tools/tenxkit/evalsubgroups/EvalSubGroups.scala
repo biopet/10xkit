@@ -21,7 +21,7 @@
 
 package nl.biopet.tools.tenxkit.evalsubgroups
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit}
 import nl.biopet.utils.tool.ToolCommand
@@ -43,31 +43,98 @@ object EvalSubGroups extends ToolCommand[Args] {
       case (sample, file) =>
         sample -> Source.fromFile(file).getLines().toList
     }
-    cmdArgs.distanceMatrix.foreach(evalDistanceMatrix(_, cmdArgs.outputDir, groups))
+
+    cmdArgs.distanceMatrix.foreach(
+      evalDistanceMatrix(_, cmdArgs.outputDir, groups))
+
+    if (cmdArgs.knownTrue.nonEmpty)
+      calculateRecallPrecision(cmdArgs.knownTrue, cmdArgs.outputDir, groups)
 
     logger.info("Done")
   }
 
-  def evalDistanceMatrix(distanceMatrixFile: File, outputDir: File, groups: Map[String, List[String]]): Unit = {
+  case class PrecisionRecall(precision: Double, recall: Double)
+
+  def calculateRecallPrecision(knownTrueFile: Map[String, File],
+                               outputDir: File,
+                               groups: Map[String, List[String]]): Unit = {
+    require(knownTrueFile.nonEmpty,
+            "This method require at least 1 known true file")
+    val knownTrue = knownTrueFile.map {
+      case (sample, file) =>
+        sample -> Source.fromFile(file).getLines().toList
+    }
+
+    val compareGroupsDir = new File(outputDir, "compare-groups")
+    compareGroupsDir.mkdir()
+
+    val result = for ((knownKey, knownList) <- knownTrue) yield {
+      knownKey -> (for ((groupKey, groupList) <- groups) yield {
+        val overlap = knownList.intersect(groupList).length
+        val missed = knownList.diff(groupList).length
+        val wrong = groupList.diff(knownList).length
+
+        val precision = overlap.toDouble / (overlap + wrong)
+        val recall = overlap.toDouble / (overlap + missed)
+
+        val outputFile =
+          new File(compareGroupsDir, s"$knownKey-$groupKey.stats")
+        val writer = new PrintWriter(outputFile)
+        writer.println(s"Overlap\t$overlap")
+        writer.println(s"Missed\t$missed")
+        writer.println(s"Wrong\t$wrong")
+        writer.println(s"Precision\t$precision")
+        writer.println(s"Recall\t$recall")
+        writer.close()
+        groupKey -> PrecisionRecall(precision, recall)
+      })
+    }
+
+    val groupKeys = groups.keys.toList.sorted
+    val knownKeys = knownTrue.keys.toList.sorted
+
+    val precisionWriter = new PrintWriter(new File(outputDir, "precision.tsv"))
+    val recallWriter = new PrintWriter(new File(outputDir, "recall.tsv"))
+    precisionWriter.println(groupKeys.mkString("\t", "\t", ""))
+    recallWriter.println(groupKeys.mkString("\t", "\t", ""))
+
+    knownKeys.foreach { knownKey =>
+      precisionWriter.println(
+        groupKeys
+          .map(result(knownKey)(_).precision)
+          .mkString(s"$knownKey\t", "\t", ""))
+      recallWriter.println(
+        groupKeys
+          .map(result(knownKey)(_).recall)
+          .mkString(s"$knownKey\t", "\t", ""))
+    }
+
+    precisionWriter.close()
+    recallWriter.close()
+  }
+
+  def evalDistanceMatrix(distanceMatrixFile: File,
+                         outputDir: File,
+                         groups: Map[String, List[String]]): Unit = {
     val distanceMatrix = DistanceMatrix.fromFile(distanceMatrixFile)
 
     val sampleMap = distanceMatrix.samples.zipWithIndex.toMap
-    val idxGroups = groups.map { case (name, list) => name -> list.map(sampleMap) }
+    val idxGroups = groups.map {
+      case (name, list) => name -> list.map(sampleMap)
+    }
 
     logger.info("Writing total data")
     val histogram = distanceMatrix.totalHistogram
-    histogram.writeHistogramToTsv(
-      new File(outputDir, "total.histogram.tsv"))
-    histogram.writeAggregateToTsv(
-      new File(outputDir, "total.aggregate.tsv"))
+    histogram.writeHistogramToTsv(new File(outputDir, "total.histogram.tsv"))
+    histogram.writeAggregateToTsv(new File(outputDir, "total.aggregate.tsv"))
 
     logger.info("Binning total")
     val binnedHistogram = histogram.binned
     binnedHistogram.writeFilesAndPlot(outputDir,
-      "total.binned",
-      "Distance",
-      "Count",
-      "Total")
+                                      "total.binned",
+                                      "Distance",
+                                      "Count",
+                                      "Total")
 
     for (((name1, list1), idx1) <- idxGroups.zipWithIndex) {
       for (((name2, list2), idx2) <- idxGroups.zipWithIndex if idx2 >= idx1) {
@@ -80,10 +147,10 @@ object EvalSubGroups extends ToolCommand[Args] {
 
         val sampleBinnedHistogram = subgroupHistogram.binned
         sampleBinnedHistogram.writeFilesAndPlot(outputDir,
-          s"$name1-$name2.binned",
-          "Distance",
-          "Count",
-          s"$name1-$name2")
+                                                s"$name1-$name2.binned",
+                                                "Distance",
+                                                "Count",
+                                                s"$name1-$name2")
       }
     }
   }
