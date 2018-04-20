@@ -53,7 +53,33 @@ object EvalSubGroups extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  case class PrecisionRecall(precision: Double, recall: Double)
+  private case class PrecisionRecall(precision: Double, recall: Double)
+
+  private object PrecisionRecall {
+    def calulate(knownKey: String,
+                 knownList: List[String],
+                 groupKey: String,
+                 groupList: List[String],
+                 outputDir: File): PrecisionRecall = {
+      val overlap = knownList.intersect(groupList).length
+      val missed = knownList.diff(groupList).length
+      val wrong = groupList.diff(knownList).length
+
+      val precision = overlap.toDouble / (overlap + wrong)
+      val recall = overlap.toDouble / (overlap + missed)
+
+      val outputFile =
+        new File(outputDir, s"$knownKey-$groupKey.stats")
+      val writer = new PrintWriter(outputFile)
+      writer.println(s"Overlap\t$overlap")
+      writer.println(s"Missed\t$missed")
+      writer.println(s"Wrong\t$wrong")
+      writer.println(s"Precision\t$precision")
+      writer.println(s"Recall\t$recall")
+      writer.close()
+      PrecisionRecall(precision, recall)
+    }
+  }
 
   def calculateRecallPrecision(knownTrueFile: Map[String, File],
                                outputDir: File,
@@ -70,23 +96,8 @@ object EvalSubGroups extends ToolCommand[Args] {
 
     val result = for ((knownKey, knownList) <- knownTrue) yield {
       knownKey -> (for ((groupKey, groupList) <- groups) yield {
-        val overlap = knownList.intersect(groupList).length
-        val missed = knownList.diff(groupList).length
-        val wrong = groupList.diff(knownList).length
-
-        val precision = overlap.toDouble / (overlap + wrong)
-        val recall = overlap.toDouble / (overlap + missed)
-
-        val outputFile =
-          new File(compareGroupsDir, s"$knownKey-$groupKey.stats")
-        val writer = new PrintWriter(outputFile)
-        writer.println(s"Overlap\t$overlap")
-        writer.println(s"Missed\t$missed")
-        writer.println(s"Wrong\t$wrong")
-        writer.println(s"Precision\t$precision")
-        writer.println(s"Recall\t$recall")
-        writer.close()
-        groupKey -> PrecisionRecall(precision, recall)
+        groupKey -> PrecisionRecall
+          .calulate(knownKey, knownList, groupKey, groupList, compareGroupsDir)
       })
     }
 
