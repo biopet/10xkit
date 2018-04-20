@@ -16,6 +16,8 @@ developers += Developer(id = "ffinfo",
                         email = "pjrvanthof@gmail.com",
                         url = url("https://github.com/ffinfo"))
 
+fork in Test := true
+
 scalaVersion := "2.11.12"
 
 libraryDependencies += "com.github.biopet" %% "spark-utils" % "0.4-SNAPSHOT" changing ()
@@ -28,7 +30,7 @@ dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-core" % "2.8.7"
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.7"
 dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.7"
 
-libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.0" //% Provided
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.0" //% Provided
-libraryDependencies += "org.apache.spark" %% "spark-mllib" % "2.3.0" //% Provided
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.0" % Provided
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.0" % Provided
+libraryDependencies += "org.apache.spark" %% "spark-mllib" % "2.3.0" % Provided
 libraryDependencies += "org.bdgenomics.adam" %% "adam-core-spark2" % "0.24.0" //% Provided
