@@ -170,12 +170,12 @@ object EvalSubGroups extends ToolCommand[Args] {
 
   def exampleText: String =
     s"""
-      |Default example:
+      |Run with distance matrix example:
       |${TenxKit.example(
          "EvalSubGroups",
          "-o",
          "<output directory>",
-         "-i",
+         "-d",
          "<distance matrix>",
          "-g",
          "<group 1>=<group 1 file>",
@@ -183,6 +183,21 @@ object EvalSubGroups extends ToolCommand[Args] {
          "<group 2>=<group 2 file>",
          "-g",
          "<<group 3>=group 3 file>"
+       )}
+      |
+      |Run with know true set:
+      |${TenxKit.example(
+         "EvalSubGroups",
+         "-o",
+         "<output directory>",
+         "-k",
+         "sample1=<sample 1 file>",
+         "-k",
+         "sample2=<sample 2 file>",
+         "-g",
+         "<group 1>=<group 2 file>",
+         "-g",
+         "<group 2>=<group 2 file>"
        )}
       |
     """.stripMargin
