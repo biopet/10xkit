@@ -69,10 +69,12 @@ object MergeBams extends ToolCommand[Args] {
       new SAMFileWriterFactory().makeBAMWriter(header, true, cmdArgs.outputBam)
 
     val it = new PrefixIterator(bamReaders, dict, cmdArgs.sampleTag)
-    it.foreach{ record =>
+    it.foreach { record =>
       if (cmdArgs.downsampleFraction >= 1.0) writer.addAlignment(record)
       else {
-        if ((random.nextInt(1000).toDouble / 1000) <= cmdArgs.downsampleFraction)
+        if ((random
+              .nextInt(1000)
+              .toDouble / 1000) <= cmdArgs.downsampleFraction)
           writer.addAlignment(record)
       }
     }
