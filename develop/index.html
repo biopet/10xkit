@@ -1,0 +1,323 @@
+<!--
+   Copyright (c) 2014 Biopet
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy of
+   this software and associated documentation files (the "Software"), to deal in
+   the Software without restriction, including without limitation the rights to
+   use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+   the Software, and to permit persons to whom the Software is furnished to do so,
+   subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+   FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+   IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <title>TenxKit</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="css/docs.css" rel="stylesheet">
+
+  </head>
+
+  <body>
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">TenxKit</a>
+          <ul class="nav navbar-nav navbar-right">
+            <li class="navbar-text" id="Version">
+              Version</li>
+          </ul>
+        </div>
+      </div>
+
+
+
+    </div>
+
+  </nav>
+  <div class="container">
+
+    <div class="row">
+      <div class="col-sm-3 col-md-2 sidebar" >
+
+        <ul class="nav nav-sidebar nav-list">
+          <li><b>Index</b></li>
+          
+          <li><a href="#description"><span>Description</span></a></li>
+          
+          <li><a href="#installation"><span>Installation</span></a></li>
+          
+          <li><a href="#manual"><span>Manual</span></a></li>
+          
+          <li><a href="#about"><span>About</span></a></li>
+          
+          <li><a href="#contributing"><span>Contributing</span></a></li>
+          
+          <li><a href="#contact"><span>Contact</span></a></li>
+          
+        </ul>
+        <ul class="nav nav-sidebar nav-list">
+          <li><b>Links</b></li>
+
+          <li><a href="https://github.com/biopet/tenxkit">Source code</a></li>
+          <li><a href="https://github.com/biopet/tenxkit/issues">Feedback, feature requests and bug reports</a></li>
+          <li><a href="api/index.html">API Documentation</a></li>
+        </ul>
+        <ul class="nav nav-sidebar nav-list">
+          <li><b>Documentation</b></li>
+          <li><a href="../index.html">Latest stable version</a></li>
+          <li><a href="../develop/index.html">Development version</a></li>
+        </ul>
+      </div>
+      
+      <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main" id="top">
+
+        
+        <h1 id="description" class="section">Description</h1>
+        
+        <h4 id="tools---cellreads" class="section">Tools - CellReads</h4>
+        <p>This tool will generate a histogram of reads per cell barcode.
+        This can be used to validate output from cellranger or to set a alternative cutoff.</p>
+        
+        <h4 id="tools---cellvariantcaller" class="section">Tools - CellVariantcaller</h4>
+        <p>This tool will call variants based on 10x data. Usually the output of cellranger is used.
+        Each cell will be treated a separated sample.</p>
+        
+        <h4 id="tools---calulatedistance" class="section">Tools - CalulateDistance</h4>
+        <p>This tool will calculate for each cell combination a sum of distances.
+        The distances are the relative distance to the middle line for each allele divided by the total coverage on that position.</p>
+        
+        <h4 id="tools---groupdistance" class="section">Tools - GroupDistance</h4>
+        <p>This tool we try to group distances together. The result should be a clusters of 1 single sample.</p>
+        <p>This tool will execute multiple iterations to find the groups.</p>
+        
+        <h4 id="tools---mergebams" class="section">Tools - MergeBams</h4>
+        <p>This tool can merge separated 10x experiments into a single bam file. This is used to simulate a mixed run.
+        This is used as a control for the GroupDistance tool.</p>
+        
+        <h4 id="tools---evalsubgroups" class="section">Tools - EvalSubGroups</h4>
+        <p>This tool will compare all given groups.
+        The histogram for a Correct match should be a steep histogram starting at 0.
+        When multiple peaks are seen this might be a mixture of samples.</p>
+        
+        <h1 id="installation" class="section">Installation</h1>
+        <p>TenxKit requires Java 8 to be installed on your device. Download Java 8
+        <a href="http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html">here</a>
+        or install via your distribution&#39;s package manager.</p>
+        <p>Download the latest version of TenxKit <a href="https://github.com/biopet/tenxkit/releases/">here</a>.
+        To generate the usage run:</p>
+        <pre><code>java -jar &lt;TenxKit_jar&gt; --help</code></pre>
+        
+        <h1 id="manual" class="section">Manual</h1>
+        
+        <h4 id="tools---cellreads-1" class="section">Tools - CellReads</h4>
+        <p>By default this the sample tag is CB, this is the default tag used by Cellrenger.
+        If required the user can set this is a other tag with the &#39;--sampleTag&#39; option.</p>
+        
+        <h4 id="tools---cellvariantcaller-1" class="section">Tools - CellVariantcaller</h4>
+        <p>The input data should have a tag to identify the sample. In cellranger output this is the &#39;CB&#39; tag.
+        The variantcalling can take umi information into account. For this the option &#39;--umiTag&#39; must be given. When given the duplicates are still used.
+        If not given the reads marked as duplicate are ignored.</p>
+        <p>The tool require a list of correct cells to use in the variantcalling. This file is a text file where each line is 1 sample/cell ID.</p>
+        
+        <h4 id="tools---calulatedistance-1" class="section">Tools - CalulateDistance</h4>
+        <p>The input file can be a bam file or a vcf file.
+        When a bam file is given the variantcall step is execute before and execute everything in memory.
+        This is faster then running it separately but does not give control to all option of the variantcalling step.</p>
+        
+        <h4 id="tools---groupdistance-1" class="section">Tools - GroupDistance</h4>
+        <p>This tool will require the distance matrix and the expected number of samples and a list of correct cells.
+        The tool will require a spark cluster up and running.</p>
+        
+        <h4 id="tools---mergebams-1" class="section">Tools - MergeBams</h4>
+        <p>This tool need at least two bam files and each bam file should also come with a barcode file.
+        The cell barcodes will be prefixed by the sample name.</p>
+        
+        <h4 id="tools---evalsubgroups-1" class="section">Tools - EvalSubGroups</h4>
+        <p>This tool will require the complete distance matrix and a list of all cells per group.
+        It will generate a histogram for each combination of groups.</p>
+        
+        <h2 id="example" class="section">Example</h2>
+        
+        <h4 id="tools---cellreads-2" class="section">Tools - CellReads</h4>
+        <p>Default run:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CellReads \
+-i &lt;input file&gt; \
+-o &lt;output dir&gt; \
+--sparkMaster &lt;spark master&gt;</code></pre>
+        <p>Alternative tag:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CellReads \
+-i &lt;input file&gt; \
+-o &lt;output dir&gt; \
+--sparkMaster &lt;spark master&gt; \
+--sampleTag &lt;tag&gt;</code></pre>
+        
+        <h4 id="tools---cellvariantcaller-2" class="section">Tools - CellVariantcaller</h4>
+        <p>Default run without umi:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CellVariantcaller \
+-i &lt;input bam file&gt; \
+-o &lt;output_dir&gt; \
+-R &lt;reference fasta&gt; \
+--correctCells &lt;txt file&gt; \
+--sparkMaster &lt;spark master&gt;</code></pre>
+        <p>Run with umi aware:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CellVariantcaller \
+-i &lt;input bam file&gt; \
+-o &lt;output_dir&gt; \
+-R &lt;reference fasta&gt; \
+--correctCells &lt;txt file&gt; \
+--sparkMaster &lt;spark master&gt; \
+-u UB</code></pre>
+        
+        <h4 id="tools---calulatedistance-2" class="section">Tools - CalulateDistance</h4>
+        <p>Default run with bam file:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CalulateDistance \
+-i &lt;bam file&gt; \
+-R &lt;reference fasta&gt; \
+-o &lt;output directory&gt; \
+--correctCells &lt;correctCells.txt&gt; \
+--sparkMaster &lt;spark master&gt;</code></pre>
+        
+        <h4 id="tools---groupdistance-2" class="section">Tools - GroupDistance</h4>
+        <p>Default run with 5 expected samples:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; GroupDistance \
+--sparkMaster &lt;spark master&gt; \
+-R &lt;reference fasta&gt; \
+-i &lt;distance matrix&gt; \
+-d &lt;distance matrix&gt; \
+-o &lt;output directory&gt; \
+--numClusters 5 \
+--correctCells &lt;correct cells file&gt;</code></pre>
+        
+        <h4 id="tools---mergebams-2" class="section">Tools - MergeBams</h4>
+        <p>A default run:</p>
+        <pre><code>java -jar &lt;TenxKit_jar&gt; MergeBams \
+-i &lt;sample1&gt;=&lt;input bamfile 1&gt; \
+--inputBarcode &lt;sample1&gt;=&lt;barcodes 1&gt; \
+-i &lt;sample2&gt;=&lt;input bamfile 2&gt; \
+--inputBarcode &lt;sample2&gt;=&lt;barcodes 2&gt; \
+-o &lt;output bam file&gt; \
+-b &lt;output barcodes&gt;</code></pre>
+        
+        <h4 id="tools---evalsubgroups-2" class="section">Tools - EvalSubGroups</h4>
+        <p>Default example:</p>
+        <pre><code>java -jar &lt;TenxKit_jar&gt; EvalSubGroups \
+-o &lt;output directory&gt; \
+-i &lt;distance matrix&gt; \
+-g &lt;group 1&gt;=&lt;group 1 file&gt; \
+-g &lt;group 2&gt;=&lt;group 2 file&gt; \
+-g &lt;&lt;group 3&gt;=group 3 file&gt;</code></pre>
+        
+        <h2 id="usage" class="section">Usage</h2>
+        <p>Usage for TenxKit:</p>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Option</th>
+              <th>Required</th>
+              <th>Can occur multiple times</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>--log_level, -l</td>
+              <td>no</td>
+              <td>no</td>
+              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
+            </tr>
+            <tr>
+              <td>--help, -h</td>
+              <td>no</td>
+              <td>no</td>
+              <td>Print usage</td>
+            </tr>
+            <tr>
+              <td>--version, -v</td>
+              <td>no</td>
+              <td>no</td>
+              <td>Print version</td>
+            </tr>
+            <tr>
+              <td>toolName</td>
+              <td>no</td>
+              <td>no</td>
+              <td>Name of the tool to execute</td>
+            </tr>
+            <tr>
+              <td>tool args</td>
+              <td>no</td>
+              <td>yes (unlimited)</td>
+              <td>Arguments for the tool</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h1 id="about" class="section">About</h1>
+        <p>TenxKit is part of BIOPET tool suite that is developed at LUMC by <a href="http://sasc.lumc.nl/">the SASC team</a>.
+        Each tool in the BIOPET tool suite is meant to offer a standalone function that can be used to perform a
+        dedicate data analysis task or added as part of <a href="http://biopet-docs.readthedocs.io/en/latest/">BIOPET pipelines</a>.</p>
+        <p>All tools in the BIOPET tool suite are <a href="https://www.gnu.org/philosophy/free-sw.html">Free/Libre</a> and
+        <a href="https://opensource.org/osd">Open Source</a> Software.</p>
+        
+        <h1 id="contributing" class="section">Contributing</h1>
+        <p>The source code of TenxKit can be found <a href="https://github.com/biopet/tenxkit">here</a>.
+        We welcome any contributions. Bug reports, feature requests and feedback can be submitted at our
+        <a href="https://github.com/biopet/tenxkit/issues">issue tracker</a>.</p>
+        <p>TenxKit is build using sbt. Before submitting a pull request, make sure all tests can be passed by
+        running <code>sbt test</code> from the project&#39;s root. We recommend using an IDE to work on TenxKit. We have had
+        good results with <a href="https://www.jetbrains.com/idea/">this IDE</a>.</p>
+        
+        <h1 id="contact" class="section">Contact</h1>
+        <p>
+          <!-- Obscure e-mail address for spammers -->
+        For any question related to TenxKit, please use the
+        <a href='https://github.com/biopet/tenxkit/issues'>github issue tracker</a>
+        or contact
+         <a href='http://sasc.lumc.nl/'>the SASC team</a> directly at: <a href='&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#115;&#97;&#115;&#99;&#64;&#108;&#117;&#109;&#99;&#46;&#110;&#108;'>
+        &#115;&#97;&#115;&#99;&#64;&#108;&#117;&#109;&#99;&#46;&#110;&#108;</a>.
+        </p>      
+
+      </div>
+    </div>
+
+  </div>
+  <script>
+    var loc = window.location.pathname;
+    var thisDir = loc.substring(0, loc.lastIndexOf('/'));
+    var splitLocation = window.location.pathname.split('/');
+    var version = splitLocation[splitLocation.length - 2]
+    document.getElementById("Version").innerHTML = "Version " + version;
+  </script>
+</body>
+
+</html>
