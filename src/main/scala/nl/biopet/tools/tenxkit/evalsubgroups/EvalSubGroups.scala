@@ -166,6 +166,8 @@ object EvalSubGroups extends ToolCommand[Args] {
     """
       |This tool will require the complete distance matrix and a list of all cells per group.
       |It will generate a histogram for each combination of groups.
+      |
+      |When a known set is given the precision and recall of each combination of group and know set writen to a file.
     """.stripMargin
 
   def exampleText: String =
