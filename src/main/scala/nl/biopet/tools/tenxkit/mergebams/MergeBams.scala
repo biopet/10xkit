@@ -28,6 +28,8 @@ import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.io
 
+import scala.util.Random
+
 object MergeBams extends ToolCommand[Args] {
   def emptyArgs = Args()
   def argsParser = new ArgsParser(this)
@@ -42,6 +44,7 @@ object MergeBams extends ToolCommand[Args] {
             "Not all given barcode files have a bam file")
 
     logger.info("Start")
+    val random = new Random(cmdArgs.seed)
     prefixBarcodes(cmdArgs.barcodes, cmdArgs.outputBarcodes)
     val bamReaders = cmdArgs.bamFiles.map {
       case (key, file) =>
@@ -66,7 +69,13 @@ object MergeBams extends ToolCommand[Args] {
       new SAMFileWriterFactory().makeBAMWriter(header, true, cmdArgs.outputBam)
 
     val it = new PrefixIterator(bamReaders, dict, cmdArgs.sampleTag)
-    it.foreach(writer.addAlignment)
+    it.foreach{ record =>
+      if (cmdArgs.downsampleFraction >= 1.0) writer.addAlignment(record)
+      else {
+        if ((random.nextInt(1000).toDouble / 1000) <= cmdArgs.downsampleFraction)
+          writer.addAlignment(record)
+      }
+    }
 
     writer.close()
     bamReaders.values.foreach(_.close())
