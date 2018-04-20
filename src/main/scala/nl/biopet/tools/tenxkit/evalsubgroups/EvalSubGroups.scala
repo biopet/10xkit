@@ -38,53 +38,54 @@ object EvalSubGroups extends ToolCommand[Args] {
 
     logger.info("Start")
 
-    logger.info("Reading input data")
+    logger.info("Reading groups")
+    val groups = cmdArgs.groups.map {
+      case (sample, file) =>
+        sample -> Source.fromFile(file).getLines().toList
+    }
+    cmdArgs.distanceMatrix.foreach(evalDistanceMatrix(_, cmdArgs.outputDir, groups))
 
-    val distanceMatrix = DistanceMatrix.fromFile(cmdArgs.inputFile)
+    logger.info("Done")
+  }
+
+  def evalDistanceMatrix(distanceMatrixFile: File, outputDir: File, groups: Map[String, List[String]]): Unit = {
+    val distanceMatrix = DistanceMatrix.fromFile(distanceMatrixFile)
+
     val sampleMap = distanceMatrix.samples.zipWithIndex.toMap
+    val idxGroups = groups.map { case (name, list) => name -> list.map(sampleMap) }
 
     logger.info("Writing total data")
     val histogram = distanceMatrix.totalHistogram
     histogram.writeHistogramToTsv(
-      new File(cmdArgs.outputDir, "total.histogram.tsv"))
+      new File(outputDir, "total.histogram.tsv"))
     histogram.writeAggregateToTsv(
-      new File(cmdArgs.outputDir, "total.aggregate.tsv"))
+      new File(outputDir, "total.aggregate.tsv"))
 
     logger.info("Binning total")
     val binnedHistogram = histogram.binned
-    binnedHistogram.writeFilesAndPlot(cmdArgs.outputDir,
-                                      "total.binned",
-                                      "Distance",
-                                      "Count",
-                                      "Total")
+    binnedHistogram.writeFilesAndPlot(outputDir,
+      "total.binned",
+      "Distance",
+      "Count",
+      "Total")
 
-    logger.info("Reading groups")
-    val groups = cmdArgs.groups.map {
-      case (sample, file) =>
-        sample -> Source.fromFile(file).getLines().map(sampleMap).toList
-    }
-
-    for (((name1, list1), idx1) <- groups.zipWithIndex) {
-      for (((name2, list2), idx2) <- groups.zipWithIndex if idx2 >= idx1) {
-        //TODO: subMatrix
-
+    for (((name1, list1), idx1) <- idxGroups.zipWithIndex) {
+      for (((name2, list2), idx2) <- idxGroups.zipWithIndex if idx2 >= idx1) {
         val subgroupHistogram =
           distanceMatrix.subgroupHistograms(list1, list2)
         subgroupHistogram.writeHistogramToTsv(
-          new File(cmdArgs.outputDir, s"$name1-$name2.histogram.tsv"))
+          new File(outputDir, s"$name1-$name2.histogram.tsv"))
         subgroupHistogram.writeAggregateToTsv(
-          new File(cmdArgs.outputDir, s"$name1-$name2.aggregate.tsv"))
+          new File(outputDir, s"$name1-$name2.aggregate.tsv"))
 
         val sampleBinnedHistogram = subgroupHistogram.binned
-        sampleBinnedHistogram.writeFilesAndPlot(cmdArgs.outputDir,
-                                                s"$name1-$name2.binned",
-                                                "Distance",
-                                                "Count",
-                                                s"$name1-$name2")
+        sampleBinnedHistogram.writeFilesAndPlot(outputDir,
+          s"$name1-$name2.binned",
+          "Distance",
+          "Count",
+          s"$name1-$name2")
       }
     }
-
-    logger.info("Done")
   }
 
   def descriptionText: String =
