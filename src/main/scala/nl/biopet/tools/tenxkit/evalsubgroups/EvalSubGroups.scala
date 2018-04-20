@@ -86,6 +86,7 @@ object EvalSubGroups extends ToolCommand[Args] {
                                groups: Map[String, List[String]]): Unit = {
     require(knownTrueFile.nonEmpty,
             "This method require at least 1 known true file")
+    logger.info("Start calculating precision and recall")
     val knownTrue = knownTrueFile.map {
       case (sample, file) =>
         sample -> Source.fromFile(file).getLines().toList
@@ -127,6 +128,7 @@ object EvalSubGroups extends ToolCommand[Args] {
   def evalDistanceMatrix(distanceMatrixFile: File,
                          outputDir: File,
                          groups: Map[String, List[String]]): Unit = {
+    logger.info("Start reading distance matrix")
     val distanceMatrix = DistanceMatrix.fromFile(distanceMatrixFile)
 
     val sampleMap = distanceMatrix.samples.zipWithIndex.toMap
