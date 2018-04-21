@@ -51,11 +51,10 @@ object MergeBams extends ToolCommand[Args] {
       .shuffle(newBarcodes)
       .take(cmdArgs.duplets * 2)
       .grouped(2)
-      .flatMap { x =>
-        val barcode1 = x(0)
-        val barcode2 = x(1)
-        val newBarcode = barcode1 + "_" + barcode2
-        List(barcode1 -> newBarcode, barcode2 -> newBarcode)
+      .flatMap {
+        case List(barcode1, barcode2) =>
+          val newBarcode = barcode1 + "_" + barcode2
+          List(barcode1 -> newBarcode, barcode2 -> newBarcode)
       }
       .toMap
 
