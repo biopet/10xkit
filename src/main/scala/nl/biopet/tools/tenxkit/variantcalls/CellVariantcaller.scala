@@ -187,15 +187,15 @@ object CellVariantcaller extends ToolCommand[Args] {
                     intervals: Option[File] = None): List[List[BedRecord]] = {
     intervals match {
       case Some(file) =>
-        creatBamBins(BedRecordList
-                       .fromFile(file)
-                       .combineOverlap
-                       .validateContigs(reference)
-                       .allRecords
-                       .toList,
-                     bamFile,
-                     partitions)
-      case _ => creatBamBins(bamFile, partitions)
+        createBamBins(BedRecordList
+                        .fromFile(file)
+                        .combineOverlap
+                        .validateContigs(reference)
+                        .allRecords
+                        .toList,
+                      bamFile,
+                      partitions)
+      case _ => createBamBins(bamFile, partitions)
     }
   }
 
