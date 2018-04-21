@@ -80,7 +80,7 @@ object MergeBams extends ToolCommand[Args] {
     }
 
     writer.close()
-    bamReaders.values.foreach(_.close())
+    it.close()
     logger.info("Done")
   }
 

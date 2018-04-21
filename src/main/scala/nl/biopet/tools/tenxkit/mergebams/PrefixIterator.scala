@@ -28,7 +28,8 @@ import scala.collection.JavaConversions._
 class PrefixIterator(bamReaders: Map[String, SamReader],
                      dict: SAMSequenceDictionary,
                      sampleTag: String)
-    extends Iterator[SAMRecord] {
+    extends Iterator[SAMRecord]
+    with AutoCloseable {
   private val its = bamReaders.map {
     case (sample, reader) => sample -> reader.iterator().buffered
   }
@@ -48,5 +49,9 @@ class PrefixIterator(bamReaders: Map[String, SamReader],
     Option(record.getAttribute(sampleTag)).foreach(x =>
       record.setAttribute(sampleTag, sample + "-" + x.toString))
     record
+  }
+
+  def close(): Unit = {
+    bamReaders.values.foreach(_.close())
   }
 }

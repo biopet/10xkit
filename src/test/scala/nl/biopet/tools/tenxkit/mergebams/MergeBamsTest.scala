@@ -32,4 +32,59 @@ class MergeBamsTest extends ToolTest[Args] {
       MergeBams.main(Array())
     }
   }
+
+  @Test
+  def testToLessBamFiles(): Unit = {
+    intercept[IllegalArgumentException] {
+      MergeBams.main(
+        Array("--inputBam",
+              "bam1=<file>",
+              "--inputBarcode",
+              "bam1=<file>",
+              "--outputBam",
+              "<file>",
+              "--outputBarcodes",
+              "<file>"))
+    }.getMessage shouldBe "requirement failed: At least 2 bam files should be given"
+  }
+
+  @Test
+  def testMissingBarcodeFile(): Unit = {
+    intercept[IllegalArgumentException] {
+      MergeBams.main(
+        Array("--inputBam",
+              "bam1=<file>",
+              "--inputBarcode",
+              "bam1=<file>",
+              "--inputBam",
+              "bam2=<file>",
+              "--outputBam",
+              "<file>",
+              "--outputBarcodes",
+              "<file>"))
+    }.getMessage shouldBe "requirement failed: Not all given bam files have a barcode file"
+  }
+
+  @Test
+  def testMissingBamFile(): Unit = {
+    intercept[IllegalArgumentException] {
+      MergeBams.main(
+        Array(
+          "--inputBam",
+          "bam1=<file>",
+          "--inputBarcode",
+          "bam1=<file>",
+          "--outputBam",
+          "<file>",
+          "--outputBarcodes",
+          "<file>",
+          "--inputBam",
+          "bam2=<file>",
+          "--inputBarcode",
+          "bam2=<file>",
+          "--inputBarcode",
+          "bam3=<file>"
+        ))
+    }.getMessage shouldBe "requirement failed: Not all given barcode files have a bam file"
+  }
 }
