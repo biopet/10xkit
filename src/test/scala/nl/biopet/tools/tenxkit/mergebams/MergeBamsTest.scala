@@ -182,8 +182,9 @@ class MergeBamsTest extends ToolTest[Args] {
     val it1 = reader.iterator()
     val aim = 40000 * fraction
     val reads = it1.size
-    reads >= (aim - (aim / 10)) shouldBe true
-    reads <= (aim + (aim / 10)) shouldBe true
+    // the 0.02 means that the result of the downsampling is variable with 2%
+    reads >= (aim - (aim * 0.02)) shouldBe true
+    reads <= (aim + (aim * 0.02)) shouldBe true
     it1.close()
 
     reader.close()
