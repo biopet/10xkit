@@ -159,7 +159,9 @@ class MergeBamsTest extends ToolTest[Args] {
         "--duplets",
         "1",
         "--sampleTag",
-        "RG"
+        "RG",
+        "--umiTag",
+        "MD"
       ))
 
     val reader = SamReaderFactory
