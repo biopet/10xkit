@@ -81,11 +81,10 @@ object EvalSubGroups extends ToolCommand[Args] {
     }
   }
 
-  def calculateRecallPrecision(knownTrueFile: Map[String, File],
-                               outputDir: File,
-                               groups: Map[String, List[String]]): Unit = {
-    require(knownTrueFile.nonEmpty,
-            "This method require at least 1 known true file")
+  private def calculateRecallPrecision(
+      knownTrueFile: Map[String, File],
+      outputDir: File,
+      groups: Map[String, List[String]]): Unit = {
     logger.info("Start calculating precision and recall")
     val knownTrue = knownTrueFile.map {
       case (sample, file) =>
@@ -216,5 +215,4 @@ object EvalSubGroups extends ToolCommand[Args] {
        )}
       |
     """.stripMargin
-
 }
