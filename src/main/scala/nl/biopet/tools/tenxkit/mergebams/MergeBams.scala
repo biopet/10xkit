@@ -88,6 +88,9 @@ object MergeBams extends ToolCommand[Args] {
           case Some(barcode) if duplets.contains(barcode) =>
             val newRecord = x.record.deepCopy()
             newRecord.setAttribute(cmdArgs.sampleTag, duplets(barcode))
+            Option(newRecord.getAttribute(cmdArgs.umiTag))
+              .foreach(umi =>
+                newRecord.setAttribute(cmdArgs.umiTag, umi.toString + "A"))
             List(x.record, newRecord)
           case _ => List(x.record)
         }
