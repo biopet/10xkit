@@ -26,8 +26,7 @@ import java.io.File
 import nl.biopet.tools.tenxkit.DistanceMatrix
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
-import nl.biopet.utils.io.writeLinesToFile
-import nl.biopet.utils.io.getLinesFromFile
+import nl.biopet.utils.io.{getLinesFromFile, writeLinesToFile}
 
 class EvalSubGroupsTest extends ToolTest[Args] {
   def toolCommand: EvalSubGroups.type = EvalSubGroups
