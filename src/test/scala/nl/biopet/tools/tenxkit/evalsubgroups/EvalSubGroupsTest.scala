@@ -21,8 +21,12 @@
 
 package nl.biopet.tools.tenxkit.evalsubgroups
 
+import java.io.File
+
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
+import nl.biopet.utils.io.writeLinesToFile
+import nl.biopet.utils.io.getLinesFromFile
 
 class EvalSubGroupsTest extends ToolTest[Args] {
   def toolCommand: EvalSubGroups.type = EvalSubGroups
@@ -31,5 +35,49 @@ class EvalSubGroupsTest extends ToolTest[Args] {
     intercept[IllegalArgumentException] {
       EvalSubGroups.main(Array())
     }
+  }
+
+  @Test
+  def testPerfectPrecisionRecall(): Unit = {
+    val group1 = List("cell1", "cell2")
+    val group2 = List("cell3", "cell4")
+    val group1File = File.createTempFile("group.", ".txt")
+    group1File.deleteOnExit()
+    val group2File = File.createTempFile("group.", ".txt")
+    group2File.deleteOnExit()
+
+    writeLinesToFile(group1File, group1)
+    writeLinesToFile(group2File, group2)
+
+    val outputDir = File.createTempFile("test.", ".eval")
+    outputDir.delete()
+    outputDir.mkdir()
+
+    EvalSubGroups.main(
+      Array("-g",
+            s"group1=$group1File",
+            "-g",
+            s"group2=$group2File",
+            "-k",
+            s"sample1=$group1File",
+            "-k",
+            s"sample2=$group2File",
+            "-o",
+            s"$outputDir"))
+
+    val precisionFile = new File(outputDir, "precision.tsv")
+    val recallFile = new File(outputDir, "recall.tsv")
+
+    precisionFile should exist
+    recallFile should exist
+
+    val content = List(
+      "\tgroup1\tgroup2",
+      "sample1\t1.0\t0.0",
+      "sample2\t0.0\t1.0"
+    )
+
+    getLinesFromFile(precisionFile) shouldBe content
+    getLinesFromFile(recallFile) shouldBe content
   }
 }
