@@ -28,6 +28,7 @@ case class Args(bamFiles: Map[String, File] = Map(),
                 outputBam: File = null,
                 outputBarcodes: File = null,
                 sampleTag: String = "CB",
+                umiTag: String = "UB",
                 downsampleFraction: Double = 1.0,
                 duplets: Int = 0,
                 seed: Int = 12345)

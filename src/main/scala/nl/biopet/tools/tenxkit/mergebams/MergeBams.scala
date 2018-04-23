@@ -45,7 +45,21 @@ object MergeBams extends ToolCommand[Args] {
 
     logger.info("Start")
     val random = new Random(cmdArgs.seed)
-    prefixBarcodes(cmdArgs.barcodes, cmdArgs.outputBarcodes)
+    val newBarcodes = readBarcodes(cmdArgs.barcodes)
+
+    val duplets = random
+      .shuffle(newBarcodes)
+      .take(cmdArgs.duplets * 2)
+      .grouped(2)
+      .flatMap {
+        case List(barcode1, barcode2) =>
+          val newBarcode = barcode1 + "_" + barcode2
+          List(barcode1 -> newBarcode, barcode2 -> newBarcode)
+      }
+      .toMap
+
+    writeBarcodes(newBarcodes, duplets, cmdArgs.outputBarcodes)
+
     val bamReaders = cmdArgs.bamFiles.map {
       case (key, file) =>
         key -> SamReaderFactory.makeDefault().open(file)
@@ -69,29 +83,49 @@ object MergeBams extends ToolCommand[Args] {
       new SAMFileWriterFactory().makeBAMWriter(header, true, cmdArgs.outputBam)
 
     val it = new PrefixIterator(bamReaders, dict, cmdArgs.sampleTag)
-    it.foreach { record =>
-      if (cmdArgs.downsampleFraction >= 1.0) writer.addAlignment(record)
-      else {
-        if (random.nextFloat() <= cmdArgs.downsampleFraction)
-          writer.addAlignment(record)
+    it.flatMap { x =>
+        x.newBarcode match {
+          case Some(barcode) if duplets.contains(barcode) =>
+            val newRecord = x.record.deepCopy()
+            newRecord.setAttribute(cmdArgs.sampleTag, duplets(barcode))
+            Option(newRecord.getAttribute(cmdArgs.umiTag))
+              .foreach(umi =>
+                newRecord.setAttribute(cmdArgs.umiTag, umi.toString + "A"))
+            List(x.record, newRecord)
+          case _ => List(x.record)
+        }
+
       }
-    }
+      .foreach { record =>
+        if (cmdArgs.downsampleFraction >= 1.0) writer.addAlignment(record)
+        else {
+          if (random.nextFloat() <= cmdArgs.downsampleFraction)
+            writer.addAlignment(record)
+        }
+      }
 
     writer.close()
     it.close()
     logger.info("Done")
   }
 
-  /** This method will prefix the barcodes with the sampleId */
-  def prefixBarcodes(files: Map[String, File], outputFile: File): Unit = {
-    val writer = new PrintWriter(outputFile)
-    files.foreach {
+  def readBarcodes(files: Map[String, File]): List[String] = {
+    files.flatMap {
       case (sample, file) =>
         io.getLinesFromFile(file)
           .map(sample + "-" + _)
-          .foreach(writer.println)
-    }
+    }.toList
+  }
+
+  /** This method will prefix the barcodes with the sampleId */
+  def writeBarcodes(barcodes: List[String],
+                    duplets: Map[String, String],
+                    outputFile: File): List[String] = {
+    val writer = new PrintWriter(outputFile)
+    barcodes.foreach(writer.println)
+    duplets.values.foreach(writer.println)
     writer.close()
+    barcodes
   }
 
   def descriptionText: String =

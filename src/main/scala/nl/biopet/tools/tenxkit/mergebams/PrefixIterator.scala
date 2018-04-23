@@ -28,14 +28,14 @@ import scala.collection.JavaConversions._
 class PrefixIterator(bamReaders: Map[String, SamReader],
                      dict: SAMSequenceDictionary,
                      sampleTag: String)
-    extends Iterator[SAMRecord]
+    extends Iterator[PrefixIterator.Record]
     with AutoCloseable {
   private val its = bamReaders.map {
     case (sample, reader) => sample -> reader.iterator().buffered
   }
   def hasNext: Boolean = its.values.exists(_.hasNext)
 
-  def next(): SAMRecord = {
+  def next(): PrefixIterator.Record = {
     val nextRecords = its
       .filter { case (_, x) => x.hasNext }
       .map { case (key, it) => key -> it.head }
@@ -46,12 +46,17 @@ class PrefixIterator(bamReaders: Map[String, SamReader],
         (if (contig >= 0) contig else Int.MaxValue, r.getAlignmentStart)
     }
     val record = its(sample).next()
-    Option(record.getAttribute(sampleTag)).foreach(x =>
-      record.setAttribute(sampleTag, sample + "-" + x.toString))
-    record
+    val newBarcode = Option(record.getAttribute(sampleTag))
+      .map(x => sample + "-" + x.toString)
+    newBarcode.foreach(record.setAttribute(sampleTag, _))
+    PrefixIterator.Record(newBarcode, record)
   }
 
   def close(): Unit = {
     bamReaders.values.foreach(_.close())
   }
+}
+
+object PrefixIterator {
+  case class Record(newBarcode: Option[String], record: SAMRecord)
 }
