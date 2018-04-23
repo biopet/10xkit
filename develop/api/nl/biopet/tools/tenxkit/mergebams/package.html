@@ -75,7 +75,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="Args.html"><span class="name">Args</span></a><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="downsampleFraction">downsampleFraction: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">1.0</span></span>, <span name="duplets">duplets: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">12345</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="Args.html"><span class="name">Args</span></a><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;UB&quot;</span></span>, <span name="downsampleFraction">downsampleFraction: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">1.0</span></span>, <span name="duplets">duplets: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">12345</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.package@ArgsextendsProductwithSerializable" title="Permalink" target="_top">
@@ -101,7 +101,7 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PrefixIteratorextendsIterator[htsjdk.samtools.SAMRecord]withAutoCloseable"></a>
+      <a id="PrefixIteratorextendsIterator[nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record]withAutoCloseable"></a>
       <a id="PrefixIterator:PrefixIterator"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -109,10 +109,10 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="PrefixIterator.html"><span class="name">PrefixIterator</span></a><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>] with <span class="extype" name="java.lang.AutoCloseable">AutoCloseable</span></span>
+        <a href="PrefixIterator.html"><span class="name">PrefixIterator</span></a><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<a href="PrefixIterator$$Record.html" class="extype" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record">Record</a>] with <span class="extype" name="java.lang.AutoCloseable">AutoCloseable</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.package@PrefixIteratorextendsIterator[htsjdk.samtools.SAMRecord]withAutoCloseable" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.package@PrefixIteratorextendsIterator[nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record]withAutoCloseable" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -137,6 +137,23 @@
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.package@MergeBams" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PrefixIterator"></a>
+      <a id="PrefixIterator:PrefixIterator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="PrefixIterator$.html"><span class="name">PrefixIterator</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.package@PrefixIterator" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

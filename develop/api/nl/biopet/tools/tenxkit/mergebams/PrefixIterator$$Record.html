@@ -1,9 +1,9 @@
 <!DOCTYPE html >
 <html>
         <head>
-          <title>Args - nl.biopet.tools.tenxkit.mergebams.Args</title>
-          <meta name="description" content="Args - nl.biopet.tools.tenxkit.mergebams.Args" />
-          <meta name="keywords" content="Args nl.biopet.tools.tenxkit.mergebams.Args" />
+          <title>Record - nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record</title>
+          <meta name="description" content="Record - nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record" />
+          <meta name="keywords" content="Record nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -16,7 +16,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../../../index.html';
-            var hash = 'nl.biopet.tools.tenxkit.mergebams.Args';
+            var hash = 'nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -29,11 +29,11 @@
         <body class="type">
       <div id="definition">
         <img alt="Class" src="../../../../../lib/class_big.png" />
-        <p id="owner"><a href="../../../../package.html" class="extype" name="nl">nl</a>.<a href="../../../package.html" class="extype" name="nl.biopet">biopet</a>.<a href="../../package.html" class="extype" name="nl.biopet.tools">tools</a>.<a href="../package.html" class="extype" name="nl.biopet.tools.tenxkit">tenxkit</a>.<a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.mergebams">mergebams</a></p>
-        <h1>Args</h1><h3><span class="morelinks"><div>Related Doc:
-            <a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.mergebams">package mergebams</a>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="nl">nl</a>.<a href="../../../package.html" class="extype" name="nl.biopet">biopet</a>.<a href="../../package.html" class="extype" name="nl.biopet.tools">tools</a>.<a href="../package.html" class="extype" name="nl.biopet.tools.tenxkit">tenxkit</a>.<a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.mergebams">mergebams</a>.<a href="PrefixIterator$.html" class="extype" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator">PrefixIterator</a></p>
+        <h1>Record</h1><h3><span class="morelinks"><div>Related Doc:
+            <a href="PrefixIterator$.html" class="extype" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator">package PrefixIterator</a>
           </div></span></h3><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;UB&quot;</span></span>, <span name="downsampleFraction">downsampleFraction: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">1.0</span></span>, <span name="duplets">duplets: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">12345</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Record</span><span class="params">(<span name="newBarcode">newBarcode: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="record">record: <span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -69,7 +69,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="nl.biopet.tools.tenxkit.mergebams.Args"><span>Args</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record"><span>Record</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -88,19 +88,19 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="nl.biopet.tools.tenxkit.mergebams.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(bamFiles:Map[String,java.io.File],barcodes:Map[String,java.io.File],outputBam:java.io.File,outputBarcodes:java.io.File,sampleTag:String,umiTag:String,downsampleFraction:Double,duplets:Int,seed:Int):nl.biopet.tools.tenxkit.mergebams.Args"></a>
-      <a id="&lt;init&gt;:Args"></a>
+              <ol><li name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(newBarcode:Option[String],record:htsjdk.samtools.SAMRecord):nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record"></a>
+      <a id="&lt;init&gt;:Record"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;UB&quot;</span></span>, <span name="downsampleFraction">downsampleFraction: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">1.0</span></span>, <span name="duplets">duplets: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">12345</span></span>)</span>
+        <span class="name">Record</span><span class="params">(<span name="newBarcode">newBarcode: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="record">record: <span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@&lt;init&gt;(bamFiles:Map[String,java.io.File],barcodes:Map[String,java.io.File],outputBam:java.io.File,outputBarcodes:java.io.File,sampleTag:String,umiTag:String,downsampleFraction:Double,duplets:Int,seed:Int):nl.biopet.tools.tenxkit.mergebams.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@&lt;init&gt;(newBarcode:Option[String],record:htsjdk.samtools.SAMRecord):nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -126,7 +126,7 @@
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@!=(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -143,7 +143,7 @@
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@##():Int" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@##():Int" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -160,7 +160,7 @@
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@==(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@==(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -177,45 +177,11 @@
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@asInstanceOf[T0]:T0" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#bamFiles" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="bamFiles:Map[String,java.io.File]"></a>
-      <a id="bamFiles:Map[String,File]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">bamFiles</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>]</span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@bamFiles:Map[String,java.io.File]" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#barcodes" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="barcodes:Map[String,java.io.File]"></a>
-      <a id="barcodes:Map[String,File]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">barcodes</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>]</span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@barcodes:Map[String,java.io.File]" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -228,7 +194,7 @@
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@clone():Object" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@clone():Object" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -239,40 +205,6 @@
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#downsampleFraction" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="downsampleFraction:Double"></a>
-      <a id="downsampleFraction:Double"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">downsampleFraction</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@downsampleFraction:Double" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#duplets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="duplets:Int"></a>
-      <a id="duplets:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">duplets</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@duplets:Int" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -285,7 +217,7 @@
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -302,7 +234,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@finalize():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@finalize():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -325,7 +257,7 @@
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@getClass():Class[_]" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@getClass():Class[_]" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -342,7 +274,7 @@
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -359,11 +291,28 @@
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record#newBarcode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="newBarcode:Option[String]"></a>
+      <a id="newBarcode:Option[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">newBarcode</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@newBarcode:Option[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <a id="notify():Unit"></a>
@@ -376,7 +325,7 @@
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@notify():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@notify():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -393,75 +342,24 @@
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@notifyAll():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@notifyAll():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#outputBam" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="outputBam:java.io.File"></a>
-      <a id="outputBam:File"></a>
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator.Record#record" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="record:htsjdk.samtools.SAMRecord"></a>
+      <a id="record:SAMRecord"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">outputBam</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
+        <span class="name">record</span><span class="result">: <span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@outputBam:java.io.File" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#outputBarcodes" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="outputBarcodes:java.io.File"></a>
-      <a id="outputBarcodes:File"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">outputBarcodes</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@outputBarcodes:java.io.File" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#sampleTag" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="sampleTag:String"></a>
-      <a id="sampleTag:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">sampleTag</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@sampleTag:String" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#seed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="seed:Int"></a>
-      <a id="seed:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">seed</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@seed:Int" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@record:htsjdk.samtools.SAMRecord" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -478,28 +376,11 @@
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#umiTag" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="umiTag:String"></a>
-      <a id="umiTag:String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">umiTag</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@umiTag:String" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -512,7 +393,7 @@
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@wait():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@wait():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -535,7 +416,7 @@
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -558,7 +439,7 @@
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@wait(x$1:Long):Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator$$Record@wait(x$1:Long):Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
