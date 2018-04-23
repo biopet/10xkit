@@ -33,5 +33,7 @@ case class Args(inputFile: File = null,
                 minTotalAltRatio: Double = 0.01,
                 minAlleleCoverage: Int = 5,
                 sampleTag: String = "CB",
+                powerMethod: Int = 4,
+                additionalPower: List[Int] = Nil,
                 umiTag: Option[String] = None,
                 sparkMaster: String = null)
