@@ -21,8 +21,12 @@
 
 package nl.biopet.tools.tenxkit.evalsubgroups
 
+import java.io.File
+
+import nl.biopet.tools.tenxkit.DistanceMatrix
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
+import nl.biopet.utils.io.{getLinesFromFile, writeLinesToFile}
 
 class EvalSubGroupsTest extends ToolTest[Args] {
   def toolCommand: EvalSubGroups.type = EvalSubGroups
@@ -31,5 +35,96 @@ class EvalSubGroupsTest extends ToolTest[Args] {
     intercept[IllegalArgumentException] {
       EvalSubGroups.main(Array())
     }
+  }
+
+  @Test
+  def testPerfectPrecisionRecall(): Unit = {
+    val group1 = List("cell1", "cell2")
+    val group2 = List("cell3", "cell4")
+    val group1File = File.createTempFile("group.", ".txt")
+    group1File.deleteOnExit()
+    val group2File = File.createTempFile("group.", ".txt")
+    group2File.deleteOnExit()
+
+    writeLinesToFile(group1File, group1)
+    writeLinesToFile(group2File, group2)
+
+    val outputDir = File.createTempFile("test.", ".eval")
+    outputDir.delete()
+    outputDir.mkdir()
+
+    EvalSubGroups.main(
+      Array("-g",
+            s"group1=$group1File",
+            "-g",
+            s"group2=$group2File",
+            "-k",
+            s"sample1=$group1File",
+            "-k",
+            s"sample2=$group2File",
+            "-o",
+            s"$outputDir"))
+
+    val precisionFile = new File(outputDir, "precision.tsv")
+    val recallFile = new File(outputDir, "recall.tsv")
+
+    precisionFile should exist
+    recallFile should exist
+
+    val content = List(
+      "\tgroup1\tgroup2",
+      "sample1\t1.0\t0.0",
+      "sample2\t0.0\t1.0"
+    )
+
+    getLinesFromFile(precisionFile) shouldBe content
+    getLinesFromFile(recallFile) shouldBe content
+  }
+
+  @Test
+  def testDistanceMatrix(): Unit = {
+    val group1 = List("cell1", "cell2")
+    val group2 = List("cell3", "cell4")
+    val group1File = File.createTempFile("group.", ".txt")
+    group1File.deleteOnExit()
+    val group2File = File.createTempFile("group.", ".txt")
+    group2File.deleteOnExit()
+
+    val distanceMatrixFile = File.createTempFile("distance.", ".tsv")
+    val distanceMatrix = DistanceMatrix(
+      Array(Array(None, Option(0.0), Option(1.0), Option(1.0)),
+            Array(None, None, Option(1.0), Option(1.0)),
+            Array(None, None, None, Option(0.0)),
+            Array(None, None, None, None)),
+      (group1 ::: group2).toArray
+    )
+    distanceMatrix.writeFile(distanceMatrixFile)
+
+    writeLinesToFile(group1File, group1)
+    writeLinesToFile(group2File, group2)
+
+    val outputDir = File.createTempFile("test.", ".eval")
+    outputDir.delete()
+    outputDir.mkdir()
+
+    EvalSubGroups.main(
+      Array("-g",
+            s"group1=$group1File",
+            "-g",
+            s"group2=$group2File",
+            "-d",
+            s"$distanceMatrixFile",
+            "-o",
+            s"$outputDir"))
+
+    val c11 = new File(outputDir, "group1-group1.histogram.tsv")
+    val c12 = new File(outputDir, "group1-group2.histogram.tsv")
+    val c22 = new File(outputDir, "group2-group2.histogram.tsv")
+    val c21 = new File(outputDir, "group2-group1.histogram.tsv")
+
+    c11 should exist
+    c12 should exist
+    c22 should exist
+    c21 shouldNot exist
   }
 }
