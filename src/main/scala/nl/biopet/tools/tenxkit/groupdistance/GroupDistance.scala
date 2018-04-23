@@ -211,7 +211,7 @@ object GroupDistance extends ToolCommand[Args] {
       (groups, trash)
     else {
       val avgDistance = groupDistances.value.values.sum / groupDistances.value.size
-      if (groupDistances.value.values.exists(_ >= (avgDistance * 2))) {
+      if (groupDistances.value.values.exists(numberOfGroups < expectedGroups || _ >= (avgDistance * 2))) {
         // Split groups where the distance to big
         val newGroups = groupBy
           .flatMap {
