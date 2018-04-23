@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Args</span><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="downsampleFraction">downsampleFraction: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">1.0</span></span>, <span name="duplets">duplets: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">12345</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.tenxkit.mergebams.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(bamFiles:Map[String,java.io.File],barcodes:Map[String,java.io.File],outputBam:java.io.File,outputBarcodes:java.io.File,sampleTag:String):nl.biopet.tools.tenxkit.mergebams.Args"></a>
+      <a id="&lt;init&gt;(bamFiles:Map[String,java.io.File],barcodes:Map[String,java.io.File],outputBam:java.io.File,outputBarcodes:java.io.File,sampleTag:String,downsampleFraction:Double,duplets:Int,seed:Int):nl.biopet.tools.tenxkit.mergebams.Args"></a>
       <a id="&lt;init&gt;:Args"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,10 +97,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>)</span>
+        <span class="name">Args</span><span class="params">(<span name="bamFiles">bamFiles: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="barcodes">barcodes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputBam">outputBam: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputBarcodes">outputBarcodes: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="downsampleFraction">downsampleFraction: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">1.0</span></span>, <span name="duplets">duplets: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">12345</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@&lt;init&gt;(bamFiles:Map[String,java.io.File],barcodes:Map[String,java.io.File],outputBam:java.io.File,outputBarcodes:java.io.File,sampleTag:String):nl.biopet.tools.tenxkit.mergebams.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@&lt;init&gt;(bamFiles:Map[String,java.io.File],barcodes:Map[String,java.io.File],outputBam:java.io.File,outputBarcodes:java.io.File,sampleTag:String,downsampleFraction:Double,duplets:Int,seed:Int):nl.biopet.tools.tenxkit.mergebams.Args" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -239,6 +239,40 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#downsampleFraction" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="downsampleFraction:Double"></a>
+      <a id="downsampleFraction:Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">downsampleFraction</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@downsampleFraction:Double" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#duplets" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="duplets:Int"></a>
+      <a id="duplets:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">duplets</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@duplets:Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -411,6 +445,23 @@
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@sampleTag:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.Args#seed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="seed:Int"></a>
+      <a id="seed:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">seed</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.Args@seed:Int" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

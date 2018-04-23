@@ -45,13 +45,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">PrefixIterator</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>]</span>
+        <span class="name">PrefixIterator</span><span class="result"> extends <span class="extype" name="scala.Iterator">Iterator</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>] with <span class="extype" name="java.lang.AutoCloseable">AutoCloseable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>], <span class="extype" name="scala.collection.TraversableOnce">TraversableOnce</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>], <span class="extype" name="scala.collection.GenTraversableOnce">GenTraversableOnce</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="java.lang.AutoCloseable">AutoCloseable</span>, <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>], <span class="extype" name="scala.collection.TraversableOnce">TraversableOnce</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>], <span class="extype" name="scala.collection.GenTraversableOnce">GenTraversableOnce</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>], <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -69,7 +69,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator"><span>PrefixIterator</span></li><li class="in" name="scala.collection.Iterator"><span>Iterator</span></li><li class="in" name="scala.collection.TraversableOnce"><span>TraversableOnce</span></li><li class="in" name="scala.collection.GenTraversableOnce"><span>GenTraversableOnce</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator"><span>PrefixIterator</span></li><li class="in" name="java.lang.AutoCloseable"><span>AutoCloseable</span></li><li class="in" name="scala.collection.Iterator"><span>Iterator</span></li><li class="in" name="scala.collection.TraversableOnce"><span>TraversableOnce</span></li><li class="in" name="scala.collection.GenTraversableOnce"><span>GenTraversableOnce</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -361,6 +361,23 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator#close" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="close():Unit"></a>
+      <a id="close():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">close</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.mergebams.PrefixIterator@close():Unit" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="nl.biopet.tools.tenxkit.mergebams.PrefixIterator">PrefixIterator</a> → AutoCloseable</dd></dl></div>
     </li><li name="scala.collection.Iterator#collect" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="collect[B](pf:PartialFunction[A,B]):Iterator[B]"></a>
       <a id="collect[B](PartialFunction[SAMRecord,B]):Iterator[B]"></a>
@@ -1978,7 +1995,9 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.collection.Iterator">
+        <div class="parent" name="java.lang.AutoCloseable">
+              <h3>Inherited from <span class="extype" name="java.lang.AutoCloseable">AutoCloseable</span></h3>
+            </div><div class="parent" name="scala.collection.Iterator">
               <h3>Inherited from <span class="extype" name="scala.collection.Iterator">Iterator</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>]</h3>
             </div><div class="parent" name="scala.collection.TraversableOnce">
               <h3>Inherited from <span class="extype" name="scala.collection.TraversableOnce">TraversableOnce</span>[<span class="extype" name="htsjdk.samtools.SAMRecord">SAMRecord</span>]</h3>
