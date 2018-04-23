@@ -23,6 +23,7 @@ package nl.biopet.tools.tenxkit.evalsubgroups
 
 import java.io.File
 
-case class Args(inputFile: File = null,
+case class Args(distanceMatrix: Option[File] = None,
+                knownTrue: Map[String, File] = Map(),
                 outputDir: File = null,
                 groups: Map[String, File] = Map())
