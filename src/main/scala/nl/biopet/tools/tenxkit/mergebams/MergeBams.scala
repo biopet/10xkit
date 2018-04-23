@@ -72,9 +72,7 @@ object MergeBams extends ToolCommand[Args] {
     it.foreach { record =>
       if (cmdArgs.downsampleFraction >= 1.0) writer.addAlignment(record)
       else {
-        if ((random
-              .nextInt(1000)
-              .toDouble / 1000) <= cmdArgs.downsampleFraction)
+        if (random.nextFloat() <= cmdArgs.downsampleFraction)
           writer.addAlignment(record)
       }
     }
