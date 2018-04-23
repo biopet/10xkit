@@ -103,16 +103,14 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
   }
 
   def subGroupDistance(samples: List[Int]): Double = {
-    val values = (for {
+    (for {
       s1 <- samples
       s2 <- samples
-    } yield this(s1, s2)).flatten
-    values.sum / values.size
+    } yield this(s1, s2)).flatten.sum / samples.size
   }
 
   def subGroupDistance(sample: Int, samples: List[Int]): Double = {
-    val values = samples.flatMap(this(_, sample))
-    values.sum / values.size
+    samples.flatMap(this(_, sample)).sum / samples.size
   }
 }
 
