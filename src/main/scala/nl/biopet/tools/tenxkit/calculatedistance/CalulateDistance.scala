@@ -97,10 +97,6 @@ object CalulateDistance extends ToolCommand[Args] {
         }
       }
       .groupByKey()
-      .cache()
-
-    val totalCombinations = combinations.count()
-    logger.info(s"Total number of samples combinations: $totalCombinations")
 
     val fractionPairs = combinations.map {
       case (key, alleles) =>
@@ -153,16 +149,8 @@ object CalulateDistance extends ToolCommand[Args] {
         }
     }
 
-    futures += combinationDistance()
-    futures += combinationDistance(2)
-    futures += combinationDistance(3)
-    futures += combinationDistance(4)
-    futures += combinationDistance(5)
-    futures += combinationDistance(6)
-    futures += combinationDistance(7)
-    futures += combinationDistance(8)
-    futures += combinationDistance(9)
-    futures += combinationDistance(10)
+    (cmdArgs.powerMethod :: cmdArgs.additionalPower).distinct.sorted
+      .foreach(futures += combinationDistance(_))
 
     if (cmdArgs.writeScatters) {
       val scatterDir = new File(cmdArgs.outputDir, "scatters")
