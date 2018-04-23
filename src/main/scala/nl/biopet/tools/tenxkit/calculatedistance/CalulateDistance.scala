@@ -98,9 +98,6 @@ object CalulateDistance extends ToolCommand[Args] {
       }
       .groupByKey()
 
-    val totalCombinations = combinations.count()
-    logger.info(s"Total number of samples combinations: $totalCombinations")
-
     val fractionPairs = combinations.map {
       case (key, alleles) =>
         key -> alleles.map { pos =>
