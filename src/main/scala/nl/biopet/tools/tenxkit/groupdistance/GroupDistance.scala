@@ -35,6 +35,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable
+import scala.util.Random
 
 object GroupDistance extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -73,27 +74,33 @@ object GroupDistance extends ToolCommand[Args] {
 //          correctCellsMap,
 //          50000000)
 //    }
-    val vectors = distanceMatrixToVectors(distanceMatrix.value, correctCells).toDF("sample", "features").cache()
 
-    val bkm = new BisectingKMeans()
-      .setK(cmdArgs.numClusters)
-      //.setMaxIter(cmdArgs.numIterations)
-      .setSeed(cmdArgs.seed)
+    val initGroups: RDD[GroupSample] = if (cmdArgs.skipKmeans) {
+      val random = new Random(cmdArgs.seed)
+      sc.parallelize(correctCells.value.indices.map(i => GroupSample(random.nextInt(cmdArgs.numClusters), i)))
+    } else {
+      val vectors = distanceMatrixToVectors(distanceMatrix.value, correctCells).toDF("sample", "features").cache()
 
-    val model = bkm.fit(vectors)
+      val bkm = new BisectingKMeans()
+        .setK(cmdArgs.numClusters)
+        //.setMaxIter(cmdArgs.numIterations)
+        .setSeed(cmdArgs.seed)
 
-    val predictions: RDD[(Int, Iterable[Int])] = model
-      .transform(vectors)
-      .select("sample", "prediction")
-      .as[Prediction]
-      .rdd
-      .groupBy(_.prediction)
-      .repartition(cmdArgs.numClusters)
-      .map { case (group, list) => group -> list.map(_.sample) }
-      .cache()
+      val model = bkm.fit(vectors)
+
+      model
+        .transform(vectors)
+        .select("sample", "prediction")
+        .as[Prediction]
+        .rdd
+        .groupBy(_.prediction)
+        .repartition(cmdArgs.numClusters)
+        .map { case (group, list) => group -> list.map(_.sample) }
+        .flatMap{case (g,l) => l.map(GroupSample(g, _))}
+    }.cache()
 
     val (groups, trash) = reCluster(
-      predictions.flatMap{case (g,l) => l.map(GroupSample(g, _))},
+      initGroups,
       distanceMatrix,
       cmdArgs.numClusters,
       cmdArgs.numIterations,
