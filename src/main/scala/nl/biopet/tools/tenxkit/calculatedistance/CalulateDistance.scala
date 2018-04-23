@@ -97,7 +97,6 @@ object CalulateDistance extends ToolCommand[Args] {
         }
       }
       .groupByKey()
-      .cache()
 
     val totalCombinations = combinations.count()
     logger.info(s"Total number of samples combinations: $totalCombinations")
