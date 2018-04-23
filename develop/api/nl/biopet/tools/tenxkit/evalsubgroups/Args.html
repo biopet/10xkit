@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Args</span><span class="params">(<span name="distanceMatrix">distanceMatrix: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="knownTrue">knownTrue: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.tenxkit.evalsubgroups.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(inputFile:java.io.File,outputDir:java.io.File,groups:Map[String,java.io.File]):nl.biopet.tools.tenxkit.evalsubgroups.Args"></a>
+      <a id="&lt;init&gt;(distanceMatrix:Option[java.io.File],knownTrue:Map[String,java.io.File],outputDir:java.io.File,groups:Map[String,java.io.File]):nl.biopet.tools.tenxkit.evalsubgroups.Args"></a>
       <a id="&lt;init&gt;:Args"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,10 +97,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>)</span>
+        <span class="name">Args</span><span class="params">(<span name="distanceMatrix">distanceMatrix: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="knownTrue">knownTrue: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="groups">groups: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>] = <span class="symbol">Map()</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.evalsubgroups.Args@&lt;init&gt;(inputFile:java.io.File,outputDir:java.io.File,groups:Map[String,java.io.File]):nl.biopet.tools.tenxkit.evalsubgroups.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.evalsubgroups.Args@&lt;init&gt;(distanceMatrix:Option[java.io.File],knownTrue:Map[String,java.io.File],outputDir:java.io.File,groups:Map[String,java.io.File]):nl.biopet.tools.tenxkit.evalsubgroups.Args" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -205,6 +205,23 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.evalsubgroups.Args#distanceMatrix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="distanceMatrix:Option[java.io.File]"></a>
+      <a id="distanceMatrix:Option[File]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">distanceMatrix</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.evalsubgroups.Args@distanceMatrix:Option[java.io.File]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -279,23 +296,6 @@
       </a>
     </span>
       
-    </li><li name="nl.biopet.tools.tenxkit.evalsubgroups.Args#inputFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="inputFile:java.io.File"></a>
-      <a id="inputFile:File"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">inputFile</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.evalsubgroups.Args@inputFile:java.io.File" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -313,6 +313,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.evalsubgroups.Args#knownTrue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="knownTrue:Map[String,java.io.File]"></a>
+      <a id="knownTrue:Map[String,File]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">knownTrue</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="java.io.File">File</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.evalsubgroups.Args@knownTrue:Map[String,java.io.File]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>

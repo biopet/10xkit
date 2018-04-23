@@ -165,6 +165,7 @@
         <h4 id="tools---evalsubgroups-1" class="section">Tools - EvalSubGroups</h4>
         <p>This tool will require the complete distance matrix and a list of all cells per group.
         It will generate a histogram for each combination of groups.</p>
+        <p>When a known set is given the precision and recall of each combination of group and know set writen to a file.</p>
         
         <h2 id="example" class="section">Example</h2>
         
@@ -229,13 +230,20 @@
 -b &lt;output barcodes&gt;</code></pre>
         
         <h4 id="tools---evalsubgroups-2" class="section">Tools - EvalSubGroups</h4>
-        <p>Default example:</p>
+        <p>Run with distance matrix example:</p>
         <pre><code>java -jar &lt;TenxKit_jar&gt; EvalSubGroups \
 -o &lt;output directory&gt; \
--i &lt;distance matrix&gt; \
+-d &lt;distance matrix&gt; \
 -g &lt;group 1&gt;=&lt;group 1 file&gt; \
 -g &lt;group 2&gt;=&lt;group 2 file&gt; \
 -g &lt;&lt;group 3&gt;=group 3 file&gt;</code></pre>
+        <p>Run with know true set:</p>
+        <pre><code>java -jar &lt;TenxKit_jar&gt; EvalSubGroups \
+-o &lt;output directory&gt; \
+-k sample1=&lt;sample 1 file&gt; \
+-k sample2=&lt;sample 2 file&gt; \
+-g &lt;group 1&gt;=&lt;group 2 file&gt; \
+-g &lt;group 2&gt;=&lt;group 2 file&gt;</code></pre>
         
         <h2 id="usage" class="section">Usage</h2>
         <p>Usage for TenxKit:</p>
