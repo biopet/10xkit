@@ -174,6 +174,21 @@ object GroupDistance extends ToolCommand[Args] {
     cache += (iteration - 1) -> (trash.cache() :: cache.getOrElse(iteration - 1,
                                                                   Nil))
 
+    val groupBy = groups.groupBy(_.group).map { case (g, list) => g -> list.map(_.sample)}
+    cache += iteration -> (groupBy.cache() :: cache.getOrElse(iteration, Nil))
+
+    val groupDistances = sc.broadcast(
+      groupBy
+        .map {
+          case (idx, samples) =>
+            val histogram =
+              distanceMatrix.value.subgroupHistograms(samples.toList,
+                samples.toList)
+            idx -> histogram.totalDistance / samples.size
+        }
+        .collectAsMap()
+        .toMap)
+
     {
       val iterationDir = new File(outputDir, s"iteration-${iteration - 1}")
       iterationDir.mkdir()
@@ -182,31 +197,16 @@ object GroupDistance extends ToolCommand[Args] {
 
     sc.setJobGroup(s"Iteration $iteration", s"Iteration $iteration")
 
-    val groupBy = groups.groupBy(_.group).map { case (g, list) => g -> list.map(_.sample)}
-    cache += iteration -> (groupBy.cache() :: cache.getOrElse(iteration, Nil))
     val ids = groupBy.keys.collect()
     val numberOfGroups = ids.length
 
     if (maxIterations - iteration <= 0 && numberOfGroups == expectedGroups)
       (groups, trash)
     else {
-
-      val groupDistances = sc.broadcast(
-        groupBy
-          .map {
-            case (idx, samples) =>
-              val histogram =
-                distanceMatrix.value.subgroupHistograms(samples.toList,
-                                                        samples.toList)
-              idx -> histogram.totalDistance / samples.size
-          }
-          .collectAsMap()
-          .toMap)
-
       val avgDistance = groupDistances.value.values.sum / groupDistances.value.size
       if (groupDistances.value.values.exists(_ >= (avgDistance * 2))) {
         // Split groups where the distance to big
-        val bla = groupBy
+        val newGroups = groupBy
           .flatMap {
             case (group, samples) =>
               if (groupDistances.value(group) >= (avgDistance * 2)) {
@@ -218,7 +218,7 @@ object GroupDistance extends ToolCommand[Args] {
           .collect()
           .zipWithIndex
           .flatMap { case (l, i) => l.map(GroupSample(i, _)) }
-        reCluster(sc.parallelize(bla),
+        reCluster(sc.parallelize(newGroups),
                   distanceMatrix,
                   expectedGroups,
                   maxIterations,
@@ -234,7 +234,7 @@ object GroupDistance extends ToolCommand[Args] {
           cache += iteration -> (removecosts
             .cache() :: cache.getOrElse(iteration, Nil))
 
-          val (_, removeGroup) = removecosts
+          val (removeGroup, _) = removecosts
             .groupBy { case (x, _) => x.group}
             .map { case (g,l) => g -> l.map { case (_, x) => x.addCost }.sum }
             .collect()
@@ -255,7 +255,6 @@ object GroupDistance extends ToolCommand[Args] {
             iteration + 1
           )
         } else {
-          //FIXME: method does not work correctly yet
           val newGroups =
             divedeTrash(groups, trash, distanceMatrix, groupDistances)
           val removecosts = calculateSampleMoveCosts(
