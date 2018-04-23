@@ -216,7 +216,7 @@ object GroupDistance extends ToolCommand[Args] {
         val newGroups = groupBy
           .flatMap {
             case (group, samples) =>
-              if (groupDistances.value(group) >= (avgDistance * 2)) {
+              if (groupDistances.value(group) >= (avgDistance * 2) || (numberOfGroups < expectedGroups && groupDistances.value(group) == groupDistances.value.values.max)) {
                 splitCluster(samples.toList, distanceMatrix)
               } else {
                 List(samples.toList)
