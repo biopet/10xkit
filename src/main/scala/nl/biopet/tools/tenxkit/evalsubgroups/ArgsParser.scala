@@ -27,16 +27,22 @@ import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 
 class ArgsParser(toolCommand: ToolCommand[Args])
     extends AbstractOptParser[Args](toolCommand) {
-  opt[File]('i', "inputFile")
-    .required()
-    .action((x, c) => c.copy(inputFile = x))
-    .text("Input bam file")
+  opt[File]('d', "distanceMatrix")
+    .action((x, c) => c.copy(distanceMatrix = Some(x)))
+    .text("DistanceMatrix file")
+  opt[(String, File)]('k', "knownTrue")
+    .action {
+      case ((id, file), c) => c.copy(knownTrue = c.knownTrue + (id -> file))
+    }
+    .unbounded()
+    .text("Known true samples")
   opt[File]('o', "outputDir")
     .required()
     .action((x, c) => c.copy(outputDir = x))
     .text("Output directory")
   opt[(String, File)]('g', "group")
     .action { case ((id, file), c) => c.copy(groups = c.groups + (id -> file)) }
+    .required()
     .unbounded()
     .text("Group to evaluate")
 }

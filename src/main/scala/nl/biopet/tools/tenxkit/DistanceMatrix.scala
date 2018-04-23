@@ -88,9 +88,6 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
     histogram
   }
 
-  case class SubgroupHistogram(group: DistanceHistogram,
-                               nonGroup: DistanceHistogram)
-
   def subgroupHistograms(barcodes1: List[Int],
                          barcodes2: List[Int]): DistanceHistogram = {
     val histogram = new DistanceHistogram
