@@ -55,4 +55,13 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .action((x, c) => c.copy(sampleTag = x))
     .text(
       s"Tag where to find the sample barcode, default '${Args().sampleTag}'")
+  opt[Double]("downsampleFraction")
+    .action((x, c) => c.copy(downsampleFraction = x))
+    .text("Downsample fraction")
+  opt[Int]("duplets")
+    .action((x, c) => c.copy(duplets = x))
+    .text(s"Number of duplets to generate, default ${Args().duplets}")
+  opt[Int]("seed")
+    .action((x, c) => c.copy(seed = x))
+    .text("Random seed")
 }
