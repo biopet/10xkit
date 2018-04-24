@@ -353,12 +353,12 @@ object GroupDistance extends ToolCommand[Args] {
       } else (g1, g2)
     }
 
-    splitGroup.map { s1 =>
+    sc.parallelize(splitGroup.map { s1 =>
       val distances = splitSamples.value
         .flatMap(s2 => distanceMatrix.value(s1.sample, s2).map(s2 -> _))
       s1.sample -> (if (distances.nonEmpty) Some(distances.maxBy { case (_, x) => x })
       else None)
-    }.repartition(1)
+    }.collect(), 1)
       .mapPartitions { it =>
         val total = it.toList
         val sorted = total.flatMap(x => x._2.map(x._1 -> _)).sortBy(_._2._2).reverse
