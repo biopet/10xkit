@@ -359,8 +359,14 @@ object GroupDistance extends ToolCommand[Args] {
             s -> ((v1 / g1.length) - (v2 / g2.length)).abs
         }
         .maxBy { case (_, x) => x }
-      val d1 = distances1.filter(_._1 == sample).head._2 / g1.length
-      val d2 = distances2.filter(_._1 == sample).head._2 / g2.length
+      val d1 = distances1
+        .filter { case (x, _) => x == sample }
+        .map { case (_, x) => x }
+        .head / g1.length
+      val d2 = distances2
+        .filter { case (x, _) => x == sample }
+        .map { case (_, x) => x }
+        .head / g2.length
       distances1 -= sample
       distances2 -= sample
       val leftoverSamples = samples.filter(_ != sample)
@@ -422,14 +428,18 @@ object GroupDistance extends ToolCommand[Args] {
                       else None)
       }
       .collect()
-    val sorted = total.flatMap(x => x._2.map(x._1 -> _)).sortBy(_._2._2).reverse
+    val sorted = total
+      .flatMap { case (s1, s2) => s2.map(s1 -> _) }
+      .sortBy { case (_, (_, x)) => x }
+      .reverse
 
     val (g1, g2) = sorted.headOption match {
       case Some((s1, (s2, _))) =>
-        splitGrouping(total.toList.map(_._1).filter(s => s != s1 && s != s2),
-                      s1 :: Nil,
-                      s2 :: Nil,
-                      distanceMatrix)
+        splitGrouping(
+          total.toList.map { case (x, _) => x }.filter(s => s != s1 && s != s2),
+          s1 :: Nil,
+          s2 :: Nil,
+          distanceMatrix)
       case _ => ???
     }
 
