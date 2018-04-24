@@ -328,6 +328,72 @@ object GroupDistance extends ToolCommand[Args] {
     } ++ groups
   }
 
+  private def splitGrouping(
+      samples: List[Int],
+      g1: List[Int],
+      g2: List[Int],
+      distanceMatrix: Broadcast[DistanceMatrix],
+      distances1: mutable.Map[Int, Double] = mutable.Map(),
+      distances2: mutable.Map[Int, Double] = mutable.Map())
+    : (List[Int], List[Int]) = {
+    require(g1.nonEmpty && g2.nonEmpty)
+    if (distances1.isEmpty) {
+      samples.foreach(
+        s1 =>
+          distances1 += s1 -> g1
+            .flatMap(s2 => distanceMatrix.value(s1, s2))
+            .sum)
+    }
+    if (distances2.isEmpty) {
+      samples.foreach(
+        s1 =>
+          distances2 += s1 -> g2
+            .flatMap(s2 => distanceMatrix.value(s1, s2))
+            .sum)
+    }
+    if (samples.nonEmpty) {
+      val (sample, distance) = distances1
+        .zip(distances2)
+        .map {
+          case ((s, v1), (_, v2)) =>
+            s -> ((v1 / g1.length) - (v2 / g2.length)).abs
+        }
+        .maxBy { case (_, x) => x }
+      val d1 = distances1.filter(_._1 == sample).head._2 / g1.length
+      val d2 = distances2.filter(_._1 == sample).head._2 / g2.length
+      distances1 -= sample
+      distances2 -= sample
+      val leftoverSamples = samples.filter(_ != sample)
+      if (d1 > d2) {
+        distances2.foreach {
+          case (s, d) =>
+            distances2 += s -> (d + distanceMatrix
+              .value(sample, s)
+              .getOrElse(0.0))
+        }
+        splitGrouping(leftoverSamples,
+                      g1,
+                      sample :: g2,
+                      distanceMatrix,
+                      distances1,
+                      distances2)
+      } else {
+        distances1.foreach {
+          case (s, d) =>
+            distances1 += s -> (d + distanceMatrix
+              .value(sample, s)
+              .getOrElse(0.0))
+        }
+        splitGrouping(leftoverSamples,
+                      sample :: g1,
+                      g2,
+                      distanceMatrix,
+                      distances1,
+                      distances2)
+      }
+    } else (g1, g2)
+  }
+
   def splitCluster(
       samples: RDD[GroupSample],
       groupIds: Array[Int],
@@ -347,60 +413,6 @@ object GroupDistance extends ToolCommand[Args] {
     val splitGroup = samples.filter(_.group == splitGroupId)
     val splitSamples = sc.broadcast(splitGroup.map(_.sample).collect())
 
-    def grouping(samples: List[Int],
-                 g1: List[Int],
-                 g2: List[Int],
-                 distances1: mutable.Map[Int, Double] = mutable.Map(),
-                 distances2: mutable.Map[Int, Double] = mutable.Map())
-      : (List[Int], List[Int]) = {
-      require(g1.nonEmpty && g2.nonEmpty)
-      if (distances1.isEmpty) {
-        samples.foreach(
-          s1 =>
-            distances1 += s1 -> g1
-              .flatMap(s2 => distanceMatrix.value(s1, s2))
-              .sum)
-      }
-      if (distances2.isEmpty) {
-        samples.foreach(
-          s1 =>
-            distances2 += s1 -> g2
-              .flatMap(s2 => distanceMatrix.value(s1, s2))
-              .sum)
-      }
-      if (samples.nonEmpty) {
-        val (sample, distance) = distances1
-          .zip(distances2)
-          .map {
-            case ((s, v1), (_, v2)) =>
-              s -> ((v1 / g1.length) - (v2 / g2.length)).abs
-          }
-          .maxBy { case (_, x) => x }
-        val d1 = distances1.filter(_._1 == sample).head._2 / g1.length
-        val d2 = distances2.filter(_._1 == sample).head._2 / g2.length
-        distances1 -= sample
-        distances2 -= sample
-        val leftoverSamples = samples.filter(_ != sample)
-        if (d1 > d2) {
-          distances2.foreach {
-            case (s, d) =>
-              distances2 += s -> (d + distanceMatrix
-                .value(sample, s)
-                .getOrElse(0.0))
-          }
-          grouping(leftoverSamples, g1, sample :: g2, distances1, distances2)
-        } else {
-          distances1.foreach {
-            case (s, d) =>
-              distances1 += s -> (d + distanceMatrix
-                .value(sample, s)
-                .getOrElse(0.0))
-          }
-          grouping(leftoverSamples, sample :: g1, g2, distances1, distances2)
-        }
-      } else (g1, g2)
-    }
-
     val total = splitGroup
       .map { s1 =>
         val distances = splitSamples.value
@@ -414,60 +426,16 @@ object GroupDistance extends ToolCommand[Args] {
 
     val (g1, g2) = sorted.headOption match {
       case Some((s1, (s2, _))) =>
-        grouping(total.toList.map(_._1).filter(s => s != s1 && s != s2),
-                 s1 :: Nil,
-                 s2 :: Nil)
+        splitGrouping(total.toList.map(_._1).filter(s => s != s1 && s != s2),
+                      s1 :: Nil,
+                      s2 :: Nil,
+                      distanceMatrix)
       case _ => ???
     }
 
     val bla = g1.map(GroupSample(splitGroupId, _)) ::: g2.map(
       GroupSample(newGroupId, _))
     sc.parallelize(bla, bla.length).union(restGroups)
-  }
-
-  def splitCluster(
-      samples: List[Int],
-      distanceMatrix: Broadcast[DistanceMatrix]): List[List[Int]] = {
-    val sampleSplit = samples.flatMap { s1 =>
-      val distances = samples
-        .flatMap(s2 => distanceMatrix.value(s1, s2).map(s2 -> _))
-      if (distances.nonEmpty) Some(s1 -> distances.maxBy { case (_, x) => x })
-      else None
-    }
-    val (maxS1, (maxS2, maxDistance)) = sampleSplit.maxBy {
-      case (_, (_, x)) => x
-    }
-
-    def grouping(samples: List[Int],
-                 g1: List[Int],
-                 g2: List[Int]): List[List[Int]] = {
-      if (samples.nonEmpty) {
-        val distances1 = samples.map(s1 =>
-          s1 -> g1.flatMap(s2 => distanceMatrix.value(s1, s2)).sum / g1.size)
-        val distances2 = samples.map(s1 =>
-          s1 -> g2.flatMap(s2 => distanceMatrix.value(s1, s2)).sum / g2.size)
-        val (_, sample) = distances1
-          .zip(distances2)
-          .map { case ((_, v1), (_, v2)) => (v1 - v2).abs }
-          .zipWithIndex
-          .maxBy { case (x, _) => x }
-        val (_, d1) = distances1(sample)
-        val (_, d2) = distances2(sample)
-        if (d1 > d2) {
-          grouping(samples.filter(_ != samples(sample)),
-                   g1,
-                   samples(sample) :: g2)
-        } else {
-          grouping(samples.filter(_ != samples(sample)),
-                   samples(sample) :: g1,
-                   g2)
-        }
-      } else List(g1, g2)
-    }
-
-    grouping(samples.filter(_ != maxS1).filter(_ != maxS2),
-             maxS1 :: Nil,
-             maxS2 :: Nil)
   }
 
   def variantsToVectors(
