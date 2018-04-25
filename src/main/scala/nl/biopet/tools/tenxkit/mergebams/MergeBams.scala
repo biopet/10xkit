@@ -80,7 +80,9 @@ object MergeBams extends ToolCommand[Args] {
     header.setSequenceDictionary(dict)
     header.setSortOrder(SAMFileHeader.SortOrder.coordinate)
     val writer =
-      new SAMFileWriterFactory().makeBAMWriter(header, true, cmdArgs.outputBam)
+      new SAMFileWriterFactory()
+        .setCreateIndex(true)
+        .makeBAMWriter(header, true, cmdArgs.outputBam)
 
     val it = new PrefixIterator(bamReaders, dict, cmdArgs.sampleTag)
     it.flatMap { x =>
