@@ -171,6 +171,15 @@ object GroupDistance extends ToolCommand[Args] {
 
   private val cache: mutable.Map[Int, List[RDD[_]]] = mutable.Map()
 
+  def sameGroups(groups1: RDD[GroupSample],
+                 groups2: RDD[GroupSample]): Boolean = {
+    groups1.collect().toSet == groups2.collect().toSet
+  }
+
+  def sameTrash(trash1: RDD[Int], trash2: RDD[Int]): Boolean = {
+    trash1.collect().toSet == trash2.collect().toSet
+  }
+
   def reCluster(groups: RDD[GroupSample],
                 distanceMatrix: Broadcast[DistanceMatrix],
                 expectedGroups: Int,
@@ -287,15 +296,22 @@ object GroupDistance extends ToolCommand[Args] {
             if (moveCost.removeCost > moveCost.addCost) None
             else Some(current)
         }
-        reCluster(newGroups2,
-                  distanceMatrix,
-                  expectedGroups,
-                  maxIterations,
-                  newTrash,
-                  outputDir,
-                  correctCells,
-                  iteration + 1)
+        cache += iteration -> (newGroups2
+          .cache() :: cache.getOrElse(iteration, Nil))
+        cache += iteration -> (newTrash
+          .cache() :: cache.getOrElse(iteration, Nil))
 
+        if (sameGroups(groups, newGroups2) && sameTrash(trash, newTrash))
+          (newGroups2, newTrash)
+        else
+          reCluster(newGroups2,
+                    distanceMatrix,
+                    expectedGroups,
+                    maxIterations,
+                    newTrash,
+                    outputDir,
+                    correctCells,
+                    iteration + 1)
       }
     }
   }
