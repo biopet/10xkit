@@ -437,17 +437,21 @@ object GroupDistance extends ToolCommand[Args] {
 
     sorted.headOption match {
       case Some((s1, (s2, _))) =>
-        (splitGroup.repartition(1).mapPartitions { it =>
-          val splitSamples = it.map(_.sample).toList
-          val (g1, g2) =
-            splitGrouping(splitSamples.filter(s => s != s1 && s != s2),
-                          s1 :: Nil,
-                          s2 :: Nil,
-                          distanceMatrix)
-          (g1.map(GroupSample(splitGroupId, _)) ::: g2.map(
-            GroupSample(newGroupId, _))).iterator
-        }, sc.emptyRDD[Int])
-      case _ => (sc.emptyRDD[GroupSample], splitGroup.map(_.sample))
+        (splitGroup
+           .repartition(1)
+           .mapPartitions { it =>
+             val splitSamples = it.map(_.sample).toList
+             val (g1, g2) =
+               splitGrouping(splitSamples.filter(s => s != s1 && s != s2),
+                             s1 :: Nil,
+                             s2 :: Nil,
+                             distanceMatrix)
+             (g1.map(GroupSample(splitGroupId, _)) ::: g2.map(
+               GroupSample(newGroupId, _))).iterator
+           }
+           .union(restGroups),
+         sc.emptyRDD[Int])
+      case _ => (restGroups, splitGroup.map(_.sample))
     }
   }
 
