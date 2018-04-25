@@ -248,19 +248,19 @@ object GroupDistance extends ToolCommand[Args] {
       } else if (numberOfGroups < expectedGroups || groupDistances.value.values
                    .exists(_ >= (avgDistance * 2))) {
         // Split groups where the distance to big
-        val splitRdd = splitCluster(groups,
-                                    ids,
-                                    distanceMatrix,
-                                    groupDistances,
-                                    avgDistance,
-                                    expectedGroups)
+        val (splitRdd, extraTrash) = splitCluster(groups,
+                                                  ids,
+                                                  distanceMatrix,
+                                                  groupDistances,
+                                                  avgDistance,
+                                                  expectedGroups)
         cache += iteration -> (splitRdd
           .cache() :: cache.getOrElse(iteration, Nil))
         reCluster(splitRdd,
                   distanceMatrix,
                   expectedGroups,
                   maxIterations,
-                  trash,
+                  trash.union(extraTrash),
                   outputDir,
                   correctCells,
                   iteration + 1)
@@ -362,11 +362,13 @@ object GroupDistance extends ToolCommand[Args] {
       val d1 = distances1
         .filter { case (x, _) => x == sample }
         .map { case (_, x) => x }
-        .head / g1.length
+        .headOption
+        .getOrElse(0.0) / g1.length
       val d2 = distances2
         .filter { case (x, _) => x == sample }
         .map { case (_, x) => x }
-        .head / g2.length
+        .headOption
+        .getOrElse(0.0) / g2.length
       distances1 -= sample
       distances2 -= sample
       val leftoverSamples = samples.filter(_ != sample)
@@ -400,13 +402,13 @@ object GroupDistance extends ToolCommand[Args] {
     } else (g1, g2)
   }
 
-  def splitCluster(
-      samples: RDD[GroupSample],
-      groupIds: Array[Int],
-      distanceMatrix: Broadcast[DistanceMatrix],
-      groupDistances: Broadcast[Map[Int, Double]],
-      avgDistance: Double,
-      expectedGroups: Int)(implicit sc: SparkContext): RDD[GroupSample] = {
+  def splitCluster(samples: RDD[GroupSample],
+                   groupIds: Array[Int],
+                   distanceMatrix: Broadcast[DistanceMatrix],
+                   groupDistances: Broadcast[Map[Int, Double]],
+                   avgDistance: Double,
+                   expectedGroups: Int)(
+      implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     val splitGroupId = groupIds.maxBy(
       group =>
         groupDistances
@@ -433,19 +435,20 @@ object GroupDistance extends ToolCommand[Args] {
       .sortBy { case (_, (_, x)) => x }
       .reverse
 
-    val (g1, g2) = sorted.headOption match {
+    sorted.headOption match {
       case Some((s1, (s2, _))) =>
-        splitGrouping(
-          total.toList.map { case (x, _) => x }.filter(s => s != s1 && s != s2),
-          s1 :: Nil,
-          s2 :: Nil,
-          distanceMatrix)
-      case _ => ???
+        (splitGroup.repartition(1).mapPartitions { it =>
+          val splitSamples = it.map(_.sample).toList
+          val (g1, g2) =
+            splitGrouping(splitSamples.filter(s => s != s1 && s != s2),
+                          s1 :: Nil,
+                          s2 :: Nil,
+                          distanceMatrix)
+          (g1.map(GroupSample(splitGroupId, _)) ::: g2.map(
+            GroupSample(newGroupId, _))).iterator
+        }, sc.emptyRDD[Int])
+      case _ => (sc.emptyRDD[GroupSample], splitGroup.map(_.sample))
     }
-
-    val bla = g1.map(GroupSample(splitGroupId, _)) ::: g2.map(
-      GroupSample(newGroupId, _))
-    sc.parallelize(bla, bla.length).union(restGroups)
   }
 
   def variantsToVectors(
