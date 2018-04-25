@@ -91,6 +91,7 @@ object GroupDistance extends ToolCommand[Args] {
 
       val model = bkm.fit(vectors)
 
+      // Predict cluster for each cell
       model
         .transform(vectors)
         .select("sample", "prediction")
