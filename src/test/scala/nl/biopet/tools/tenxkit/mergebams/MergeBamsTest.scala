@@ -121,6 +121,7 @@ class MergeBamsTest extends ToolTest[Args] {
       .makeDefault()
       .validationStringency(ValidationStringency.SILENT)
       .open(outputBam)
+    reader.hasIndex shouldBe true
     val it1 = reader.iterator()
     it1.size shouldBe 40000
     it1.close()
