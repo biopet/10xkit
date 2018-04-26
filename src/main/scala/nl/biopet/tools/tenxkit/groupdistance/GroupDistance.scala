@@ -34,7 +34,10 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 import scala.util.Random
 
 object GroupDistance extends ToolCommand[Args] {
@@ -172,12 +175,16 @@ object GroupDistance extends ToolCommand[Args] {
   private val cache: mutable.Map[Int, List[RDD[_]]] = mutable.Map()
 
   def sameGroups(groups1: RDD[GroupSample],
-                 groups2: RDD[GroupSample]): Boolean = {
-    groups1.collect().toSet == groups2.collect().toSet
+                 groups2: RDD[GroupSample]): Future[Boolean] = {
+    val c1 = groups1.collectAsync().map(_.toSet)
+    val c2 = groups2.collectAsync().map(_.toSet)
+    c1.zip(c2).map{ case (r1, r2) => r1 == r2}
   }
 
-  def sameTrash(trash1: RDD[Int], trash2: RDD[Int]): Boolean = {
-    trash1.collect().toSet == trash2.collect().toSet
+  def sameTrash(trash1: RDD[Int], trash2: RDD[Int]): Future[Boolean] = {
+    val c1 = trash1.collectAsync().map(_.toSet)
+    val c2 = trash2.collectAsync().map(_.toSet)
+    c1.zip(c2).map{ case (r1, r2) => r1 == r2}
   }
 
   def reCluster(groups: RDD[GroupSample],
@@ -301,7 +308,8 @@ object GroupDistance extends ToolCommand[Args] {
         cache += iteration -> (newTrash
           .cache() :: cache.getOrElse(iteration, Nil))
 
-        if (sameGroups(groups, newGroups2) && sameTrash(trash, newTrash))
+        val same = sameGroups(groups, newGroups2).zip(sameTrash(trash, newTrash)).map{ case (g, t) => g && t}
+        if (Await.result(same, Duration.Inf))
           (newGroups2, newTrash)
         else
           reCluster(newGroups2,
