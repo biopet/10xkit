@@ -35,6 +35,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable
+import scala.util.Random
 
 object GroupDistance extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -73,27 +74,37 @@ object GroupDistance extends ToolCommand[Args] {
 //          correctCellsMap,
 //          50000000)
 //    }
-    val vectors = distanceMatrixToVectors(distanceMatrix.value, correctCells).toDF("sample", "features").cache()
 
-    val bkm = new BisectingKMeans()
-      .setK(cmdArgs.numClusters)
-      //.setMaxIter(cmdArgs.numIterations)
-      .setSeed(cmdArgs.seed)
+    val initGroups: RDD[GroupSample] = if (cmdArgs.skipKmeans) {
+      val random = new Random(cmdArgs.seed)
+      sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
+                     correctCells.value.length)
+    } else {
+      val vectors = distanceMatrixToVectors(distanceMatrix.value, correctCells)
+        .toDF("sample", "features")
+        .cache()
 
-    val model = bkm.fit(vectors)
+      val bkm = new BisectingKMeans()
+        .setK(cmdArgs.numClusters)
+        //.setMaxIter(cmdArgs.numIterations)
+        .setSeed(cmdArgs.seed)
 
-    val predictions: RDD[(Int, Iterable[Int])] = model
-      .transform(vectors)
-      .select("sample", "prediction")
-      .as[Prediction]
-      .rdd
-      .groupBy(_.prediction)
-      .repartition(cmdArgs.numClusters)
-      .map { case (group, list) => group -> list.map(_.sample) }
-      .cache()
+      val model = bkm.fit(vectors)
+
+      // Predict cluster for each cell
+      model
+        .transform(vectors)
+        .select("sample", "prediction")
+        .as[Prediction]
+        .rdd
+        .groupBy(_.prediction)
+        .repartition(cmdArgs.numClusters)
+        .map { case (group, list) => group -> list.map(_.sample) }
+        .flatMap { case (g, l) => l.map(GroupSample(g, _)) }
+    }.cache()
 
     val (groups, trash) = reCluster(
-      predictions.flatMap{case (g,l) => l.map(GroupSample(g, _))},
+      initGroups,
       distanceMatrix,
       cmdArgs.numClusters,
       cmdArgs.numIterations,
@@ -139,8 +150,11 @@ object GroupDistance extends ToolCommand[Args] {
       implicit sc: SparkContext): RDD[(GroupSample, MoveFromCost)] = {
     val groups = sc.broadcast(predictions.collectAsMap())
     val total = distanceMatrix.value.samples.length
-    predictions.flatMap{ case (_,l) => l}.repartition(total).map { sample =>
-      val group = groups.value.find{ case (_, v) => v.contains(sample)}.map{ case (k, _) => k }.getOrElse(0)
+    predictions.flatMap { case (_, l) => l }.repartition(total).map { sample =>
+      val group = groups.value
+        .find { case (_, v) => v.contains(sample) }
+        .map { case (k, _) => k }
+        .getOrElse(0)
       val removeCost: Double = distanceMatrix.value
         .subGroupDistance(sample, groups.value(group).filterNot(_ == sample))
       GroupSample(group, sample) -> groups.value
@@ -174,6 +188,22 @@ object GroupDistance extends ToolCommand[Args] {
     cache += (iteration - 1) -> (trash.cache() :: cache.getOrElse(iteration - 1,
                                                                   Nil))
 
+    val groupBy =
+      groups.groupBy(_.group).map { case (g, list) => g -> list.map(_.sample) }
+    cache += iteration -> (groupBy.cache() :: cache.getOrElse(iteration, Nil))
+
+    val groupDistances = sc.broadcast(
+      groupBy
+        .map {
+          case (idx, samples) =>
+            val histogram =
+              distanceMatrix.value.subgroupHistograms(samples.toList,
+                                                      samples.toList)
+            idx -> histogram.totalDistance / samples.size
+        }
+        .collectAsMap()
+        .toMap)
+
     {
       val iterationDir = new File(outputDir, s"iteration-${iteration - 1}")
       iterationDir.mkdir()
@@ -182,108 +212,90 @@ object GroupDistance extends ToolCommand[Args] {
 
     sc.setJobGroup(s"Iteration $iteration", s"Iteration $iteration")
 
-    val groupBy = groups.groupBy(_.group).map { case (g, list) => g -> list.map(_.sample)}
-    cache += iteration -> (groupBy.cache() :: cache.getOrElse(iteration, Nil))
     val ids = groupBy.keys.collect()
     val numberOfGroups = ids.length
 
     if (maxIterations - iteration <= 0 && numberOfGroups == expectedGroups)
       (groups, trash)
     else {
-
-      val groupDistances = sc.broadcast(
-        groupBy
-          .map {
-            case (idx, samples) =>
-              val histogram =
-                distanceMatrix.value.subgroupHistograms(samples.toList,
-                                                        samples.toList)
-              idx -> histogram.totalDistance / samples.size
-          }
-          .collectAsMap()
-          .toMap)
-
       val avgDistance = groupDistances.value.values.sum / groupDistances.value.size
-      if (groupDistances.value.values.exists(_ >= (avgDistance * 2))) {
-        // Split groups where the distance to big
-        val bla = groupBy
-          .flatMap {
-            case (group, samples) =>
-              if (groupDistances.value(group) >= (avgDistance * 2)) {
-                splitCluster(samples.toList, distanceMatrix)
-              } else {
-                List(samples.toList)
-              }
-          }
+      if (numberOfGroups > expectedGroups) {
+        val removecosts = calculateSampleMoveCosts(groupBy.map {
+          case (g, l) => g -> l.toList
+        }, distanceMatrix)
+        cache += iteration -> (removecosts
+          .cache() :: cache.getOrElse(iteration, Nil))
+
+        val (removeGroup, _) = removecosts
+          .groupBy { case (x, _) => x.group }
+          .map { case (g, l) => g -> l.map { case (_, x) => x.addCost }.sum }
           .collect()
-          .zipWithIndex
-          .flatMap { case (l, i) => l.map(GroupSample(i, _)) }
-        reCluster(sc.parallelize(bla),
+          .minBy { case (_, x) => x }
+        reCluster(
+          removecosts.map {
+            case (current, moveTo) =>
+              if (current.group == removeGroup) {
+                GroupSample(moveTo.group, current.sample)
+              } else current
+          },
+          distanceMatrix,
+          expectedGroups,
+          maxIterations,
+          trash,
+          outputDir,
+          correctCells,
+          iteration + 1
+        )
+      } else if (numberOfGroups < expectedGroups || groupDistances.value.values
+                   .exists(_ >= (avgDistance * 2))) {
+        // Split groups where the distance to big
+        val (splitRdd, extraTrash) = splitCluster(groups,
+                                                  ids,
+                                                  distanceMatrix,
+                                                  groupDistances,
+                                                  avgDistance,
+                                                  expectedGroups)
+        cache += iteration -> (splitRdd
+          .cache() :: cache.getOrElse(iteration, Nil))
+        reCluster(splitRdd,
                   distanceMatrix,
                   expectedGroups,
                   maxIterations,
-                  trash,
+                  trash.union(extraTrash),
                   outputDir,
                   correctCells,
                   iteration + 1)
       } else {
-        if (numberOfGroups > expectedGroups) {
-          val removecosts = calculateSampleMoveCosts(
-            groupBy.map { case (g, l) => g -> l.toList },
-            distanceMatrix)
-          cache += iteration -> (removecosts
-            .cache() :: cache.getOrElse(iteration, Nil))
+        val newGroups =
+          divedeTrash(groups, trash, distanceMatrix, groupDistances)
+        val removecosts = calculateSampleMoveCosts(
+          newGroups
+            .groupBy(_.group)
+            .map { case (g, l) => g -> l.map(_.sample).toList },
+          distanceMatrix)
+        cache += iteration -> (removecosts
+          .cache() :: cache.getOrElse(iteration, Nil))
 
-          val (_, removeGroup) = removecosts
-            .groupBy { case (x, _) => x.group}
-            .map { case (g,l) => g -> l.map { case (_, x) => x.addCost }.sum }
-            .collect()
-            .minBy{ case (_,x) => x }
-          reCluster(
-            removecosts.map {
-              case (current, moveTo) =>
-                if (current.group == removeGroup) {
-                  GroupSample(moveTo.group, current.sample)
-                } else current
-            },
-            distanceMatrix,
-            expectedGroups,
-            maxIterations,
-            trash,
-            outputDir,
-            correctCells,
-            iteration + 1
-          )
-        } else {
-          //FIXME: method does not work correctly yet
-          val newGroups =
-            divedeTrash(groups, trash, distanceMatrix, groupDistances)
-          val removecosts = calculateSampleMoveCosts(
-            newGroups
-              .groupBy(_.group)
-              .map { case (g, l) => g -> l.map(_.sample).toList},
-            distanceMatrix)
-          cache += iteration -> (removecosts
-            .cache() :: cache.getOrElse(iteration, Nil))
-
-          val newTrash = removecosts
-            .filter {
-              case (current, moveCost) => moveCost.removeCost > moveCost.addCost
-            }.keys.map(_.sample)
-          val newGroups2 = removecosts.flatMap {
-            case (current, moveCost) =>
-              if (moveCost.removeCost > moveCost.addCost) None
-              else Some(current)
+        val newTrash = removecosts
+          .filter {
+            case (current, moveCost) => moveCost.removeCost > moveCost.addCost
           }
-          reCluster(newGroups2,
-                    distanceMatrix,
-                    expectedGroups,
-                    maxIterations,
-                    newTrash,
-                    outputDir,
-                    correctCells,
-                    iteration + 1)
+          .keys
+          .map(_.sample)
+        val newGroups2 = removecosts.flatMap {
+          case (current, moveCost) =>
+            if (moveCost.removeCost > moveCost.addCost) None
+            else Some(current)
         }
+        reCluster(newGroups2,
+                  distanceMatrix,
+                  expectedGroups,
+                  maxIterations,
+                  newTrash,
+                  outputDir,
+                  correctCells,
+                  iteration + 1)
+
       }
     }
   }
@@ -305,7 +317,7 @@ object GroupDistance extends ToolCommand[Args] {
     val groupsBroadcast = sc.broadcast(
       groups
         .groupBy(_.group)
-        .map{case (g,l) => g -> l.map(_.sample).toList}
+        .map { case (g, l) => g -> l.map(_.sample).toList }
         .collectAsMap()
         .toMap)
     trash.map { s =>
@@ -317,47 +329,131 @@ object GroupDistance extends ToolCommand[Args] {
     } ++ groups
   }
 
-  def splitCluster(
-      group: List[Int],
-      distanceMatrix: Broadcast[DistanceMatrix]): List[List[Int]] = {
-    val sampleSplit = group.map { s1 =>
-      val maxDistance = group
-        .flatMap(s2 => distanceMatrix.value(s1, s2).map(s2 -> _))
-        .maxBy { case (_, x) => x }
-      s1 -> maxDistance
+  private def splitGrouping(
+      samples: List[Int],
+      g1: List[Int],
+      g2: List[Int],
+      distanceMatrix: Broadcast[DistanceMatrix],
+      distances1: mutable.Map[Int, Double] = mutable.Map(),
+      distances2: mutable.Map[Int, Double] = mutable.Map())
+    : (List[Int], List[Int]) = {
+    require(g1.nonEmpty && g2.nonEmpty)
+    if (distances1.isEmpty) {
+      samples.foreach(
+        s1 =>
+          distances1 += s1 -> g1
+            .flatMap(s2 => distanceMatrix.value(s1, s2))
+            .sum)
     }
-    val (maxS1, (maxS2, maxDistance)) = sampleSplit.maxBy{ case (_, (_, x)) => x }
-
-    def grouping(samples: List[Int],
-                 g1: List[Int],
-                 g2: List[Int]): List[List[Int]] = {
-      if (samples.nonEmpty) {
-        val distances1 = samples.map(s1 =>
-          s1 -> g1.flatMap(s2 => distanceMatrix.value(s1, s2)).sum / g1.size)
-        val distances2 = samples.map(s1 =>
-          s1 -> g2.flatMap(s2 => distanceMatrix.value(s1, s2)).sum / g2.size)
-        val (_, sample) = distances1
-          .zip(distances2)
-          .map { case ((_, v1),(_, v2)) => (v1 - v2).abs }
-          .zipWithIndex
-          .maxBy{ case (x, _) => x }
-        val (_, d1) = distances1(sample)
-        val (_, d2) = distances2(sample)
-        if (d1 > d2) {
-          grouping(samples.filter(_ != samples(sample)),
-                   g1,
-                   samples(sample) :: g2)
-        } else {
-          grouping(samples.filter(_ != samples(sample)),
-                   samples(sample) :: g1,
-                   g2)
+    if (distances2.isEmpty) {
+      samples.foreach(
+        s1 =>
+          distances2 += s1 -> g2
+            .flatMap(s2 => distanceMatrix.value(s1, s2))
+            .sum)
+    }
+    if (samples.nonEmpty) {
+      val (sample, distance) = distances1
+        .zip(distances2)
+        .map {
+          case ((s, v1), (_, v2)) =>
+            s -> ((v1 / g1.length) - (v2 / g2.length)).abs
         }
-      } else List(g1, g2)
-    }
+        .maxBy { case (_, x) => x }
+      val d1 = distances1
+        .filter { case (x, _) => x == sample }
+        .map { case (_, x) => x }
+        .headOption
+        .getOrElse(0.0) / g1.length
+      val d2 = distances2
+        .filter { case (x, _) => x == sample }
+        .map { case (_, x) => x }
+        .headOption
+        .getOrElse(0.0) / g2.length
+      distances1 -= sample
+      distances2 -= sample
+      val leftoverSamples = samples.filter(_ != sample)
+      if (d1 > d2) {
+        distances2.foreach {
+          case (s, d) =>
+            distances2 += s -> (d + distanceMatrix
+              .value(sample, s)
+              .getOrElse(0.0))
+        }
+        splitGrouping(leftoverSamples,
+                      g1,
+                      sample :: g2,
+                      distanceMatrix,
+                      distances1,
+                      distances2)
+      } else {
+        distances1.foreach {
+          case (s, d) =>
+            distances1 += s -> (d + distanceMatrix
+              .value(sample, s)
+              .getOrElse(0.0))
+        }
+        splitGrouping(leftoverSamples,
+                      sample :: g1,
+                      g2,
+                      distanceMatrix,
+                      distances1,
+                      distances2)
+      }
+    } else (g1, g2)
+  }
 
-    grouping(group.filter(_ != maxS1).filter(_ != maxS2),
-      maxS1 :: Nil,
-      maxS2 :: Nil)
+  def splitCluster(samples: RDD[GroupSample],
+                   groupIds: Array[Int],
+                   distanceMatrix: Broadcast[DistanceMatrix],
+                   groupDistances: Broadcast[Map[Int, Double]],
+                   avgDistance: Double,
+                   expectedGroups: Int)(
+      implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
+    val splitGroupId = groupIds.maxBy(
+      group =>
+        groupDistances
+          .value(group) == groupDistances.value.values.max && (groupDistances.value(
+          group) >= (avgDistance * 2) || (groupIds.length < expectedGroups)))
+    val newGroupId = groupIds.max + 1
+
+    val restGroups = samples.filter(_.group != splitGroupId)
+
+    val splitGroup = samples.filter(_.group == splitGroupId)
+    val splitSamples = sc.broadcast(splitGroup.map(_.sample).collect())
+
+    val total = splitGroup
+      .map { s1 =>
+        val distances = splitSamples.value
+          .flatMap(s2 => distanceMatrix.value(s1.sample, s2).map(s2 -> _))
+        s1.sample -> (if (distances.nonEmpty)
+                        Some(distances.maxBy { case (_, x) => x })
+                      else None)
+      }
+      .collect()
+    val sorted = total
+      .flatMap { case (s1, s2) => s2.map(s1 -> _) }
+      .sortBy { case (_, (_, x)) => x }
+      .reverse
+
+    sorted.headOption match {
+      case Some((s1, (s2, _))) =>
+        (splitGroup
+           .repartition(1)
+           .mapPartitions { it =>
+             val splitSamples = it.map(_.sample).toList
+             val (g1, g2) =
+               splitGrouping(splitSamples.filter(s => s != s1 && s != s2),
+                             s1 :: Nil,
+                             s2 :: Nil,
+                             distanceMatrix)
+             (g1.map(GroupSample(splitGroupId, _)) ::: g2.map(
+               GroupSample(newGroupId, _))).iterator
+           }
+           .union(restGroups),
+         sc.emptyRDD[Int])
+      case _ => (restGroups, splitGroup.map(_.sample))
+    }
   }
 
   def variantsToVectors(
@@ -380,7 +476,8 @@ object GroupDistance extends ToolCommand[Args] {
       .map {
         case (sample, list) =>
           val sorted = list.toList.sortBy { case (y1, y2, _) => (y1, y2) }
-          (sample, Vectors.dense(sorted.flatMap{ case (_, _, x) => x }.toArray))
+          (sample,
+           Vectors.dense(sorted.flatMap { case (_, _, x) => x }.toArray))
       }
   }
 
