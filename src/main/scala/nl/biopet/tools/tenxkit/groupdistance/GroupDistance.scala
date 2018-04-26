@@ -178,13 +178,13 @@ object GroupDistance extends ToolCommand[Args] {
                  groups2: RDD[GroupSample]): Future[Boolean] = {
     val c1 = groups1.collectAsync().map(_.toSet)
     val c2 = groups2.collectAsync().map(_.toSet)
-    c1.zip(c2).map{ case (r1, r2) => r1 == r2}
+    c1.zip(c2).map { case (r1, r2) => r1 == r2 }
   }
 
   def sameTrash(trash1: RDD[Int], trash2: RDD[Int]): Future[Boolean] = {
     val c1 = trash1.collectAsync().map(_.toSet)
     val c2 = trash2.collectAsync().map(_.toSet)
-    c1.zip(c2).map{ case (r1, r2) => r1 == r2}
+    c1.zip(c2).map { case (r1, r2) => r1 == r2 }
   }
 
   def reCluster(groups: RDD[GroupSample],
@@ -308,7 +308,10 @@ object GroupDistance extends ToolCommand[Args] {
         cache += iteration -> (newTrash
           .cache() :: cache.getOrElse(iteration, Nil))
 
-        val same = sameGroups(groups, newGroups2).zip(sameTrash(trash, newTrash)).map{ case (g, t) => g && t}
+        val same =
+          sameGroups(groups, newGroups2).zip(sameTrash(trash, newTrash)).map {
+            case (g, t) => g && t
+          }
         if (Await.result(same, Duration.Inf))
           (newGroups2, newTrash)
         else
