@@ -25,6 +25,8 @@ import java.io.File
 
 import htsjdk.variant.vcf._
 import nl.biopet.utils.io
+import nl.biopet.utils.ngs.bam.IndexScattering.createBamBins
+import nl.biopet.utils.ngs.intervals.{BedRecord, BedRecordList}
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 
@@ -105,5 +107,23 @@ package object tenxkit {
   def correctCellsMap(samples: Broadcast[Array[String]])(
       implicit sc: SparkContext): Broadcast[Map[String, Int]] = {
     sc.broadcast(samples.value.zipWithIndex.toMap)
+  }
+
+  def createRegions(bamFile: File,
+                    reference: File,
+                    partitions: Int,
+                    intervals: Option[File] = None): List[List[BedRecord]] = {
+    intervals match {
+      case Some(file) =>
+        createBamBins(BedRecordList
+                        .fromFile(file)
+                        .combineOverlap
+                        .validateContigs(reference)
+                        .allRecords
+                        .toList,
+                      bamFile,
+                      partitions)
+      case _ => createBamBins(bamFile, partitions)
+    }
   }
 }

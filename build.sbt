@@ -33,4 +33,3 @@ dependencyOverrides += "com.fasterxml.jackson.module" %% "jackson-module-scala" 
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.3.0" % Provided
 libraryDependencies += "org.apache.spark" %% "spark-sql" % "2.3.0" % Provided
 libraryDependencies += "org.apache.spark" %% "spark-mllib" % "2.3.0" % Provided
-libraryDependencies += "org.bdgenomics.adam" %% "adam-core-spark2" % "0.24.0" //% Provided

@@ -43,14 +43,18 @@ class CellReadsTest extends ToolTest[Args] {
     outputFile.deleteOnExit()
     val sampleTag = "NM"
     CellReads.main(
-      Array("-i",
-            resourcePath("/paired01.bam"),
-            "--sparkMaster",
-            "local[2]",
-            "--sampleTag",
-            sampleTag,
-            "-o",
-            outputFile.getAbsolutePath))
+      Array(
+        "-i",
+        resourcePath("/paired01.bam"),
+        "-R",
+        resourcePath("/reference.fasta"),
+        "--sparkMaster",
+        "local[2]",
+        "--sampleTag",
+        sampleTag,
+        "-o",
+        outputFile.getAbsolutePath
+      ))
     new File(outputFile, s"$sampleTag.csv") should exist
     new File(outputFile, s"$sampleTag.duplicates.csv") should exist
   }
