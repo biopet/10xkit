@@ -26,6 +26,7 @@ import java.io.File
 import htsjdk.samtools.{SamReaderFactory, ValidationStringency}
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.{DataProvider, Test}
+import nl.biopet.utils.io.getLinesFromFile
 
 import scala.collection.JavaConversions._
 
@@ -135,6 +136,10 @@ class MergeBamsTest extends ToolTest[Args] {
                        "bam2-wgs2-lib1")
     it2.close()
     reader.close()
+
+    val outputCells = getLinesFromFile(outputBarcodes)
+    outputCells.size shouldBe cells.size
+    outputCells.toSet shouldBe cells
   }
 
   @Test
@@ -183,6 +188,10 @@ class MergeBamsTest extends ToolTest[Args] {
                        "bam1-wgs2-lib1_bam2-wgs2-lib1")
     it2.close()
     reader.close()
+
+    val outputCells = getLinesFromFile(outputBarcodes)
+    outputCells.size shouldBe cells.size
+    outputCells.toSet shouldBe cells
   }
 
   @DataProvider(name = "fractions")
