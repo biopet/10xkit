@@ -1,3 +1,6 @@
+triggers {
+    cron('* * * * *')
+}
 node('local') {
     try {
 
