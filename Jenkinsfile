@@ -5,7 +5,7 @@ pipeline {
         }
     }
     triggers {
-        cron('* * * * *')
+        pollSCM('*/5 * * * *')
     }
     tools {
         jdk 'JDK 8u162'
@@ -13,10 +13,7 @@ pipeline {
     stages {
         stage('Init') {
             steps {
-//            env.JAVA_HOME = "${tool 'JDK 8u162'}"
-//            env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 sh 'java -version'
-//            tool 'sbt 1.0.4'
                 checkout scm
                 sh 'git submodule update --init --recursive'
                 script {
