@@ -38,33 +38,27 @@ pipeline {
             steps {
                 step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.11/scoverage-report/', reportFile: 'scoverage.xml'])
                 junit '**/test-output/junitreports/*.xml'
-                if (env.BRANCH_NAME == 'develop') stage('Publish') {
-                    sh "sbt -no-colors publish ghpagesPushSite"
-                }
             }
         }
 
+        stage('Example Deploy') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                sh "sbt -no-colors publish ghpagesPushSite"
+            }
+        }
     }
     post {
-        failure {
-            if (currentBuild.result == null || "FAILED" == currentBuild.result) {
-                currentBuild.result = "FAILED"
-                slackSend(color: '#FF0000', message: "${currentBuild.result}: Job '${env.JOB_NAME} #${env.BUILD_NUMBER}' (<${env.BUILD_URL}|Open>)", channel: '#biopet-bot', teamDomain: 'lumc', tokenCredentialId: 'lumc')
-            } else {
-                slackSend(color: '#FFFF00', message: "${currentBuild.result}: Job '${env.JOB_NAME} #${env.BUILD_NUMBER}' (<${env.BUILD_URL}|Open>)", channel: '#biopet-bot', teamDomain: 'lumc', tokenCredentialId: 'lumc')
-            }
-
-            junit '**/test-output/junitreports/*.xml'
-
-            throw e
-        }
         always {
-            if (currentBuild.result == null || "SUCCESS" == currentBuild.result) {
-                currentBuild.result = "SUCCESS"
-                slackSend(color: '#00FF00', message: "${currentBuild.result}: Job '${env.JOB_NAME} #${env.BUILD_NUMBER}' (<${env.BUILD_URL}|Open>)", channel: '#biopet-bot', teamDomain: 'lumc', tokenCredentialId: 'lumc')
-            } else {
-                slackSend(color: '#FFFF00', message: "${currentBuild.result}: Job '${env.JOB_NAME} #${env.BUILD_NUMBER}' (<${env.BUILD_URL}|Open>)", channel: '#biopet-bot', teamDomain: 'lumc', tokenCredentialId: 'lumc')
-            }
+            junit '**/test-output/junitreports/*.xml'
+        }
+        failure {
+            slackSend(color: '#FF0000', message: "${currentBuild.result}: Job '${env.JOB_NAME} #${env.BUILD_NUMBER}' (<${env.BUILD_URL}|Open>)", channel: '#biopet-bot', teamDomain: 'lumc', tokenCredentialId: 'lumc')
+        }
+        success {
+            slackSend(color: '#00FF00', message: "${currentBuild.result}: Job '${env.JOB_NAME} #${env.BUILD_NUMBER}' (<${env.BUILD_URL}|Open>)", channel: '#biopet-bot', teamDomain: 'lumc', tokenCredentialId: 'lumc')
         }
     }
 }
