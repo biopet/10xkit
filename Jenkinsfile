@@ -1,12 +1,13 @@
-triggers {
-    cron('* * * * *')
-}
-node('local') {
+pipeline {
+    agent { label 'local' }
+    triggers {
+        cron('* * * * *')
+    }
     try {
 
         stage('Init') {
-            env.JAVA_HOME="${tool 'JDK 8u162'}"
-            env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
+            env.JAVA_HOME = "${tool 'JDK 8u162'}"
+            env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
             sh 'java -version'
             tool 'sbt 1.0.4'
             checkout scm
@@ -50,5 +51,4 @@ node('local') {
 
         throw e
     }
-
 }
