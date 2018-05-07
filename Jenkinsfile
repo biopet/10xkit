@@ -13,26 +13,32 @@ pipeline {
     }
     stages {
         stage('Init') {
+            steps {
 //            env.JAVA_HOME = "${tool 'JDK 8u162'}"
 //            env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-            sh 'java -version'
+                sh 'java -version'
 //            tool 'sbt 1.0.4'
-            checkout scm
-            sh 'git submodule update --init --recursive'
+                checkout scm
+                sh 'git submodule update --init --recursive'
+            }
         }
 
         stage('Build & Test') {
-            sh "#!/bin/bash\n" +
-                    "set -e -v -o pipefail\n" +
-                    "sbt -no-colors clean evicted biopetTest 'set test in assembly := {}' assembly | tee sbt.log"
-            //sh "java -jar target/scala-2.11/*-assembly-*.jar -h" // Not possible for spark tools
-            sh 'n=`grep -ce "\\* com.github.biopet" sbt.log || true`; if [ "$n" -ne \"0\" ]; then echo "ERROR: Found conflicting dependencies inside biopet"; exit 1; fi'
-            sh "git diff --exit-code || (echo \"ERROR: Git changes detected, please regenerate the readme, create license headers and run scalafmt: sbt biopetGenerateReadme headerCreate scalafmt\" && exit 1)"
+            steps {
+                sh "#!/bin/bash\n" +
+                        "set -e -v -o pipefail\n" +
+                        "sbt -no-colors clean evicted biopetTest 'set test in assembly := {}' assembly | tee sbt.log"
+                //sh "java -jar target/scala-2.11/*-assembly-*.jar -h" // Not possible for spark tools
+                sh 'n=`grep -ce "\\* com.github.biopet" sbt.log || true`; if [ "$n" -ne \"0\" ]; then echo "ERROR: Found conflicting dependencies inside biopet"; exit 1; fi'
+                sh "git diff --exit-code || (echo \"ERROR: Git changes detected, please regenerate the readme, create license headers and run scalafmt: sbt biopetGenerateReadme headerCreate scalafmt\" && exit 1)"
+            }
         }
 
         stage('Results') {
-            step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.11/scoverage-report/', reportFile: 'scoverage.xml'])
-            junit '**/test-output/junitreports/*.xml'
+            steps {
+                step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.11/scoverage-report/', reportFile: 'scoverage.xml'])
+                junit '**/test-output/junitreports/*.xml'
+            }
         }
 
         if (env.BRANCH_NAME == 'develop') stage('Publish') {
