@@ -23,13 +23,17 @@ package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.File
 
+import htsjdk.samtools.{QueryInterval, SAMRecord, SamReaderFactory}
+import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.Histogram
+import nl.biopet.utils.ngs.bam.getDictFromBam
 import nl.biopet.utils.tool.ToolCommand
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
+
+import scala.collection.JavaConversions._
 
 object CellReads extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -47,22 +51,35 @@ object CellReads extends ToolCommand[Args] {
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    val reads: AlignmentRecordRDD =
-      sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
+    val dict = sc.broadcast(getDictFromBam(cmdArgs.inputFile))
+    val partitions = (cmdArgs.reference.length() / 1500000).toInt + 2
+    val regions = sc.parallelize(tenxkit.createRegions(cmdArgs.inputFile,
+                                                       cmdArgs.reference,
+                                                       partitions,
+                                                       cmdArgs.intervals),
+                                 partitions)
+
+    val reads = regions.mapPartitions { it =>
+      val regions = it.toList.flatten
+      val reader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
+      val intervals = regions
+        .map(r =>
+          new QueryInterval(dict.value.getSequenceIndex(r.chr), r.start, r.end))
+        .toArray
+      reader.query(intervals, false)
+    }
+
     generateHistograms(reads, cmdArgs.sampleTag, cmdArgs.outputDir)
 
     logger.info("Done")
   }
 
-  def generateHistograms(reads: AlignmentRecordRDD,
+  def generateHistograms(reads: RDD[SAMRecord],
                          sampleTag: String,
                          outputDir: File): Unit = {
-    val groups = reads.rdd
+    val groups = reads
       .flatMap { read =>
-        read.getAttributes
-          .split("\t")
-          .find(_.startsWith(sampleTag + ":"))
-          .map(read.getDuplicateRead -> _.split(":")(2))
+        Option(read.getAttribute(sampleTag)).map(read.getDuplicateReadFlag -> _)
       }
       .countByValue()
 
@@ -98,6 +115,8 @@ object CellReads extends ToolCommand[Args] {
       |${TenxKit.sparkExample("CellReads",
                               "-i",
                               "<input file>",
+                              "-R",
+                              "<reference fasta>",
                               "-o",
                               "<output dir>",
                               "--sparkMaster",
@@ -107,6 +126,8 @@ object CellReads extends ToolCommand[Args] {
       |${TenxKit.sparkExample("CellReads",
                               "-i",
                               "<input file>",
+                              "-R",
+                              "<reference fasta>",
                               "-o",
                               "<output dir>",
                               "--sparkMaster",

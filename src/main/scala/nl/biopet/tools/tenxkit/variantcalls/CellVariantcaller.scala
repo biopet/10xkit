@@ -117,7 +117,8 @@ object CellVariantcaller extends ToolCommand[Args] {
       seqError: Float,
       writeRawVcf: Boolean = false,
       writeFilteredVcf: Boolean = true)(implicit sc: SparkContext): Result = {
-    val regions = createRegions(inputFile, reference, partitions, intervals)
+    val regions =
+      tenxkit.createRegions(inputFile, reference, partitions, intervals)
 
     val allVariants = createAllVariants(inputFile,
                                         reference,
@@ -178,24 +179,6 @@ object CellVariantcaller extends ToolCommand[Args] {
               x.altDepth >= cutoffs.value.minAlternativeDepth &&
               x.totalDepth >= cutoffs.value.minTotalDepth &&
               x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
-    }
-  }
-
-  def createRegions(bamFile: File,
-                    reference: File,
-                    partitions: Int,
-                    intervals: Option[File] = None): List[List[BedRecord]] = {
-    intervals match {
-      case Some(file) =>
-        createBamBins(BedRecordList
-                        .fromFile(file)
-                        .combineOverlap
-                        .validateContigs(reference)
-                        .allRecords
-                        .toList,
-                      bamFile,
-                      partitions)
-      case _ => createBamBins(bamFile, partitions)
     }
   }
 
