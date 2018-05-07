@@ -9,7 +9,7 @@ pipeline {
     }
     tools {
         jdk 'JDK 8u162'
-        sbt 'sbt 1.0.4'
+        org.jvnet.hudson.plugins.SbtPluginBuilder$SbtInstallation 'sbt 1.0.4'
     }
     stages {
         stage('Init') {
