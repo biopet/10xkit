@@ -5,7 +5,7 @@ pipeline {
         }
     }
     triggers {
-        pollSCM('H/5 * * * *')
+        pollSCM('H/15 * * * *')
     }
     tools {
         jdk 'JDK 8u162'
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 sh "#!/bin/bash\n" +
                         "set -e -v -o pipefail\n" +
-                        "${sbt} -no-colors clean evicted biopetTest 'set test in assembly := {}' assembly | tee sbt.log"
+                        "${sbt} clean evicted biopetTest 'set test in assembly := {}' assembly | tee sbt.log"
                 //sh "java -jar target/scala-2.11/*-assembly-*.jar -h" // Not possible for spark tools
                 sh 'n=`grep -ce "\\* com.github.biopet" sbt.log || true`; if [ "$n" -ne \"0\" ]; then echo "ERROR: Found conflicting dependencies inside biopet"; exit 1; fi'
                 sh "git diff --exit-code || (echo \"ERROR: Git changes detected, please regenerate the readme, create license headers and run scalafmt: sbt biopetGenerateReadme headerCreate scalafmt\" && exit 1)"
@@ -46,7 +46,7 @@ pipeline {
                 branch 'develop'
             }
             steps {
-                sh "${sbt} -no-colors publish ghpagesPushSite"
+                sh "${sbt} publish ghpagesPushSite"
             }
         }
     }
