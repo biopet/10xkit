@@ -125,7 +125,7 @@ object MergeBams extends ToolCommand[Args] {
                     outputFile: File): List[String] = {
     val writer = new PrintWriter(outputFile)
     barcodes.foreach(writer.println)
-    duplets.values.foreach(writer.println)
+    duplets.values.toList.distinct.foreach(writer.println)
     writer.close()
     barcodes
   }
