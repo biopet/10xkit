@@ -31,13 +31,7 @@ pipeline {
                 //sh "java -jar target/scala-2.11/*-assembly-*.jar -h" // Not possible for spark tools
                 sh 'n=`grep -ce "\\* com.github.biopet" sbt.log || true`; if [ "$n" -ne \"0\" ]; then echo "ERROR: Found conflicting dependencies inside biopet"; exit 1; fi'
                 sh "git diff --exit-code || (echo \"ERROR: Git changes detected, please regenerate the readme, create license headers and run scalafmt: sbt biopetGenerateReadme headerCreate scalafmt\" && exit 1)"
-            }
-        }
-
-        stage('Results') {
-            steps {
                 step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.11/scoverage-report/', reportFile: 'scoverage.xml'])
-                junit '**/test-output/junitreports/*.xml'
             }
         }
 
