@@ -1,7 +1,15 @@
 pipeline {
-    agent { label 'local' }
+    agent {
+        node {
+            label 'local'
+        }
+    }
     triggers {
         cron('* * * * *')
+    }
+    tools {
+        jdk 'JDK 8u162'
+        sbt 'sbt 1.0.4'
     }
     stages {
         stage('Init') {
