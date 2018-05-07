@@ -6,6 +6,7 @@ pipeline {
     }
     triggers {
         pollSCM('H/15 * * * *')
+        bla('blablablabla')
     }
     tools {
         jdk 'JDK 8u162'
