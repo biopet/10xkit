@@ -79,7 +79,6 @@ object GroupDistance extends ToolCommand[Args] {
 //    }
 
     val initGroups: RDD[GroupSample] = if (cmdArgs.skipKmeans) {
-      val random = new Random(cmdArgs.seed)
       sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
                      correctCells.value.length)
     } else {
