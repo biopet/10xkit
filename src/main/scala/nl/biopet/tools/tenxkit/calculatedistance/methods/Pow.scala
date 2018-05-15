@@ -19,21 +19,22 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
-
-case class Args(inputFile: File = null,
-                reference: File = null,
-                outputDir: File = null,
-                intervals: Option[File] = None,
-                correctCells: File = null,
-                writeScatters: Boolean = false,
-                binSize: Int = 500000,
-                minTotalAltRatio: Double = 0.01,
-                minAlleleCoverage: Int = 5,
-                sampleTag: String = "CB",
-                method: String = "pow4",
-                additionalMethods: List[String] = Nil,
-                umiTag: Option[String] = None,
-                sparkMaster: String = null)
+class Pow(pow: Double) extends Method {
+  protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double = {
+    val cell1Total = cell1.sum
+    val cell2Total = cell2.sum
+    cell1
+      .zip(cell2)
+      .map {
+        case (a1, a2) =>
+          val f1 = a1.toDouble / cell1Total
+          val f2 = a2.toDouble / cell2Total
+          val midlePoint = ((f1 - f2) / 2) + f1
+          val distanceToMidle = math.sqrt(math.pow(midlePoint - f1, 2) * 2)
+          math.pow(distanceToMidle, pow)
+      }
+      .sum
+  }
+}

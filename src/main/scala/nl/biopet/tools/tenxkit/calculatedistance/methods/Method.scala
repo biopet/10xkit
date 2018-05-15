@@ -19,21 +19,23 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
+trait Method extends Serializable {
+  final def calculate(cell1: Array[Int], cell2: Array[Int]): Double = {
+    require(cell1.length == cell2.length, "not the same count of alleles")
+    calulateMethod(cell1, cell2)
+  }
 
-case class Args(inputFile: File = null,
-                reference: File = null,
-                outputDir: File = null,
-                intervals: Option[File] = None,
-                correctCells: File = null,
-                writeScatters: Boolean = false,
-                binSize: Int = 500000,
-                minTotalAltRatio: Double = 0.01,
-                minAlleleCoverage: Int = 5,
-                sampleTag: String = "CB",
-                method: String = "pow4",
-                additionalMethods: List[String] = Nil,
-                umiTag: Option[String] = None,
-                sparkMaster: String = null)
+  protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double
+}
+
+object Method {
+  def fromString(string: String): Method = {
+    string match {
+      case s if s.startsWith("pow") => new Pow(s.stripPrefix("pow").toDouble)
+      case _ =>
+        throw new IllegalArgumentException(s"Method '$string' does not exist")
+    }
+  }
+}
