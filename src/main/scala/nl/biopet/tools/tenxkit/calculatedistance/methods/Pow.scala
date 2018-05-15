@@ -21,18 +21,24 @@
 
 package nl.biopet.tools.tenxkit.calculatedistance.methods
 
+/**
+  * This method will clculate the distance to the middle line of the fractions for each allele
+  * @param pow Power value
+  */
 class Pow(pow: Double) extends Method {
   protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double = {
+    // Calculate total depth
     val cell1Total = cell1.sum
     val cell2Total = cell2.sum
     cell1
       .zip(cell2)
       .map {
-        case (a1, a2) =>
-          val f1 = a1.toDouble / cell1Total
-          val f2 = a2.toDouble / cell2Total
-          val midlePoint = ((f1 - f2) / 2) + f1
-          val distanceToMidle = math.sqrt(math.pow(midlePoint - f1, 2) * 2)
+        case (c1, c2) => // calculate distance for each allele
+          val fraction1 = c1.toDouble / cell1Total
+          val fraction2 = c2.toDouble / cell2Total
+          val middlePoint = ((fraction1 - fraction2) / 2) + fraction1
+          val distanceToMidle =
+            math.sqrt(math.pow(middlePoint - fraction1, 2) * 2)
           math.pow(distanceToMidle, pow)
       }
       .sum

@@ -22,6 +22,13 @@
 package nl.biopet.tools.tenxkit.calculatedistance.methods
 
 trait Method extends Serializable {
+
+  /**
+    * Calculate a single distance for alleles from the same position
+    * @param cell1 Alleles from cell 1
+    * @param cell2 alleles from cell 2
+    * @return
+    */
   final def calculate(cell1: Array[Int], cell2: Array[Int]): Double = {
     require(cell1.length == cell2.length, "not the same count of alleles")
     calulateMethod(cell1, cell2)
@@ -31,6 +38,8 @@ trait Method extends Serializable {
 }
 
 object Method {
+
+  /** Parsing a argument string to a specfic [[Method]] */
   def fromString(string: String): Method = {
     string match {
       case s if s.startsWith("pow") => new Pow(s.stripPrefix("pow").toDouble)
