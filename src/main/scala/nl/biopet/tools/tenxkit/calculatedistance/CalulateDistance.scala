@@ -99,7 +99,7 @@ object CalulateDistance extends ToolCommand[Args] {
       }
       .groupByKey()
 
-    def combinationDistance(methodString: String): Future[DistanceMatrix] = {
+    def combinationDistance(methodString: String): Future[Unit] = {
       val method = sc.broadcast(Method.fromString(methodString))
       combinations
         .map {
@@ -120,7 +120,7 @@ object CalulateDistance extends ToolCommand[Args] {
             })
         }
         .repartition(1)
-        .mapPartitions { it =>
+        .foreachPartitionAsync { it =>
           val map = it.toMap
           val values = for (s1 <- correctCells.value.indices.toArray) yield {
             for (s2 <- correctCells.value.indices.toArray) yield {
@@ -130,10 +130,7 @@ object CalulateDistance extends ToolCommand[Args] {
           val matrix = DistanceMatrix(values, correctCells.value)
           matrix.writeFile(
             new File(cmdArgs.outputDir, s"distance.$methodString.csv"))
-          Iterator(matrix)
         }
-        .collectAsync()
-        .map(_.head)
     }
 
     (cmdArgs.method :: cmdArgs.additionalMethods).distinct.sorted
