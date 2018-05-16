@@ -28,7 +28,7 @@ class Chi2Test extends BiopetTest {
   @Test
   def test(): Unit = {
     val method = new Chi2()
-    val value = method.calculate(Array(2, 0), Array(0, 2))
-    ""
+    val value = method.calculate(Array(2, 0, 0), Array(0, 2, 0))
+    value.isNaN shouldBe false
   }
 }
