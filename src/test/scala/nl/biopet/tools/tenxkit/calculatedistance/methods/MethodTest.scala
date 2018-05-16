@@ -21,26 +21,36 @@
 
 package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-/**
-  * This method will clculate the distance to the middle line of the fractions for each allele
-  * @param pow Power value
-  */
-class Pow(val pow: Double) extends Method {
-  protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double = {
-    // Calculate total depth
-    val cell1Total = cell1.sum
-    val cell2Total = cell2.sum
-    cell1
-      .zip(cell2)
-      .map {
-        case (c1, c2) => // calculate distance for each allele
-          val fraction1 = c1.toDouble / cell1Total
-          val fraction2 = c2.toDouble / cell2Total
-          val middlePoint = ((fraction1 - fraction2) / 2) + fraction1
-          val distanceToMidle =
-            math.sqrt(math.pow(middlePoint - fraction1, 2) * 2)
-          math.pow(distanceToMidle, pow)
-      }
-      .sum
+import nl.biopet.test.BiopetTest
+import org.testng.annotations.Test
+
+class MethodTest extends BiopetTest {
+  @Test
+  def testFromStringPow(): Unit = {
+    val method1 = Method.fromString("pow1").asInstanceOf[Pow]
+    method1.pow shouldBe 1.0
+
+    val method2 = Method.fromString("pow4").asInstanceOf[Pow]
+    method2.pow shouldBe 4.0
   }
+
+  @Test
+  def testFromStringChi2(): Unit = {
+    val method = Method.fromString("chi2")
+    method.isInstanceOf[Chi2] shouldBe true
+    method.isInstanceOf[Chi2Pow] shouldBe false
+  }
+
+  @Test
+  def testFromStringChi2Pow(): Unit = {
+    val method1 = Method.fromString("chi2pow1-1").asInstanceOf[Chi2Pow]
+    method1.isInstanceOf[Chi2] shouldBe true
+    method1.resultsPow shouldBe 1.0
+    method1.countsPow shouldBe 1.0
+
+    val method2 = Method.fromString("chi2pow3-5").asInstanceOf[Chi2Pow]
+    method2.resultsPow shouldBe 5.0
+    method2.countsPow shouldBe 3.0
+  }
+
 }

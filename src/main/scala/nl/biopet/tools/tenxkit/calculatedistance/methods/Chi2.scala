@@ -22,12 +22,14 @@
 package nl.biopet.tools.tenxkit.calculatedistance.methods
 
 class Chi2 extends Method {
-  protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double = {
-    val cell1Total = cell1.sum.toDouble
-    val cell2Total = cell2.sum.toDouble
+
+  protected def calulateChi2(cell1: Array[Double],
+                             cell2: Array[Double]): Double = {
+    val cell1Total = cell1.sum
+    val cell2Total = cell2.sum
     val total = cell1Total + cell2Total
     val alleleTotals =
-      cell1.zip(cell2).map { case (a1, a2) => (a1 + a2).toDouble }
+      cell1.zip(cell2).map { case (a1, a2) => a1 + a2 }
     (cell1.zipWithIndex ++ cell2.zipWithIndex).map {
       case (count, idx) =>
         val expected = cell1Total * (alleleTotals(idx) / total)
@@ -35,4 +37,7 @@ class Chi2 extends Method {
         (x * x) / expected
     }.sum
   }
+
+  protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double =
+    calulateChi2(cell1.map(_.toDouble), cell2.map(_.toDouble))
 }
