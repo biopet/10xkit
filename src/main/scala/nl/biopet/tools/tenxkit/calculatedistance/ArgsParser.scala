@@ -67,11 +67,11 @@ class ArgsParser(toolCommand: ToolCommand[Args])
   opt[Unit]("writeScatters")
     .action((_, c) => c.copy(writeScatters = true))
     .text(s"Write fractions for all sample pairs")
-  opt[String]("powerMethod")
+  opt[String]("method")
     .action((x, c) => c.copy(method = x))
     .text(
       s"The power variable for the distance calculation, default: ${Args().method}")
-  opt[String]("additionalPower")
+  opt[String]("additionalMethod")
     .action((x, c) => c.copy(additionalMethods = x :: c.additionalMethods))
     .unbounded()
     .text(
