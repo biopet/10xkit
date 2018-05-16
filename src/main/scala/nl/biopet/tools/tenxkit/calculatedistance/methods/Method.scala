@@ -43,7 +43,9 @@ object Method {
   def fromString(string: String): Method = {
     string match {
       case s if s.startsWith("pow") => new Pow(s.stripPrefix("pow").toDouble)
-      case "chi2"                   => new Chi2
+      case s if s.startsWith("depthpow") =>
+        new DepthPow(s.stripPrefix("depthpow").toDouble)
+      case "chi2" => new Chi2
       case s if s.startsWith("chi2pow") =>
         val values = s.stripPrefix("chi2pow").split("-").map(_.toDouble)
         new Chi2Pow(values(0), values(1))
