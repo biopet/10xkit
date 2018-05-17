@@ -19,34 +19,37 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.extractgroupvariants
 
-import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
-import nl.biopet.tools.tenxkit.cellreads.CellReads
-import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
-import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
-import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
-import nl.biopet.tools.tenxkit.mergebams.MergeBams
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.utils.tool.ToolCommand
-import nl.biopet.utils.tool.multi.MultiToolCommand
+import java.io.File
 
-object TenxKit extends MultiToolCommand {
+import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 
-  def subTools: Map[String, List[ToolCommand[_]]] =
-    Map(
-      "Tools" -> List(CellReads,
-                      CellVariantcaller,
-                      CalulateDistance,
-                      GroupDistance,
-                      MergeBams,
-                      EvalSubGroups,
-                      ExtractGroupVariants))
-
-  def descriptionText: String = extendedDescriptionText
-
-  def manualText: String = extendedManualText
-
-  def exampleText: String = extendedExampleText
-
+class ArgsParser(toolCommand: ToolCommand[Args])
+    extends AbstractOptParser[Args](toolCommand) {
+  opt[File]('i', "inputVcfFile")
+    .action((x, c) => c.copy(inputVcfFile = x))
+    .required()
+    .text("Input vcf file, can be partitioned")
+  opt[File]('R', "reference")
+    .action((x, c) => c.copy(reference = x))
+    .required()
+    .text("Reference fasta file")
+  opt[File]("correctCells")
+    .action((x, c) => c.copy(correctCells = x))
+    .required()
+    .text("List of correct cells")
+  opt[File]('o', "outputDir")
+    .required()
+    .action((x, c) => c.copy(outputDir = x))
+    .text("Output directory")
+  opt[(String, File)]('g', "group")
+    .action { case ((id, file), c) => c.copy(groups = c.groups + (id -> file)) }
+    .required()
+    .unbounded()
+    .text("Group to extract")
+  opt[String]("sparkMaster")
+    .required()
+    .action((x, c) => c.copy(sparkMaster = x))
+    .text("Spark master")
 }

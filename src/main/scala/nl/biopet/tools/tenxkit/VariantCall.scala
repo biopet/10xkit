@@ -283,14 +283,18 @@ object VariantCall {
                   reference: File,
                   sampleMap: Broadcast[Map[String, Int]],
                   binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
-    val dict = sc.broadcast(fasta.getCachedDict(reference))
-    val regions =
-      BedRecordList.fromReference(reference).scatter(binsize)
-    sc.parallelize(regions, regions.size).mapPartitions { it =>
-      it.flatMap { list =>
-        vcf
-          .loadRegions(inputFile, list.iterator)
-          .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+    if (inputFile.isDirectory) {
+      fromPartitionedVcf(inputFile, reference, sampleMap)
+    } else {
+      val dict = sc.broadcast(fasta.getCachedDict(reference))
+      val regions =
+        BedRecordList.fromReference(reference).scatter(binsize)
+      sc.parallelize(regions, regions.size).mapPartitions { it =>
+        it.flatMap { list =>
+          vcf
+            .loadRegions(inputFile, list.iterator)
+            .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+        }
       }
     }
   }
