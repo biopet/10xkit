@@ -21,8 +21,16 @@
 
 package nl.biopet.tools.tenxkit.extractgroupvariants
 
+import java.io.File
+
+import htsjdk.variant.variantcontext.writer.{
+  Options,
+  VariantContextWriterBuilder
+}
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
+import nl.biopet.utils.io
+import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
@@ -38,18 +46,47 @@ object ExtractGroupVariants extends ToolCommand[Args] {
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
-    import sparkSession.implicits._
+    //import sparkSession.implicits._
     implicit val sc: SparkContext = sparkSession.sparkContext
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
+    val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
+
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
+    val groups = sc.broadcast(cmdArgs.groups.map {
+      case (name, file) =>
+        name -> io.getLinesFromFile(file).map(correctCellsMap.value).toArray
+    })
+    val groupsMap = sc.broadcast(groups.value.flatMap {
+      case (k, l) => l.map(_ -> k)
+    })
+    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toArray))
 
     val variants = VariantCall.fromVcfFile(cmdArgs.inputVcfFile,
                                            cmdArgs.reference,
                                            correctCellsMap,
                                            1000000)
+    val groupCalls = variants.map(_.toGroupCall(groupsMap.value))
+
+    val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
+    outputVcfDir.mkdir()
+    groupCalls
+      .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
+      .mapPartitionsWithIndex {
+        case (idx, it) =>
+          val outputFile = new File(outputVcfDir, s"$idx.vcf.gz")
+          val writer =
+            new VariantContextWriterBuilder()
+              .unsetOption(Options.INDEX_ON_THE_FLY)
+              .setOutputFile(outputFile)
+              .build()
+          writer.writeHeader(vcfHeader.value)
+          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
+          writer.close()
+          Iterator(outputFile)
+      }
   }
 
   def descriptionText: String =

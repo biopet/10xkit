@@ -196,6 +196,9 @@ case class VariantCall(contig: Int,
       .genotypes(genotypes)
       .make()
   }
+
+  def toGroupCall(groupsMap: Map[Int, String]): GroupCall =
+    GroupCall.fromVariantCall(this, groupsMap)
 }
 
 object VariantCall {
