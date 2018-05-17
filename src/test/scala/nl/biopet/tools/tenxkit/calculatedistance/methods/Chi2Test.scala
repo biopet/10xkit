@@ -31,6 +31,6 @@ class Chi2Test extends BiopetTest {
     val value = method.calculate(Array(2, 0, 0), Array(0, 2, 0))
     value.isNaN shouldBe false
 
-    method.calulateChi2(Array(1, 1), Array(1, 1))
+    method.calulateValue(Array(1, 1), Array(1, 1))
   }
 }

@@ -23,11 +23,11 @@ package nl.biopet.tools.tenxkit.calculatedistance.methods
 
 class Chi2Pow(val countsPow: Double = 1.0, val resultsPow: Double = 1.0)
     extends Chi2 {
-  override def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double = {
+  override def calulateInternal(cell1: Array[Int], cell2: Array[Int]): Double = {
     val (c1, c2) =
       if (countsPow == 1.0) (cell1.map(_.toDouble), cell2.map(_.toDouble))
       else
         (cell1.map(math.pow(_, countsPow)), cell2.map(math.pow(_, countsPow)))
-    math.pow(calulateChi2(c1, c2), resultsPow)
+    math.pow(calulateValue(c1, c2), resultsPow)
   }
 }

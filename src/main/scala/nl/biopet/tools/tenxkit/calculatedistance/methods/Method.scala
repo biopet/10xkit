@@ -31,10 +31,10 @@ trait Method extends Serializable {
     */
   final def calculate(cell1: Array[Int], cell2: Array[Int]): Double = {
     require(cell1.length == cell2.length, "not the same count of alleles")
-    calulateMethod(cell1, cell2)
+    calulateInternal(cell1, cell2)
   }
 
-  protected def calulateMethod(cell1: Array[Int], cell2: Array[Int]): Double
+  protected def calulateInternal(cell1: Array[Int], cell2: Array[Int]): Double
 }
 
 object Method {
