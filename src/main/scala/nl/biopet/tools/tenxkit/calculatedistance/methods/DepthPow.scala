@@ -34,11 +34,14 @@ class DepthPow(val pow: Double) extends Method {
       .zip(cell2)
       .map {
         case (c1, c2) => // calculate distance for each allele
+          val depthFraction = List(
+            c1.toDouble / cell1Total,
+            c2.toDouble / cell2Total).filter(_ != 0.0).min
           val distanceToMidle =
             Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
                                           c2.toDouble / cell2Total)
-          math.pow(distanceToMidle, pow)
+          math.pow(distanceToMidle, pow) * depthFraction
       }
-      .sum * List(cell1Total, cell2Total).min
+      .sum
   }
 }
