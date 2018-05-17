@@ -64,29 +64,52 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     })
     val vcfHeader = sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toArray))
 
-    val variants = VariantCall.fromVcfFile(cmdArgs.inputVcfFile,
-                                           cmdArgs.reference,
-                                           correctCellsMap,
-                                           1000000)
-    val groupCalls = variants.map(_.toGroupCall(groupsMap.value))
+    val variants = VariantCall
+      .fromVcfFile(cmdArgs.inputVcfFile,
+                   cmdArgs.reference,
+                   correctCellsMap,
+                   1000000)
+      .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
+    val groupCalls = variants.map(x => (x, x.toGroupCall(groupsMap.value)))
+
+    val filterGroupCalls =
+      groupCalls
+        .filter(_._2.alleleCount.exists(_._2.count(_.total > 5) > 1))
+        .filter(_._2.alleleCount.exists(_._2.count(_.total > 5) > 1))
+
+    val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
+    outputFilterVcfDir.mkdir()
+    val outputFilterFiles = filterGroupCalls
+      .mapPartitionsWithIndex {
+        case (idx, it) =>
+          val outputFile = new File(outputFilterVcfDir, s"$idx.vcf.gz")
+          val writer =
+            new VariantContextWriterBuilder()
+              .setOutputFile(outputFile)
+              .build()
+          writer.writeHeader(vcfHeader.value)
+          it.foreach(x => writer.add(x._2.toVariantContext(dict.value)))
+          writer.close()
+          Iterator(outputFile)
+      }
+      .collect()
 
     val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
     outputVcfDir.mkdir()
-    groupCalls
-      .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
+    val outputFiles = groupCalls
       .mapPartitionsWithIndex {
         case (idx, it) =>
           val outputFile = new File(outputVcfDir, s"$idx.vcf.gz")
           val writer =
             new VariantContextWriterBuilder()
-              .unsetOption(Options.INDEX_ON_THE_FLY)
               .setOutputFile(outputFile)
               .build()
           writer.writeHeader(vcfHeader.value)
-          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
+          it.foreach(x => writer.add(x._2.toVariantContext(dict.value)))
           writer.close()
           Iterator(outputFile)
       }
+      .collect()
   }
 
   def descriptionText: String =

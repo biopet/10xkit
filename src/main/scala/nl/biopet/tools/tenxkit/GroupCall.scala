@@ -36,7 +36,8 @@ case class GroupCall(contig: Int,
                      pos: Long,
                      refAllele: String,
                      altAlleles: Array[String],
-                     alleleCount: Map[String, Array[AlleleCount]]) {
+                     alleleCount: Map[String, Array[AlleleCount]],
+                     cellCounts: Map[String, Int]) {
 
   def hasNonReference: Boolean = {
     altDepth > 0
@@ -78,6 +79,7 @@ case class GroupCall(contig: Int,
     val genotypes = alleleCount.map {
       case (groupName, a) =>
         val attributes = Map(
+          "CN" -> cellCounts(groupName).toString,
           "DP-READ" -> a.map(_.totalReads).sum.toString,
           "DPF" -> a.map(_.forwardUmi).sum.toString,
           "DPR" -> a.map(_.reverseUmi).sum.toString,
@@ -97,11 +99,14 @@ case class GroupCall(contig: Int,
       .map(Allele.create)
       .toList
     val attributes =
-      Map("DP" -> totalDepth,
-          "DP-READ" -> totalReadDepth,
-          "SN" -> alleleCount.size,
-          "AD" -> alleleDepth.mkString(","),
-          "AD-READ" -> alleleReadDepth.mkString(","))
+      Map(
+        "DP" -> totalDepth,
+        "DP-READ" -> totalReadDepth,
+        "SN" -> alleleCount.size,
+        "CN" -> cellCounts.values.sum,
+        "AD" -> alleleDepth.mkString(","),
+        "AD-READ" -> alleleReadDepth.mkString(",")
+      )
     new VariantContextBuilder()
       .chr(dict.getSequence(contig).getSequenceName)
       .start(pos)
@@ -125,10 +130,15 @@ object GroupCall {
             .map(_._2.map(_._1).reduce(_ + _))
             .toArray
       }
+    val cellCounts =
+      variant.samples.groupBy { case (k, _) => groupsMap(k) }.map {
+        case (k, v) => k -> v.size
+      }
     GroupCall(variant.contig,
               variant.pos,
               variant.refAllele,
               variant.altAlleles,
-              alleleCounts)
+              alleleCounts,
+              cellCounts)
   }
 }
