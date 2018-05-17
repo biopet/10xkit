@@ -23,17 +23,14 @@ package nl.biopet.tools.tenxkit.extractgroupvariants
 
 import java.io.File
 
-import htsjdk.variant.variantcontext.writer.{
-  Options,
-  VariantContextWriterBuilder
-}
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.tool.ToolCommand
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.{SparkConf, SparkContext}
 
 object ExtractGroupVariants extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -75,7 +72,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     val filterGroupCalls =
       groupCalls
         .filter(_._2.alleleCount.exists(_._2.count(_.total > 5) > 1))
-        .filter(_._2.alleleCount.exists(_._2.count(_.total > 5) > 1))
+        .filter(_._1.getUniqueAlleles(groupsMap.value).nonEmpty)
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
@@ -96,7 +93,8 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
     outputVcfDir.mkdir()
-    val outputFiles = groupCalls
+    val outputFiles = variants
+      .map(_.toGroupCall(groupsMap.value))
       .mapPartitionsWithIndex {
         case (idx, it) =>
           val outputFile = new File(outputVcfDir, s"$idx.vcf.gz")
@@ -105,7 +103,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
               .setOutputFile(outputFile)
               .build()
           writer.writeHeader(vcfHeader.value)
-          it.foreach(x => writer.add(x._2.toVariantContext(dict.value)))
+          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
           writer.close()
           Iterator(outputFile)
       }
