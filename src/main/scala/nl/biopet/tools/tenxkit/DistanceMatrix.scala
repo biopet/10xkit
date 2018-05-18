@@ -115,20 +115,39 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
 }
 
 object DistanceMatrix extends Logging {
-  def fromFile(file: File): DistanceMatrix = {
+  def fromFile(file: File, countFile: Option[File] = None): DistanceMatrix = {
     val reader = Source.fromFile(file)
     val readerIt = reader.getLines()
+    val countReader = countFile.map(Source.fromFile)
+    val countIt = countReader.map(_.getLines())
 
     val samples = readerIt.next().split("\t").tail
+    require(countIt.forall(_.next().split("\t") sameElements samples),
+            "Samples in count file are not the same as the distance matrix")
     val sampleMap = samples.zipWithIndex.toMap
 
     val data = (for ((line, idx) <- readerIt.zipWithIndex) yield {
       val values = line.split("\t")
+      val countValues = countIt.map(_.next().split("\t"))
       require(sampleMap(values.head) == idx,
               "Order of rows is different then columns")
-      values.tail.map(x => if (x == ".") None else Some(x.toDouble))
+      require(countValues.forall(x => sampleMap(x.head) == idx),
+              "Order of rows is different then columns in count file")
+      values.tail.zipWithIndex.map {
+        case (x, idx2) =>
+          if (x == ".") None
+          else {
+            val distance = x.toDouble
+            Some(
+              countValues
+                .map(_(idx2).toInt)
+                .map(distance / _)
+                .getOrElse(distance))
+          }
+      }
     }).toArray
     reader.close()
+    countReader.foreach(_.close())
     DistanceMatrix(data, samples)
   }
 }
