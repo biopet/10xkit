@@ -38,7 +38,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
-import scala.util.Random
 
 object GroupDistance extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -61,7 +60,8 @@ object GroupDistance extends ToolCommand[Args] {
     logger.info("Reading input data")
     val distanceMatrix =
       sc.broadcast(
-        DistanceMatrix.fromFile(cmdArgs.distanceMatrix, cmdArgs.countMatrix))
+        DistanceMatrix.fromFileSpark(cmdArgs.distanceMatrix,
+                                     cmdArgs.countMatrix))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
 
@@ -79,45 +79,49 @@ object GroupDistance extends ToolCommand[Args] {
 //          50000000)
 //    }
 
-    val initGroups: RDD[GroupSample] = if (cmdArgs.skipKmeans) {
-      sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
-                     correctCells.value.length)
-    } else {
-      val vectors = distanceMatrixToVectors(distanceMatrix.value, correctCells)
-        .toDF("sample", "features")
-        .cache()
+    val (initGroups, trash): (RDD[GroupSample], RDD[Int]) =
+      if (cmdArgs.skipKmeans) {
+        (sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
+                        correctCells.value.length),
+         sc.emptyRDD)
+      } else {
+        val (vectorsRdd, trash) =
+          distanceMatrixToVectors(distanceMatrix.value, correctCells)
+        val vectors = vectorsRdd.toDF("sample", "features").cache()
 
-      val bkm = new BisectingKMeans()
-        .setK(cmdArgs.numClusters)
-        //.setMaxIter(cmdArgs.numIterations)
-        .setSeed(cmdArgs.seed)
+        val bkm = new BisectingKMeans()
+          .setK(cmdArgs.numClusters)
+          //.setMaxIter(cmdArgs.numIterations)
+          .setSeed(cmdArgs.seed)
 
-      val model = bkm.fit(vectors)
+        val model = bkm.fit(vectors)
 
-      // Predict cluster for each cell
-      model
-        .transform(vectors)
-        .select("sample", "prediction")
-        .as[Prediction]
-        .rdd
-        .groupBy(_.prediction)
-        .repartition(cmdArgs.numClusters)
-        .map { case (group, list) => group -> list.map(_.sample) }
-        .flatMap { case (g, l) => l.map(GroupSample(g, _)) }
-    }.cache()
+        // Predict cluster for each cell
+        (model
+           .transform(vectors)
+           .select("sample", "prediction")
+           .as[Prediction]
+           .rdd
+           .groupBy(_.prediction)
+           .repartition(cmdArgs.numClusters)
+           .map { case (group, list) => group -> list.map(_.sample) }
+           .flatMap { case (g, l) => l.map(GroupSample(g, _)) },
+         trash)
+      }
+    initGroups.cache()
 
-    val (groups, trash) = reCluster(
+    val (groups, trash2) = reCluster(
       initGroups,
       distanceMatrix,
       cmdArgs.numClusters,
       cmdArgs.numIterations,
-      sc.emptyRDD,
+      trash,
       cmdArgs.outputDir,
       correctCells
     )
     sc.clearJobGroup()
 
-    writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
+    writeGroups(groups.cache(), trash2.cache(), cmdArgs.outputDir, correctCells)
 
     sc.stop()
     logger.info("Done")
@@ -510,17 +514,18 @@ object GroupDistance extends ToolCommand[Args] {
 
   def distanceMatrixToVectors(matrix: DistanceMatrix,
                               correctSamples: Broadcast[Array[String]])(
-      implicit sc: SparkContext): RDD[(Int, linalg.Vector)] = {
+      implicit sc: SparkContext): (RDD[(Int, linalg.Vector)], RDD[Int]) = {
     require(matrix.samples sameElements correctSamples.value)
     val samples = matrix.samples.indices.toList
     val samplesFiltered = samples.filter(s1 =>
       samples.map(s2 => matrix(s1, s2)).count(_.isDefined) >= 1000)
+    val trash = samples.diff(samplesFiltered)
     logger.info(s"Removed ${samples.size - samplesFiltered.size} samples")
     val vectors = samplesFiltered.map(
       s1 =>
         s1 -> Vectors.dense(
           samplesFiltered.map(s2 => matrix(s1, s2).getOrElse(0.0)).toArray))
-    sc.parallelize(vectors)
+    (sc.parallelize(vectors), sc.parallelize(trash))
   }
 
   def descriptionText: String =

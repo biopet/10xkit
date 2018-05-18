@@ -24,6 +24,7 @@ package nl.biopet.tools.tenxkit
 import java.io.{File, PrintWriter}
 
 import nl.biopet.utils.Logging
+import org.apache.spark.SparkContext
 
 import scala.io.Source
 
@@ -122,7 +123,7 @@ object DistanceMatrix extends Logging {
     val countIt = countReader.map(_.getLines())
 
     val samples = readerIt.next().split("\t").tail
-    require(countIt.forall(_.next().split("\t") sameElements samples),
+    require(countIt.forall(_.next().split("\t").tail sameElements samples),
             "Samples in count file are not the same as the distance matrix")
     val sampleMap = samples.zipWithIndex.toMap
 
@@ -140,7 +141,7 @@ object DistanceMatrix extends Logging {
             val distance = x.toDouble
             Some(
               countValues
-                .map(_(idx2).toInt)
+                .map(_.tail(idx2).toInt)
                 .map(distance / _)
                 .getOrElse(distance))
           }
@@ -149,5 +150,60 @@ object DistanceMatrix extends Logging {
     reader.close()
     countReader.foreach(_.close())
     DistanceMatrix(data, samples)
+  }
+
+  def fromFileSpark(file: File, countFile: Option[File] = None)(
+      implicit sc: SparkContext): DistanceMatrix = {
+
+    val distanceLines =
+      sc.textFile(file.getAbsolutePath, 200).map(_.split("\t")).zipWithIndex()
+    val samples = distanceLines.first()._1.tail
+    val distances = distanceLines.filter(_._2 != 0L).flatMap {
+      case (values, s1) =>
+        values.tail.zipWithIndex
+          .flatMap {
+            case (v, s2) =>
+              if (v == ".") None
+              else Some((s1.toInt - 1, s2) -> v.toDouble)
+          }
+    }
+    val dist = countFile match {
+      case Some(cFile) =>
+        val countLines = sc
+          .textFile(cFile.getAbsolutePath, 200)
+          .map(_.split("\t"))
+          .zipWithIndex()
+        require(countLines.first()._1.tail sameElements samples,
+                "Samples in count file are not the same as the distance matrix")
+        val counts = countLines.filter(_._2 != 0L).flatMap {
+          case (values, s1) =>
+            values.tail.zipWithIndex
+              .flatMap {
+                case (v, s2) =>
+                  if (v == ".") None
+                  else Some((s1.toInt - 1, s2) -> v.toInt)
+              }
+        }
+        distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
+      case _ => distances
+    }
+    dist
+      .groupBy(_._1._2)
+      .map { x =>
+        val map = x._2.map(x => x._1._1 -> x._2).toMap
+        x._1 -> samples.indices.map(map.get).toArray
+      }
+      .repartition(1)
+      .mapPartitions { it =>
+        val map = it.toMap
+        Iterator(
+          DistanceMatrix(
+            samples.indices
+              .map(map
+                .getOrElse(_, Array.fill[Option[Double]](samples.length)(None)))
+              .toArray,
+            samples))
+      }
+      .first()
   }
 }
