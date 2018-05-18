@@ -156,42 +156,48 @@ object DistanceMatrix extends Logging {
       implicit sc: SparkContext): DistanceMatrix = {
 
     val distanceLines =
-      sc.textFile(file.getAbsolutePath, 200).map(_.split("\t")).zipWithIndex()
-    val samples = distanceLines.first()._1.tail
-    val distances = distanceLines.filter(_._2 != 0L).flatMap {
-      case (values, s1) =>
-        values.tail.zipWithIndex
-          .flatMap {
-            case (v, s2) =>
-              if (v == ".") None
-              else Some((s1.toInt - 1, s2) -> v.toDouble)
-          }
-    }
+      sc.textFile(file.getAbsolutePath, 200).map(_.split("\t"))
+    val samples = distanceLines.first().tail
+    val distances = distanceLines
+      .zipWithIndex()
+      .filter { case (_, idx) => idx != 0L }
+      .flatMap {
+        case (values, s1) =>
+          values.tail.zipWithIndex
+            .flatMap {
+              case (v, s2) =>
+                if (v == ".") None
+                else Some((s1.toInt - 1, s2) -> v.toDouble)
+            }
+      }
     val dist = countFile match {
       case Some(cFile) =>
         val countLines = sc
           .textFile(cFile.getAbsolutePath, 200)
           .map(_.split("\t"))
-          .zipWithIndex()
-        require(countLines.first()._1.tail sameElements samples,
+        require(countLines.first().tail sameElements samples,
                 "Samples in count file are not the same as the distance matrix")
-        val counts = countLines.filter(_._2 != 0L).flatMap {
-          case (values, s1) =>
-            values.tail.zipWithIndex
-              .flatMap {
-                case (v, s2) =>
-                  if (v == ".") None
-                  else Some((s1.toInt - 1, s2) -> v.toInt)
-              }
-        }
+        val counts = countLines
+          .zipWithIndex()
+          .filter { case (_, idx) => idx != 0L }
+          .flatMap {
+            case (values, s1) =>
+              values.tail.zipWithIndex
+                .flatMap {
+                  case (v, s2) =>
+                    if (v == ".") None
+                    else Some((s1.toInt - 1, s2) -> v.toInt)
+                }
+          }
         distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
       case _ => distances
     }
     dist
-      .groupBy(_._1._2)
-      .map { x =>
-        val map = x._2.map(x => x._1._1 -> x._2).toMap
-        x._1 -> samples.indices.map(map.get).toArray
+      .groupBy { case ((_, x), _) => x }
+      .map {
+        case (rowId, row) =>
+          val map = row.map { case ((columnId, _), value) => columnId -> value }.toMap
+          rowId -> samples.indices.map(map.get).toArray
       }
       .repartition(1)
       .mapPartitions { it =>
