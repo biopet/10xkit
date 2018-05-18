@@ -19,21 +19,16 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
-
-case class Args(inputFile: File = null,
-                reference: File = null,
-                outputDir: File = null,
-                intervals: Option[File] = None,
-                correctCells: File = null,
-                writeScatters: Boolean = false,
-                binSize: Int = 500000,
-                minTotalAltRatio: Double = 0.01,
-                minAlleleCoverage: Int = 5,
-                sampleTag: String = "CB",
-                method: String = "pow4",
-                additionalMethods: List[String] = Nil,
-                umiTag: Option[String] = None,
-                sparkMaster: String = null)
+class Chi2Pow(val countsPow: Double = 1.0, val resultsPow: Double = 1.0)
+    extends Chi2 {
+  override def calulateInternal(cell1: Array[Int],
+                                cell2: Array[Int]): Double = {
+    val (c1, c2) =
+      if (countsPow == 1.0) (cell1.map(_.toDouble), cell2.map(_.toDouble))
+      else
+        (cell1.map(math.pow(_, countsPow)), cell2.map(math.pow(_, countsPow)))
+    math.pow(calulateValue(c1, c2), resultsPow)
+  }
+}

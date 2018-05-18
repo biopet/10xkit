@@ -19,21 +19,29 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
+class Chi2 extends Method {
 
-case class Args(inputFile: File = null,
-                reference: File = null,
-                outputDir: File = null,
-                intervals: Option[File] = None,
-                correctCells: File = null,
-                writeScatters: Boolean = false,
-                binSize: Int = 500000,
-                minTotalAltRatio: Double = 0.01,
-                minAlleleCoverage: Int = 5,
-                sampleTag: String = "CB",
-                method: String = "pow4",
-                additionalMethods: List[String] = Nil,
-                umiTag: Option[String] = None,
-                sparkMaster: String = null)
+  def calulateValue(cell1: Array[Double], cell2: Array[Double]): Double = {
+    val cell1Total = cell1.sum
+    val cell2Total = cell2.sum
+    require(cell1Total > 0 && cell2Total > 0,
+            "Each cell should have some coverage here")
+    val total = cell1Total + cell2Total
+    val alleleTotals =
+      cell1.zip(cell2).map { case (a1, a2) => a1 + a2 }
+    (cell1.zipWithIndex ++ cell2.zipWithIndex).map {
+      case (count, idx) =>
+        val totalAlleleCount = alleleTotals(idx)
+        if (totalAlleleCount > 0) {
+          val expected = cell1Total * (totalAlleleCount / total)
+          val x = count - expected
+          (x * x) / expected
+        } else 0.0
+    }.sum
+  }
+
+  protected def calulateInternal(cell1: Array[Int], cell2: Array[Int]): Double =
+    calulateValue(cell1.map(_.toDouble), cell2.map(_.toDouble))
+}
