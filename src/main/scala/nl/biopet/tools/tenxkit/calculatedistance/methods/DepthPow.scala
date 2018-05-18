@@ -26,7 +26,8 @@ package nl.biopet.tools.tenxkit.calculatedistance.methods
   * @param pow Power value
   */
 class DepthPow(val pow: Double) extends Method {
-  protected def calulateInternal(cell1: Array[Int], cell2: Array[Int]): Double = {
+  protected def calulateInternal(cell1: Array[Int],
+                                 cell2: Array[Int]): Double = {
     // Calculate total depth
     val cell1Total = cell1.sum
     val cell2Total = cell2.sum
