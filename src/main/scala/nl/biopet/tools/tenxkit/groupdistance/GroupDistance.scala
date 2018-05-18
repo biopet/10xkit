@@ -79,7 +79,7 @@ object GroupDistance extends ToolCommand[Args] {
 //          50000000)
 //    }
 
-    val (initGroups, trash): (RDD[GroupSample], RDD[Int]) =
+    val (initGroups, trashInit): (RDD[GroupSample], RDD[Int]) =
       if (cmdArgs.skipKmeans) {
         (sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
                         correctCells.value.length),
@@ -110,18 +110,18 @@ object GroupDistance extends ToolCommand[Args] {
       }
     initGroups.cache()
 
-    val (groups, trash2) = reCluster(
+    val (groups, trash) = reCluster(
       initGroups,
       distanceMatrix,
       cmdArgs.numClusters,
       cmdArgs.numIterations,
-      trash,
+      trashInit,
       cmdArgs.outputDir,
       correctCells
     )
     sc.clearJobGroup()
 
-    writeGroups(groups.cache(), trash2.cache(), cmdArgs.outputDir, correctCells)
+    writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
 
     sc.stop()
     logger.info("Done")
