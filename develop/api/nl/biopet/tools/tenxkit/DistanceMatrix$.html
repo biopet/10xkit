@@ -245,18 +245,35 @@
               
         </dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.DistanceMatrix#fromFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromFile(file:java.io.File):nl.biopet.tools.tenxkit.DistanceMatrix"></a>
-      <a id="fromFile(File):DistanceMatrix"></a>
+      <a id="fromFile(file:java.io.File,countFile:Option[java.io.File]):nl.biopet.tools.tenxkit.DistanceMatrix"></a>
+      <a id="fromFile(File,Option[File]):DistanceMatrix"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromFile</span><span class="params">(<span name="file">file: <span class="extype" name="java.io.File">File</span></span>)</span><span class="result">: <a href="DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a></span>
+        <span class="name">fromFile</span><span class="params">(<span name="file">file: <span class="extype" name="java.io.File">File</span></span>, <span name="countFile">countFile: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>)</span><span class="result">: <a href="DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.DistanceMatrix$@fromFile(file:java.io.File):nl.biopet.tools.tenxkit.DistanceMatrix" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.DistanceMatrix$@fromFile(file:java.io.File,countFile:Option[java.io.File]):nl.biopet.tools.tenxkit.DistanceMatrix" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.DistanceMatrix#fromFileSpark" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="fromFileSpark(file:java.io.File,countFile:Option[java.io.File])(implicitsc:org.apache.spark.SparkContext):nl.biopet.tools.tenxkit.DistanceMatrix"></a>
+      <a id="fromFileSpark(File,Option[File])(SparkContext):DistanceMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromFileSpark</span><span class="params">(<span name="file">file: <span class="extype" name="java.io.File">File</span></span>, <span name="countFile">countFile: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <a href="DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.DistanceMatrix$@fromFileSpark(file:java.io.File,countFile:Option[java.io.File])(implicitsc:org.apache.spark.SparkContext):nl.biopet.tools.tenxkit.DistanceMatrix" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -380,6 +397,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.DistanceMatrix#rddToMatrix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="rddToMatrix(rdd:org.apache.spark.rdd.RDD[((Int,Int),Double)],samples:Array[String]):nl.biopet.tools.tenxkit.DistanceMatrix"></a>
+      <a id="rddToMatrix(RDD[((Int,Int),Double)],Array[String]):DistanceMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">rddToMatrix</span><span class="params">(<span name="rdd">rdd: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[((<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Int">Int</span>), <span class="extype" name="scala.Double">Double</span>)]</span>, <span name="samples">samples: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.DistanceMatrix$@rddToMatrix(rdd:org.apache.spark.rdd.RDD[((Int,Int),Double)],samples:Array[String]):nl.biopet.tools.tenxkit.DistanceMatrix" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>

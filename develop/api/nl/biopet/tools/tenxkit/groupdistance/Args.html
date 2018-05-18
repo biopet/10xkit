@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="distanceMatrix">distanceMatrix: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCells">correctCells: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="distanceMatrix">distanceMatrix: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="countMatrix">countMatrix: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCells">correctCells: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.tenxkit.groupdistance.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(inputFile:java.io.File,distanceMatrix:java.io.File,outputDir:java.io.File,reference:java.io.File,correctCells:java.io.File,skipKmeans:Boolean,numClusters:Int,numIterations:Int,seed:Long,sparkMaster:String):nl.biopet.tools.tenxkit.groupdistance.Args"></a>
+      <a id="&lt;init&gt;(inputFile:java.io.File,distanceMatrix:java.io.File,countMatrix:Option[java.io.File],outputDir:java.io.File,reference:java.io.File,correctCells:java.io.File,skipKmeans:Boolean,numClusters:Int,numIterations:Int,seed:Long,sparkMaster:String):nl.biopet.tools.tenxkit.groupdistance.Args"></a>
       <a id="&lt;init&gt;:Args"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,10 +97,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="distanceMatrix">distanceMatrix: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCells">correctCells: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span>
+        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="distanceMatrix">distanceMatrix: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="countMatrix">countMatrix: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCells">correctCells: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@&lt;init&gt;(inputFile:java.io.File,distanceMatrix:java.io.File,outputDir:java.io.File,reference:java.io.File,correctCells:java.io.File,skipKmeans:Boolean,numClusters:Int,numIterations:Int,seed:Long,sparkMaster:String):nl.biopet.tools.tenxkit.groupdistance.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@&lt;init&gt;(inputFile:java.io.File,distanceMatrix:java.io.File,countMatrix:Option[java.io.File],outputDir:java.io.File,reference:java.io.File,correctCells:java.io.File,skipKmeans:Boolean,numClusters:Int,numIterations:Int,seed:Long,sparkMaster:String):nl.biopet.tools.tenxkit.groupdistance.Args" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -218,6 +218,23 @@
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@correctCells:java.io.File" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#countMatrix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="countMatrix:Option[java.io.File]"></a>
+      <a id="countMatrix:Option[File]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">countMatrix</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@countMatrix:Option[java.io.File]" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
