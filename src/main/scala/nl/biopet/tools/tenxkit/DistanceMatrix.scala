@@ -25,6 +25,7 @@ import java.io.{File, PrintWriter}
 
 import nl.biopet.utils.Logging
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 import scala.io.Source
 
@@ -192,7 +193,12 @@ object DistanceMatrix extends Logging {
         distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
       case _ => distances
     }
-    dist
+    rddToMatrix(dist, samples)
+  }
+
+  def rddToMatrix(rdd: RDD[((Int, Int), Double)],
+                  samples: Array[String]): DistanceMatrix = {
+    rdd
       .groupBy { case ((_, x), _) => x }
       .map {
         case (rowId, row) =>
@@ -211,5 +217,6 @@ object DistanceMatrix extends Logging {
             samples))
       }
       .first()
+
   }
 }
