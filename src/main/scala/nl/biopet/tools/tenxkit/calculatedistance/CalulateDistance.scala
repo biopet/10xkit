@@ -24,6 +24,7 @@ package nl.biopet.tools.tenxkit.calculatedistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
+import nl.biopet.tools.tenxkit.calculatedistance.methods.Method
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.tools.tenxkit.{
   DistanceMatrix,
@@ -98,33 +99,15 @@ object CalulateDistance extends ToolCommand[Args] {
       }
       .groupByKey()
 
-    val fractionPairs = combinations.map {
-      case (key, alleles) =>
-        key -> alleles.map { pos =>
-          val total1 = pos.ad1.sum
-          val total2 = pos.ad2.sum
-          //TODO: Filter alleles
-          val fractions1 = pos.ad1.map(_.toDouble / total1)
-          val fractions2 = pos.ad2.map(_.toDouble / total2)
-          fractions1.zip(fractions2).map {
-            case (f1, f2) => FractionPairDistance(f1, f2)
-          }
+    def combinationDistance(methodString: String): Future[Unit] = {
+      val method = sc.broadcast(Method.fromString(methodString))
+      combinations
+        .map {
+          case (key, alleleDepts) =>
+            key -> alleleDepts
+              .map(x => method.value.calculate(x.ad1, x.ad2))
+              .sum
         }
-    }
-
-    def combinationDistance(power: Int = 1): Future[Unit] = {
-      val rdd: RDD[(SampleCombinationKey, Double)] = {
-        fractionPairs.map {
-          case (key, list) =>
-            val total = list.size
-            val distance = if (power == 1) {
-              list.map(_.map(_.distance).sum).sum
-            } else list.map(_.map(y => math.pow(y.distance, power)).sum).sum
-            key -> (distance / total)
-        }
-      }
-
-      rdd
         .groupBy { case (key, _) => key.sample1 }
         .map {
           case (s1, list) =>
@@ -145,15 +128,30 @@ object CalulateDistance extends ToolCommand[Args] {
             }
           }
           val matrix = DistanceMatrix(values, correctCells.value)
-          matrix.writeFile(new File(cmdArgs.outputDir, s"distance.$power.csv"))
+          matrix.writeFile(
+            new File(cmdArgs.outputDir, s"distance.$methodString.csv"))
         }
     }
 
-    (cmdArgs.powerMethod :: cmdArgs.additionalPower).distinct.sorted
+    (cmdArgs.method :: cmdArgs.additionalMethods).distinct.sorted
       .foreach(futures += combinationDistance(_))
 
     if (cmdArgs.writeScatters) {
       val scatterDir = new File(cmdArgs.outputDir, "scatters")
+
+      val fractionPairs = combinations.map {
+        case (key, alleles) =>
+          key -> alleles.map { pos =>
+            val total1 = pos.ad1.sum
+            val total2 = pos.ad2.sum
+            val fractions1 = pos.ad1.map(_.toDouble / total1)
+            val fractions2 = pos.ad2.map(_.toDouble / total2)
+            fractions1.zip(fractions2).map {
+              case (f1, f2) => FractionPairDistance(f1, f2)
+            }
+          }
+      }
+
       futures += fractionPairs.foreachAsync {
         case (c, b) =>
           val sample1 = correctCells.value(c.sample1)

@@ -24,6 +24,8 @@ package nl.biopet.tools.tenxkit
 import java.io.{File, PrintWriter}
 
 import nl.biopet.utils.Logging
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 
 import scala.io.Source
 
@@ -115,20 +117,106 @@ case class DistanceMatrix(values: Array[Array[Option[Double]]],
 }
 
 object DistanceMatrix extends Logging {
-  def fromFile(file: File): DistanceMatrix = {
+  def fromFile(file: File, countFile: Option[File] = None): DistanceMatrix = {
     val reader = Source.fromFile(file)
     val readerIt = reader.getLines()
+    val countReader = countFile.map(Source.fromFile)
+    val countIt = countReader.map(_.getLines())
 
     val samples = readerIt.next().split("\t").tail
+    require(countIt.forall(_.next().split("\t").tail sameElements samples),
+            "Samples in count file are not the same as the distance matrix")
     val sampleMap = samples.zipWithIndex.toMap
 
     val data = (for ((line, idx) <- readerIt.zipWithIndex) yield {
       val values = line.split("\t")
+      val countValues = countIt.map(_.next().split("\t"))
       require(sampleMap(values.head) == idx,
               "Order of rows is different then columns")
-      values.tail.map(x => if (x == ".") None else Some(x.toDouble))
+      require(countValues.forall(x => sampleMap(x.head) == idx),
+              "Order of rows is different then columns in count file")
+      values.tail.zipWithIndex.map {
+        case (x, idx2) =>
+          if (x == ".") None
+          else {
+            val distance = x.toDouble
+            Some(
+              countValues
+                .map(_.tail(idx2).toInt)
+                .map(distance / _)
+                .getOrElse(distance))
+          }
+      }
     }).toArray
     reader.close()
+    countReader.foreach(_.close())
     DistanceMatrix(data, samples)
+  }
+
+  def fromFileSpark(file: File, countFile: Option[File] = None)(
+      implicit sc: SparkContext): DistanceMatrix = {
+
+    val distanceLines =
+      sc.textFile(file.getAbsolutePath, 200).map(_.split("\t"))
+    val samples = distanceLines.first().tail
+    val distances = distanceLines
+      .zipWithIndex()
+      .filter { case (_, idx) => idx != 0L }
+      .flatMap {
+        case (values, s1) =>
+          values.tail.zipWithIndex
+            .flatMap {
+              case (v, s2) =>
+                if (v == ".") None
+                else Some((s1.toInt - 1, s2) -> v.toDouble)
+            }
+      }
+    val dist = countFile match {
+      case Some(cFile) =>
+        val countLines = sc
+          .textFile(cFile.getAbsolutePath, 200)
+          .map(_.split("\t"))
+        require(countLines.first().tail sameElements samples,
+                "Samples in count file are not the same as the distance matrix")
+        val counts = countLines
+          .zipWithIndex()
+          .filter { case (_, idx) => idx != 0L }
+          .flatMap {
+            case (values, s1) =>
+              values.tail.zipWithIndex
+                .flatMap {
+                  case (v, s2) =>
+                    if (v == ".") None
+                    else Some((s1.toInt - 1, s2) -> v.toInt)
+                }
+          }
+        distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
+      case _ => distances
+    }
+    rddToMatrix(dist, samples)
+  }
+
+  def rddToMatrix(rdd: RDD[((Int, Int), Double)],
+                  samples: Array[String]): DistanceMatrix = {
+    rdd
+      .groupBy { case ((_, x), _) => x }
+      .map {
+        case (rowId, row) =>
+          val map = row.map { case ((columnId, _), value) => columnId -> value }.toMap
+          rowId -> samples.indices.map(map.get).toArray
+      }
+      .repartition(1)
+      .mapPartitions { it =>
+        val map = it.toMap
+        Iterator(
+          DistanceMatrix(
+            samples.indices
+              .map(map
+                .getOrElse(_, Array.fill[Option[Double]](samples.length)(None)))
+              .toArray,
+            samples))
+      }
+      .first()
+
   }
 }

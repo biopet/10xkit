@@ -19,18 +19,30 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.groupdistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
-
-case class Args(inputFile: File = null,
-                distanceMatrix: File = null,
-                countMatrix: Option[File] = None,
-                outputDir: File = null,
-                reference: File = null,
-                correctCells: File = null,
-                skipKmeans: Boolean = false,
-                numClusters: Int = 0,
-                numIterations: Int = 20,
-                seed: Long = 0,
-                sparkMaster: String = null)
+/**
+  * This method will clculate the distance to the middle line of the fractions for each allele
+  * @param pow Power value
+  */
+class DepthPow(val pow: Double) extends Method {
+  protected def calulateInternal(cell1: Array[Int],
+                                 cell2: Array[Int]): Double = {
+    // Calculate total depth
+    val cell1Total = cell1.sum
+    val cell2Total = cell2.sum
+    cell1
+      .zip(cell2)
+      .map {
+        case (c1, c2) => // calculate distance for each allele
+          val depthFraction = List(
+            c1.toDouble / cell1Total,
+            c2.toDouble / cell2Total).filter(_ != 0.0).min
+          val distanceToMidle =
+            Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
+                                          c2.toDouble / cell2Total)
+          math.pow(distanceToMidle, pow) * depthFraction
+      }
+      .sum
+  }
+}

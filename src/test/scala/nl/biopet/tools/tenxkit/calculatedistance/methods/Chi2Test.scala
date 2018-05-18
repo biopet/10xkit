@@ -19,18 +19,18 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.groupdistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
+import nl.biopet.test.BiopetTest
+import org.testng.annotations.Test
 
-case class Args(inputFile: File = null,
-                distanceMatrix: File = null,
-                countMatrix: Option[File] = None,
-                outputDir: File = null,
-                reference: File = null,
-                correctCells: File = null,
-                skipKmeans: Boolean = false,
-                numClusters: Int = 0,
-                numIterations: Int = 20,
-                seed: Long = 0,
-                sparkMaster: String = null)
+class Chi2Test extends BiopetTest {
+  @Test
+  def test(): Unit = {
+    val method = new Chi2()
+    val value = method.calculate(Array(2, 0, 0), Array(0, 2, 0))
+    value.isNaN shouldBe false
+
+    method.calulateValue(Array(1, 1), Array(1, 1))
+  }
+}
