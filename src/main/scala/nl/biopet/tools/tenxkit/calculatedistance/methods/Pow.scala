@@ -19,21 +19,35 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-import java.io.File
+/**
+  * This method will clculate the distance to the middle line of the fractions for each allele
+  * @param pow Power value
+  */
+class Pow(val pow: Double) extends Method {
+  protected def calulateInternal(cell1: Array[Int],
+                                 cell2: Array[Int]): Double = {
+    // Calculate total depth
+    val cell1Total = cell1.sum
+    val cell2Total = cell2.sum
+    cell1
+      .zip(cell2)
+      .map {
+        case (c1, c2) => // calculate distance for each allele
+          val distanceToMidle =
+            Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
+                                          c2.toDouble / cell2Total)
+          math.pow(distanceToMidle, pow)
+      }
+      .sum
+  }
+}
 
-case class Args(inputFile: File = null,
-                reference: File = null,
-                outputDir: File = null,
-                intervals: Option[File] = None,
-                correctCells: File = null,
-                writeScatters: Boolean = false,
-                binSize: Int = 500000,
-                minTotalAltRatio: Double = 0.01,
-                minAlleleCoverage: Int = 5,
-                sampleTag: String = "CB",
-                method: String = "pow4",
-                additionalMethods: List[String] = Nil,
-                umiTag: Option[String] = None,
-                sparkMaster: String = null)
+object Pow {
+  def calculateDistanceToMiddle(fraction1: Double,
+                                fraction2: Double): Double = {
+    val middlePoint = ((fraction1 - fraction2) / 2) + fraction1
+    math.sqrt(math.pow(middlePoint - fraction1, 2) * 2)
+  }
+}
