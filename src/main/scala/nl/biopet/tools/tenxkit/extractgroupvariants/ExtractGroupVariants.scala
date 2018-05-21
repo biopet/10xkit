@@ -76,11 +76,17 @@ object ExtractGroupVariants extends ToolCommand[Args] {
       groupCalls
         .filter {
           case (v, g) =>
-            g.genotypes.size > 1 && g.genotypes.values
-              .map(_.genotype.toList.flatten)
-              .toList
-              .distinct
-              .size != 1
+            g.genotypes.size > 1
+        }
+        .filter {
+          case (v, g) =>
+            val called =
+              g.genotypes.values.filter(_.genotype.exists(_.isDefined))
+            called.headOption match {
+              case Some(gt) =>
+                !called.tail.forall(_.genotype sameElements gt.genotype)
+              case _ => false
+            }
         }
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
