@@ -74,7 +74,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
         .filter {
           case (v, g) =>
             g.genotypes.size > 1 && g.genotypes.values
-              .map(_.genotype)
+              .map(_.genotype.toList.flatten)
               .toList
               .distinct
               .size != 1
