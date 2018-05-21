@@ -70,36 +70,29 @@ object ExtractGroupVariants extends ToolCommand[Args] {
                    correctCellsMap,
                    1000000)
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
-    val groupCalls = variants.map(x => (x, x.toGroupCall(groupsMap.value)))
+    val groupCalls = variants.map(_.toGroupCall(groupsMap.value))
 
     val filterGroupCalls =
       groupCalls
-        .filter {
-          case (v, g) =>
-            g.genotypes.size > 1
+        .filter(_.genotypes.size > 1)
+        .filter { g =>
+          val called =
+            g.genotypes.values.filter(_.genotype.exists(_.isDefined))
+          called.headOption match {
+            case Some(gt) =>
+              !called.tail.forall(_.genotype sameElements gt.genotype)
+            case _ => false
+          }
         }
-        .filter {
-          case (v, g) =>
-            val called =
-              g.genotypes.values.filter(_.genotype.exists(_.isDefined))
-            called.headOption match {
-              case Some(gt) =>
-                !called.tail.forall(_.genotype sameElements gt.genotype)
-              case _ => false
-            }
+        .filter { g =>
+          val gts = g.genotypes.values
+            .filter(_.genotype.exists(_.isDefined))
+            .toList
+            .distinct
+          gts.exists(x =>
+            g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
         }
-        .filter {
-          case (v, g) =>
-            val gts = g.genotypes.values
-              .filter(_.genotype.exists(_.isDefined))
-              .toList
-              .distinct
-            gts.exists(x =>
-              g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
-        }
-        .filter {
-          case (v, g) => g.alleleCount.values.forall(_.map(_.total).sum >= 50)
-        }
+        .filter(_.alleleCount.values.forall(_.map(_.total).sum >= 50))
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
@@ -112,7 +105,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
               .setOutputFile(outputFile)
               .build()
           writer.writeHeader(vcfHeader.value)
-          it.foreach(x => writer.add(x._2.toVariantContext(dict.value)))
+          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
           writer.close()
           Iterator(outputFile)
       }
