@@ -114,8 +114,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
     outputVcfDir.mkdir()
-    val outputFiles = variants
-      .map(_.toGroupCall(groupsMap.value))
+    val outputFiles = groupCalls
       .mapPartitionsWithIndex {
         case (idx, it) =>
           val outputFile = new File(outputVcfDir, s"$idx.vcf.gz")
