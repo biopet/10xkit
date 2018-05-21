@@ -84,16 +84,16 @@ case class GroupCall(contig: Int,
     val genotypes = alleleCount.map {
       case (groupName, a) =>
         val genotypeCall = this.genotypes(groupName)
-        val attributes = Map(
-          "CN" -> cellCounts(groupName).toString,
-          "DP-READ" -> a.map(_.totalReads).sum.toString,
-          "DPF" -> a.map(_.forwardUmi).sum.toString,
-          "DPR" -> a.map(_.reverseUmi).sum.toString,
-          "AD-READ" -> a.map(_.totalReads).mkString(","),
-          "ADF-READ" -> a.map(_.forwardReads).mkString(","),
-          "ADR-READ" -> a.map(_.reverseReads).mkString(","),
-          "ADF" -> a.map(_.forwardUmi).mkString(","),
-          "ADR" -> a.map(_.reverseUmi).mkString(",")
+        val attributes: Map[String, String] = Map(
+//          "CN" -> cellCounts(groupName).toString,
+//          "DP-READ" -> a.map(_.totalReads).sum.toString,
+//          "DPF" -> a.map(_.forwardUmi).sum.toString,
+//          "DPR" -> a.map(_.reverseUmi).sum.toString,
+//          "AD-READ" -> a.map(_.totalReads).mkString(","),
+//          "ADF-READ" -> a.map(_.forwardReads).mkString(","),
+//          "ADR-READ" -> a.map(_.reverseReads).mkString(","),
+//          "ADF" -> a.map(_.forwardUmi).mkString(","),
+//          "ADR" -> a.map(_.reverseUmi).mkString(",")
         )
         new GenotypeBuilder(groupName)
           .alleles(genotypeCall.genotype.flatten.map(a => alleles(a)).toList)
@@ -102,14 +102,14 @@ case class GroupCall(contig: Int,
           .attributes(attributes)
           .make()
     }
-    val attributes =
+    val attributes: Map[String, String] =
       Map(
-        "DP" -> totalDepth,
-        "DP-READ" -> totalReadDepth,
-        "SN" -> alleleCount.size,
-        "CN" -> cellCounts.values.sum,
-        "AD" -> alleleDepth.mkString(","),
-        "AD-READ" -> alleleReadDepth.mkString(",")
+//        "DP" -> totalDepth,
+//        "DP-READ" -> totalReadDepth,
+//        "SN" -> alleleCount.size,
+//        "CN" -> cellCounts.values.sum,
+//        "AD" -> alleleDepth.mkString(","),
+//        "AD-READ" -> alleleReadDepth.mkString(",")
       )
     new VariantContextBuilder()
       .chr(dict.getSequence(contig).getSequenceName)
