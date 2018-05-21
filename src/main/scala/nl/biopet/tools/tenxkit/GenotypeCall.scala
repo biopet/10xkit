@@ -23,7 +23,7 @@ package nl.biopet.tools.tenxkit
 
 case class GenotypeCall(genotype: Array[Option[Int]],
                         ad: Array[Int],
-                        gq: Int,
+                        aq: Array[Int],
                         pl: Array[Array[Int]])
 
 object GenotypeCall {
@@ -81,6 +81,9 @@ object GenotypeCall {
 
     val min = pl.tail.flatten.min
 
-    GenotypeCall(getGenotype().sorted.toArray, ad, 0, pl.map(_.map(_ - min)))
+    GenotypeCall(getGenotype().sorted.toArray,
+                 ad,
+                 Array(),
+                 pl.map(_.map(_ - min)))
   }
 }

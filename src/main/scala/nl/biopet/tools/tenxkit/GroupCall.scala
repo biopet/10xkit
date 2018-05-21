@@ -76,8 +76,13 @@ case class GroupCall(contig: Int,
   }
 
   def toVariantContext(dict: SAMSequenceDictionary): VariantContext = {
+    val alleles = Allele.create(refAllele, true) :: altAlleles
+      .map(Allele.create)
+      .toList
+
     val genotypes = alleleCount.map {
       case (groupName, a) =>
+        val genotypeCall = GenotypeCall.fromAd(a.map(_.total))
         val attributes = Map(
           "CN" -> cellCounts(groupName).toString,
           "DP-READ" -> a.map(_.totalReads).sum.toString,
@@ -90,14 +95,12 @@ case class GroupCall(contig: Int,
           "ADR" -> a.map(_.reverseUmi).mkString(",")
         )
         new GenotypeBuilder(groupName)
+          .alleles(genotypeCall.genotype.flatten.map(a => alleles(a)).toList)
           .AD(a.map(_.total))
           .DP(a.map(_.total).sum)
           .attributes(attributes)
           .make()
     }
-    val alleles = Allele.create(refAllele, true) :: altAlleles
-      .map(Allele.create)
-      .toList
     val attributes =
       Map(
         "DP" -> totalDepth,
