@@ -88,7 +88,15 @@ object ExtractGroupVariants extends ToolCommand[Args] {
               case _ => false
             }
         }
-        .filter(_._2.totalDepth > 200)
+        .filter {
+          case (v, g) =>
+            val gts = g.genotypes.values
+              .filter(_.genotype.exists(_.isDefined))
+              .toList
+              .distinct
+            gts.exists(x =>
+              g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
+        }
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
