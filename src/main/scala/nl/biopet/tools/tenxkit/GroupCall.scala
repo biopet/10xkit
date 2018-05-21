@@ -37,6 +37,7 @@ case class GroupCall(contig: Int,
                      refAllele: String,
                      altAlleles: Array[String],
                      alleleCount: Map[String, Array[AlleleCount]],
+                     genotypes: Map[String, GenotypeCall],
                      cellCounts: Map[String, Int]) {
 
   def hasNonReference: Boolean = {
@@ -82,7 +83,7 @@ case class GroupCall(contig: Int,
 
     val genotypes = alleleCount.map {
       case (groupName, a) =>
-        val genotypeCall = GenotypeCall.fromAd(a.map(_.total))
+        val genotypeCall = this.genotypes(groupName)
         val attributes = Map(
           "CN" -> cellCounts(groupName).toString,
           "DP-READ" -> a.map(_.totalReads).sum.toString,
@@ -137,11 +138,15 @@ object GroupCall {
       variant.samples.groupBy { case (k, _) => groupsMap(k) }.map {
         case (k, v) => k -> v.size
       }
+    val genotypes = alleleCounts.map {
+      case (k, v) => k -> GenotypeCall.fromAd(v.map(_.total))
+    }
     GroupCall(variant.contig,
               variant.pos,
               variant.refAllele,
               variant.altAlleles,
               alleleCounts,
+              genotypes,
               cellCounts)
   }
 }

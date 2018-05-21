@@ -71,8 +71,14 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     val filterGroupCalls =
       groupCalls
-        .filter(_._2.alleleCount.exists(_._2.count(_.total > 5) > 1))
-        .filter(_._1.getUniqueAlleles(groupsMap.value).nonEmpty)
+        .filter {
+          case (v, g) =>
+            g.genotypes.size > 1 && g.genotypes.values
+              .map(_.genotype)
+              .toList
+              .distinct
+              .size != 1
+        }
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
