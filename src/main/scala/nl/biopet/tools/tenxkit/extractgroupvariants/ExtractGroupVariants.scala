@@ -32,6 +32,9 @@ import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 object ExtractGroupVariants extends ToolCommand[Args] {
   def emptyArgs = Args()
   def argsParser = new ArgsParser(this)
@@ -95,7 +98,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
           writer.close()
           Iterator(outputFile)
       }
-      .collect()
+      .collectAsync()
 
     val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
     outputVcfDir.mkdir()
@@ -113,7 +116,10 @@ object ExtractGroupVariants extends ToolCommand[Args] {
           writer.close()
           Iterator(outputFile)
       }
-      .collect()
+      .collectAsync()
+
+    Await.result(outputFilterFiles, Duration.Inf)
+    Await.result(outputFiles, Duration.Inf)
   }
 
   def descriptionText: String =
