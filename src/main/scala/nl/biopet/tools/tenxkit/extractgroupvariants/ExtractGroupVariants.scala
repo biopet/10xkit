@@ -69,8 +69,9 @@ object ExtractGroupVariants extends ToolCommand[Args] {
                    cmdArgs.reference,
                    correctCellsMap,
                    1000000)
+    val groupCalls = variants
+      .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
-    val groupCalls = variants.map(_.toGroupCall(groupsMap.value))
 
     val filterGroupCalls =
       groupCalls
