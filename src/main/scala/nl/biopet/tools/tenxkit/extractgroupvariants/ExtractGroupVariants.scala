@@ -97,6 +97,9 @@ object ExtractGroupVariants extends ToolCommand[Args] {
             gts.exists(x =>
               g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
         }
+        .filter {
+          case (v, g) => g.alleleCount.values.forall(_.map(_.total).sum >= 50)
+        }
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
