@@ -88,6 +88,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
               case _ => false
             }
         }
+        .filter(_._2.totalDepth > 200)
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
