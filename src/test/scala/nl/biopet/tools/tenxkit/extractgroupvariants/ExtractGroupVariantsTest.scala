@@ -19,34 +19,17 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.extractgroupvariants
 
-import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
-import nl.biopet.tools.tenxkit.cellreads.CellReads
-import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
-import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
-import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
-import nl.biopet.tools.tenxkit.mergebams.MergeBams
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.utils.tool.ToolCommand
-import nl.biopet.utils.tool.multi.MultiToolCommand
+import nl.biopet.utils.test.tools.ToolTest
+import org.testng.annotations.Test
 
-object TenxKit extends MultiToolCommand {
-
-  def subTools: Map[String, List[ToolCommand[_]]] =
-    Map(
-      "Tools" -> List(CellReads,
-                      CellVariantcaller,
-                      CalulateDistance,
-                      GroupDistance,
-                      MergeBams,
-                      EvalSubGroups,
-                      ExtractGroupVariants))
-
-  def descriptionText: String = extendedDescriptionText
-
-  def manualText: String = extendedManualText
-
-  def exampleText: String = extendedExampleText
-
+class ExtractGroupVariantsTest extends ToolTest[Args] {
+  def toolCommand: ExtractGroupVariants.type = ExtractGroupVariants
+  @Test
+  def testNoArgs(): Unit = {
+    intercept[IllegalArgumentException] {
+      ExtractGroupVariants.main(Array())
+    }
+  }
 }

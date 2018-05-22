@@ -45,6 +45,13 @@ When multiple peaks are seen this might be a mixture of samples.
     
         
 
+#### Tools - ExtractGroupVariants
+
+This tool will merge variants from the same group. This will be a representation of the real samples.
+This can also be used to validate if there is a true set known.
+    
+        
+
 # Documentation
 
 For documentation and manuals visit our [github.io page](https://biopet.github.io/tenxkit).
