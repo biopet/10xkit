@@ -203,8 +203,8 @@ case class VariantCall(contig: Int,
   def getUniqueAlleles(groupsMap: Map[Int, String],
                        balance: Double = 0.9): Array[(String, String)] = {
     val groupFactions = samples
-      .filter(x => groupsMap.contains(x._1))
-      .groupBy(x => groupsMap(x._1))
+      .filter { case (groupId, _) => groupsMap.contains(groupId) }
+      .groupBy { case (groupId, _) => groupsMap(groupId) }
       .map {
         case (groupName, cells) =>
           groupName -> allAlleles.indices.map { i =>
@@ -216,7 +216,9 @@ case class VariantCall(contig: Int,
         val a = groupFactions.values.count(_(i) >= balance)
         val b = groupFactions.values.count(_(i) <= (1.0 - balance))
         if (a == 1 && b >= 1) {
-          groupFactions.find(_._2(i) >= balance).map(_._1 -> allele)
+          groupFactions.find { case (_, f) => f(i) >= balance }.map {
+            case (al, _) => al -> allele
+          }
         } else None
     }
   }

@@ -58,21 +58,21 @@ object GenotypeCall {
       if (alleleLeft == 0) genotype
       else {
         val filterPl = pl.zipWithIndex
-          .filter(x => !genotype.contains(Some(x._2)))
+          .filter{ case (_, alleleIdx) => !genotype.contains(Some(alleleIdx))}
           .map {
             case (aPl, aIdx) =>
               aIdx -> aPl.zipWithIndex.slice(1, alleleLeft + 1)
           }
-        val flatten = filterPl.flatMap(_._2.map(_._1))
+        val flatten = filterPl.flatMap{case (_, pls) => pls.map{case (p, _) => p}}
         if (flatten.nonEmpty) {
           val min = flatten.min
           val newAlleles = filterPl
-            .find(_._2.map(_._1).contains(min))
-            .map(x => x._1 -> x._2.find(_._1 == min).get)
+            .find{case (_, pls) => pls.map{case (p, _) => p}.contains(min)}
+            .map{case (alleleIdx, pls) => alleleIdx -> pls.find{ case (p, _) => p == min}.get}
             .toList
             .flatMap {
-              case (a, n) =>
-                List.fill(n._2)(Some(a))
+              case (a, (_, n)) =>
+                List.fill(n)(Some(a))
             }
           getGenotype(genotype ::: newAlleles)
         } else genotype ::: List.fill(alleleLeft)(None)

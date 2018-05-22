@@ -134,7 +134,10 @@ object GroupCall {
             group -> maps.values
               .flatMap(x => x.zipWithIndex)
               .groupBy { case (_, idx) => idx }
-              .map(_._2.map(_._1).reduce(_ + _))
+              .map {
+                case (_, counts) =>
+                  counts.map { case (c, _) => c }.reduce(_ + _)
+              }
               .toArray
         }
     val cellCounts =
