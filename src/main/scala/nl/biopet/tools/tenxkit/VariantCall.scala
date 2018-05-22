@@ -52,38 +52,51 @@ case class VariantCall(contig: Int,
                        refAllele: String,
                        altAlleles: Array[String],
                        samples: Map[Int, Array[AlleleCount]]) {
-  def hasNonReference: Boolean = {
-    altDepth > 0
-  }
 
-  def totalDepth: Int = {
-    samples.values.flatMap(_.map(_.total)).sum
-  }
+  /** true if there is coverage on a alt allele */
+  def hasNonReference: Boolean = altDepth > 0
 
-  def totalReadDepth: Int = {
-    samples.values.flatMap(_.map(_.totalReads)).sum
-  }
+  /** total umi coverage on this position */
+  def totalDepth: Int = samples.values.flatMap(_.map(_.total)).sum
 
-  def referenceDepth: Int = {
+  /** total read coverage on this position */
+  def totalReadDepth: Int = samples.values.flatMap(_.map(_.totalReads)).sum
+
+  /** total umi coverage on the reference allele */
+  def referenceDepth: Int =
     samples.values.flatMap(_.headOption.map(_.total)).sum
-  }
 
-  def altDepth: Int = {
-    totalDepth - referenceDepth
-  }
+  /** Total umi coverage on the alt alleles */
+  def altDepth: Int = totalDepth - referenceDepth
 
-  def totalAltRatio: Double = {
-    altDepth.toDouble / totalDepth
-  }
+  /** Ratio of  the alt depth to the reference allele */
+  def totalAltRatio: Double = altDepth.toDouble / totalDepth
 
+  /** true if there is a sample alt allele with atleast the goiven number of umis */
   def minSampleAltDepth(cutoff: Int): Boolean = {
     samples.values.exists(_.tail.exists(_.total >= cutoff))
+  }
+
+  /** Allele alles in 1 Array */
+  def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
+
+  /** Umi depth for each allele acrosss samples */
+  def alleleDepth: Seq[Int] = {
+    allAlleles.indices.map(i =>
+      samples.values.flatMap(_.lift(i).map(_.total)).sum)
+  }
+
+  /** Read depth for each allele acrosss samples */
+  def alleleReadDepth: Seq[Int] = {
+    allAlleles.indices.map(i =>
+      samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
   }
 
   def setAllelesToZeroDepth(minAlleleDepth: Int): VariantCall = {
     val newSamples = samples.map {
       case (s, a) =>
-        s -> a.map(a => if (a.totalReads > minAlleleDepth) a else AlleleCount())
+        s -> a.map(a =>
+          if (a.totalReads >= minAlleleDepth) a else AlleleCount())
     }
     this.copy(samples = newSamples)
   }
@@ -134,16 +147,6 @@ case class VariantCall(contig: Int,
     }
   }
 
-  def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
-
-  def alleleDepth: Seq[Int] = {
-    allAlleles.indices.map(i =>
-      samples.values.flatMap(_.lift(i).map(_.total)).sum)
-  }
-  def alleleReadDepth: Seq[Int] = {
-    allAlleles.indices.map(i =>
-      samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
-  }
   def toVariantContext(sampleList: Array[String],
                        dict: SAMSequenceDictionary,
                        seqError: Float): VariantContext = {

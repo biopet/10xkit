@@ -45,4 +45,40 @@ class VariantCallTest extends BiopetTest {
     call2.getUniqueAlleles(Map(1 -> "group1", 2 -> "group2")) shouldBe Array(
       "group1" -> "A")
   }
+
+  @Test
+  def testBasicAlleleMethods(): Unit = {
+    val v1 = VariantCall(
+      1,
+      1000,
+      "A",
+      Array("G", "T"),
+      Map(0 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
+          1 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
+
+    v1.allAlleles shouldBe Array("A", "G", "T")
+    v1.alleleDepth shouldBe Seq(2, 2, 2)
+    v1.alleleReadDepth shouldBe Seq(2, 2, 2)
+  }
+
+  @Test
+  def testBasicTotalMethods(): Unit = {
+    val v1 = VariantCall(
+      1,
+      1000,
+      "A",
+      Array("G", "T"),
+      Map(0 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
+          1 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
+
+    v1.altDepth shouldBe 4
+    v1.referenceDepth shouldBe 2
+    v1.totalDepth shouldBe 6
+    v1.totalReadDepth shouldBe 6
+    v1.hasNonReference shouldBe true
+    v1.totalAltRatio shouldBe 2.0 / 3
+
+    v1.minSampleAltDepth(1) shouldBe true
+    v1.minSampleAltDepth(2) shouldBe false
+  }
 }
