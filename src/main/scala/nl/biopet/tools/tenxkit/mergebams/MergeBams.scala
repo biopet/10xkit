@@ -92,7 +92,7 @@ object MergeBams extends ToolCommand[Args] {
             newRecord.setAttribute(cmdArgs.sampleTag, duplets(barcode))
             Option(newRecord.getAttribute(cmdArgs.umiTag))
               .foreach(umi =>
-                newRecord.setAttribute(cmdArgs.umiTag, umi.toString + "A"))
+                newRecord.setAttribute(cmdArgs.umiTag, umi.toString + "G"))
             List(x.record, newRecord)
           case _ => List(x.record)
         }
