@@ -23,12 +23,12 @@ package nl.biopet.tools.tenxkit.extractgroupvariants
 
 import java.io.File
 
-import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{GroupCall, TenxKit, VariantCall}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.tool.ToolCommand
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -41,18 +41,15 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
   def main(args: Array[String]): Unit = {
     val cmdArgs = cmdArrayToArgs(args)
-
     val sparkConf: SparkConf =
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
-    //import sparkSession.implicits._
     implicit val sc: SparkContext = sparkSession.sparkContext
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
-
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val groups = sc.broadcast(cmdArgs.groups.map {
@@ -73,45 +70,47 @@ object ExtractGroupVariants extends ToolCommand[Args] {
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
 
-    val filterGroupCalls =
-      groupCalls
-        .filter(_.genotypes.size > 1)
-        .filter { g =>
-          val called =
-            g.genotypes.values.filter(_.genotype.exists(_.isDefined))
-          called.headOption match {
-            case Some(gt) =>
-              !called.tail.forall(_.genotype sameElements gt.genotype)
-            case _ => false
-          }
-        }
-        .filter { g =>
-          val gts = g.genotypes.values
-            .filter(_.genotype.exists(_.isDefined))
-            .toList
-            .distinct
-          gts.exists(x =>
-            g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
-        }
-        .filter(_.alleleCount.values.forall(_.map(_.total).sum >= 50))
+    val filterGroupCalls = filterGroupCall(groupCalls)
 
-    val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
-    outputFilterVcfDir.mkdir()
     val outputFilterFiles = GroupCall
-      .writeAsPartitionedVcfFile(filterGroupCalls,
-                                 outputFilterVcfDir,
+      .writeAsPartitionedVcfFile(
+        filterGroupCalls,
+        new File(cmdArgs.outputDir, "output-filter-vcf"),
+        vcfHeader,
+        dict)
+      .collectAsync()
+    val outputFiles = GroupCall
+      .writeAsPartitionedVcfFile(groupCalls,
+                                 new File(cmdArgs.outputDir, "output-vcf"),
                                  vcfHeader,
                                  dict)
       .collectAsync()
 
-    val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
-    outputVcfDir.mkdir()
-    val outputFiles = GroupCall
-      .writeAsPartitionedVcfFile(groupCalls, outputVcfDir, vcfHeader, dict)
-      .collectAsync()
-
     Await.result(outputFilterFiles, Duration.Inf)
     Await.result(outputFiles, Duration.Inf)
+  }
+
+  def filterGroupCall(groupCalls: RDD[GroupCall]): RDD[GroupCall] = {
+    groupCalls
+      .filter(_.genotypes.size > 1)
+      .filter { g =>
+        val called =
+          g.genotypes.values.filter(_.genotype.exists(_.isDefined))
+        called.headOption match {
+          case Some(gt) =>
+            !called.tail.forall(_.genotype sameElements gt.genotype)
+          case _ => false
+        }
+      }
+      .filter { g =>
+        val gts = g.genotypes.values
+          .filter(_.genotype.exists(_.isDefined))
+          .toList
+          .distinct
+        gts.exists(x =>
+          g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
+      }
+      .filter(_.alleleCount.values.forall(_.map(_.total).sum >= 50))
   }
 
   def descriptionText: String =

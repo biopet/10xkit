@@ -171,6 +171,7 @@ object GroupCall {
                                 vcfHeader: Broadcast[VCFHeader],
                                 dict: Broadcast[SAMSequenceDictionary])(
       implicit sc: SparkContext): RDD[File] = {
+    outputDir.mkdir()
     rdd
       .mapPartitionsWithIndex {
         case (idx, it) =>
