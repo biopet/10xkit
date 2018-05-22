@@ -80,16 +80,6 @@ case class VariantCall(contig: Int,
     samples.values.exists(_.tail.exists(_.total >= cutoff))
   }
 
-  def toVcfLine(samplesIdxs: Range, dict: SAMSequenceDictionary): String = {
-    s"${dict.getSequence(contig).getSequenceName}\t$pos\t.\t$refAllele\t${altAlleles
-      .mkString(",")}\t.\t.\t.\tAD\t" +
-      s"${samplesIdxs
-        .map { idx =>
-          samples.get(idx).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")
-        }
-        .mkString("\t")}"
-  }
-
   def setAllelesToZeroDepth(minAlleleDepth: Int): VariantCall = {
     val newSamples = samples.map {
       case (s, a) =>
