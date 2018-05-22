@@ -45,6 +45,7 @@ package object tenxkit {
     new VCFInfoHeaderLine("DP", 1, VCFHeaderLineType.Integer, "Umi dept"),
     new VCFInfoHeaderLine("DP-READ", 1, VCFHeaderLineType.Integer, "Read dept"),
     new VCFInfoHeaderLine("SN", 1, VCFHeaderLineType.Integer, "Sample count"),
+    new VCFInfoHeaderLine("CN", 1, VCFHeaderLineType.Integer, "Cell count"),
     new VCFFormatHeaderLine("GT",
                             VCFHeaderLineCount.UNBOUNDED,
                             VCFHeaderLineType.String,
@@ -89,7 +90,8 @@ package object tenxkit {
     new VCFFormatHeaderLine("ADR",
                             VCFHeaderLineCount.R,
                             VCFHeaderLineType.Integer,
-                            "Reverse strand umi count per allele")
+                            "Reverse strand umi count per allele"),
+    new VCFFormatHeaderLine("CN", 1, VCFHeaderLineType.Integer, "Cell count")
   )
 
   def vcfHeader(samples: Array[String]) =

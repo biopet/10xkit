@@ -196,6 +196,32 @@ case class VariantCall(contig: Int,
       .genotypes(genotypes)
       .make()
   }
+
+  def toGroupCall(groupsMap: Map[Int, String]): GroupCall =
+    GroupCall.fromVariantCall(this, groupsMap)
+
+  def getUniqueAlleles(groupsMap: Map[Int, String],
+                       balance: Double = 0.9): Array[(String, String)] = {
+    val groupFactions = samples
+      .filter { case (groupId, _) => groupsMap.contains(groupId) }
+      .groupBy { case (groupId, _) => groupsMap(groupId) }
+      .map {
+        case (groupName, cells) =>
+          groupName -> allAlleles.indices.map { i =>
+            cells.values.count(_(i).total > 1).toDouble / cells.size
+          }.toArray
+      }
+    allAlleles.zipWithIndex.flatMap {
+      case (allele, i) =>
+        val a = groupFactions.values.count(_(i) >= balance)
+        val b = groupFactions.values.count(_(i) <= (1.0 - balance))
+        if (a == 1 && b >= 1) {
+          groupFactions.find { case (_, f) => f(i) >= balance }.map {
+            case (al, _) => al -> allele
+          }
+        } else None
+    }
+  }
 }
 
 object VariantCall {
@@ -283,14 +309,18 @@ object VariantCall {
                   reference: File,
                   sampleMap: Broadcast[Map[String, Int]],
                   binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
-    val dict = sc.broadcast(fasta.getCachedDict(reference))
-    val regions =
-      BedRecordList.fromReference(reference).scatter(binsize)
-    sc.parallelize(regions, regions.size).mapPartitions { it =>
-      it.flatMap { list =>
-        vcf
-          .loadRegions(inputFile, list.iterator)
-          .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+    if (inputFile.isDirectory) {
+      fromPartitionedVcf(inputFile, reference, sampleMap)
+    } else {
+      val dict = sc.broadcast(fasta.getCachedDict(reference))
+      val regions =
+        BedRecordList.fromReference(reference).scatter(binsize)
+      sc.parallelize(regions, regions.size).mapPartitions { it =>
+        it.flatMap { list =>
+          vcf
+            .loadRegions(inputFile, list.iterator)
+            .map(VariantCall.fromVariantContext(_, dict.value, sampleMap.value))
+        }
       }
     }
   }
