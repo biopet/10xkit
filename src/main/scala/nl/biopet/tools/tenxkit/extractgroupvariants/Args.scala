@@ -28,4 +28,5 @@ case class Args(inputVcfFile: File = null,
                 correctCells: File = null,
                 outputDir: File = null,
                 sparkMaster: String = null,
+                minSampleDepth: Int = 50,
                 groups: Map[String, File] = Map())

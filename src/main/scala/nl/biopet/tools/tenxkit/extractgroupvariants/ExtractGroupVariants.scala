@@ -70,7 +70,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
 
-    val filterGroupCalls = filterGroupCall(groupCalls)
+    val filterGroupCalls = filterGroupCall(groupCalls, cmdArgs.minSampleDepth)
 
     val outputFilterFiles = GroupCall
       .writeAsPartitionedVcfFile(
