@@ -129,6 +129,10 @@
         The histogram for a Correct match should be a steep histogram starting at 0.
         When multiple peaks are seen this might be a mixture of samples.</p>
         
+        <h4 id="tools---extractgroupvariants" class="section">Tools - ExtractGroupVariants</h4>
+        <p>This tool will merge variants from the same group. This will be a representation of the real samples.
+        This can also be used to validate if there is a true set known.</p>
+        
         <h1 id="installation" class="section">Installation</h1>
         <p>TenxKit requires Java 8 to be installed on your device. Download Java 8
         <a href="http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html">here</a>
@@ -166,6 +170,10 @@
         <p>This tool will require the complete distance matrix and a list of all cells per group.
         It will generate a histogram for each combination of groups.</p>
         <p>When a known set is given the precision and recall of each combination of group and know set writen to a file.</p>
+        
+        <h4 id="tools---extractgroupvariants-1" class="section">Tools - ExtractGroupVariants</h4>
+        <p>This tool will require a vcf file that contains a AD for each cell that has coverage on a position.
+        From here the sample for each group given with the --group argument will compress this group in 1 single vcf genotype.</p>
         
         <h2 id="example" class="section">Example</h2>
         
@@ -246,6 +254,17 @@
 -k sample2=&lt;sample 2 file&gt; \
 -g &lt;group 1&gt;=&lt;group 2 file&gt; \
 -g &lt;group 2&gt;=&lt;group 2 file&gt;</code></pre>
+        
+        <h4 id="tools---extractgroupvariants-2" class="section">Tools - ExtractGroupVariants</h4>
+        <p>Default run:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; ExtractGroupVariants \
+--sparkMaster &lt;spark master&gt; \
+-i &lt;input vcf file&gt; \
+-o &lt;output directory&gt; \
+-R &lt;reference fasta&gt; \
+--correctCells &lt;list of cells&gt; \
+--group &lt;group name&gt;=&lt;group file&gt; \
+--group &lt;group name&gt;=&lt;group file&gt;</code></pre>
         
         <h2 id="usage" class="section">Usage</h2>
         <p>Usage for TenxKit:</p>
