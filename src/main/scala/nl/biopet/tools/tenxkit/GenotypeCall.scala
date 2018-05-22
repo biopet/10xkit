@@ -68,7 +68,7 @@ object GenotypeCall {
           val min = flatten.min
           val newAlleles = filterPl
             .find{case (_, pls) => pls.map{case (p, _) => p}.contains(min)}
-            .map{case (alleleIdx, pls) => alleleIdx -> pls.find{ case (p, _) => p == min}.get}
+            .map{case (alleleIdx, pls) => alleleIdx -> pls.find{ case (p, _) => p == min}.getOrElse(throw new IllegalStateException("Not possible"))}
             .toList
             .flatMap {
               case (a, (_, n)) =>

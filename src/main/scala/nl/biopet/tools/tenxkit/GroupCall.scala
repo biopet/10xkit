@@ -21,14 +21,21 @@
 
 package nl.biopet.tools.tenxkit
 
+import java.io.File
+
 import htsjdk.samtools.SAMSequenceDictionary
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
 import htsjdk.variant.variantcontext.{
   Allele,
   GenotypeBuilder,
   VariantContext,
   VariantContextBuilder
 }
+import htsjdk.variant.vcf.VCFHeader
 import nl.biopet.tools.tenxkit.variantcalls.AlleleCount
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConversions._
 
@@ -157,5 +164,25 @@ object GroupCall {
               alleleCounts,
               genotypes,
               cellCounts)
+  }
+
+  def writeAsPartitionedVcfFile(rdd: RDD[GroupCall],
+                                outputDir: File,
+                                vcfHeader: Broadcast[VCFHeader],
+                                dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): RDD[File] = {
+    rdd
+      .mapPartitionsWithIndex {
+        case (idx, it) =>
+          val outputFile = new File(outputDir, s"$idx.vcf.gz")
+          val writer =
+            new VariantContextWriterBuilder()
+              .setOutputFile(outputFile)
+              .build()
+          writer.writeHeader(vcfHeader.value)
+          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
+          writer.close()
+          Iterator(outputFile)
+      }
   }
 }

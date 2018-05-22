@@ -25,7 +25,7 @@ import java.io.File
 
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
+import nl.biopet.tools.tenxkit.{GroupCall, TenxKit, VariantCall}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.tool.ToolCommand
@@ -97,36 +97,17 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     val outputFilterVcfDir = new File(cmdArgs.outputDir, "output-filter-vcf")
     outputFilterVcfDir.mkdir()
-    val outputFilterFiles = filterGroupCalls
-      .mapPartitionsWithIndex {
-        case (idx, it) =>
-          val outputFile = new File(outputFilterVcfDir, s"$idx.vcf.gz")
-          val writer =
-            new VariantContextWriterBuilder()
-              .setOutputFile(outputFile)
-              .build()
-          writer.writeHeader(vcfHeader.value)
-          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
-          writer.close()
-          Iterator(outputFile)
-      }
+    val outputFilterFiles = GroupCall
+      .writeAsPartitionedVcfFile(filterGroupCalls,
+                                 outputFilterVcfDir,
+                                 vcfHeader,
+                                 dict)
       .collectAsync()
 
     val outputVcfDir = new File(cmdArgs.outputDir, "output-vcf")
     outputVcfDir.mkdir()
-    val outputFiles = groupCalls
-      .mapPartitionsWithIndex {
-        case (idx, it) =>
-          val outputFile = new File(outputVcfDir, s"$idx.vcf.gz")
-          val writer =
-            new VariantContextWriterBuilder()
-              .setOutputFile(outputFile)
-              .build()
-          writer.writeHeader(vcfHeader.value)
-          it.foreach(x => writer.add(x.toVariantContext(dict.value)))
-          writer.close()
-          Iterator(outputFile)
-      }
+    val outputFiles = GroupCall
+      .writeAsPartitionedVcfFile(groupCalls, outputVcfDir, vcfHeader, dict)
       .collectAsync()
 
     Await.result(outputFilterFiles, Duration.Inf)
