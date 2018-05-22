@@ -30,8 +30,9 @@ object GenotypeCall {
 
   def probabilityToPhred(p: Double): Int = (-10 * math.log(p)).toInt
 
-  val t = 2.0
+  private val t = 2.0
 
+  /** This will calculate the probability of the number of alleles with a certain ploidy */
   def adToProbability(fraction: Double,
                       expectedAlleles: Int,
                       ploidy: Int = 2): Double = {
@@ -41,6 +42,7 @@ object GenotypeCall {
     if (v > 1.0 || v < 0.0) 0.0 else v
   }
 
+  /** Generates a [[GenotypeCall]] from a given allele depths */
   def fromAd(ad: Array[Int], ploidy: Int = 2): GenotypeCall = {
     val totalDepth = ad.sum
 

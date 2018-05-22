@@ -39,6 +39,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConversions._
 
+/** This class is used to store a genotype of a single group, this is a combination from cell/[[VariantCall]] */
 case class GroupCall(contig: Int,
                      pos: Long,
                      refAllele: String,
@@ -83,6 +84,7 @@ case class GroupCall(contig: Int,
       alleleCount.values.flatMap(_.lift(i).map(_.totalReads)).sum)
   }
 
+  /** This will convert this to a VariantContext to write to a vcf file */
   def toVariantContext(dict: SAMSequenceDictionary): VariantContext = {
     val alleles = Allele.create(refAllele, true) :: altAlleles
       .map(Allele.create)
@@ -130,6 +132,13 @@ case class GroupCall(contig: Int,
 }
 
 object GroupCall {
+
+  /**
+    * This method will convert a variant call to a groupcall with a list of groups
+    * @param variant Input variantcall
+    * @param groupsMap Map to see to which group a cell belongs
+    * @return
+    */
   def fromVariantCall(variant: VariantCall,
                       groupsMap: Map[Int, String]): GroupCall = {
     val alleleCounts =
@@ -166,6 +175,15 @@ object GroupCall {
               cellCounts)
   }
 
+  /**
+    * This method will write a RDD into a partitioned vcf file
+    * @param rdd Input [[GroupCall]]s
+    * @param outputDir Output directory
+    * @param vcfHeader Header of the vcf file
+    * @param dict sequence dict
+    * @param sc Spark context
+    * @return
+    */
   def writeAsPartitionedVcfFile(rdd: RDD[GroupCall],
                                 outputDir: File,
                                 vcfHeader: Broadcast[VCFHeader],

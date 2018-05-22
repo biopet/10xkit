@@ -90,7 +90,15 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     Await.result(outputFiles, Duration.Inf)
   }
 
-  def filterGroupCall(groupCalls: RDD[GroupCall]): RDD[GroupCall] = {
+  /**
+    * This method will filter the groupcalls for position where there is a unique genotype
+    * where all called samples has enough coverage.
+    * @param groupCalls Input calls
+    * @param minSampleDepth Minimal sample depth
+    * @return Filtered RDD
+    */
+  def filterGroupCall(groupCalls: RDD[GroupCall],
+                      minSampleDepth: Int = 50): RDD[GroupCall] = {
     groupCalls
       .filter(_.genotypes.size > 1)
       .filter { g =>
@@ -110,7 +118,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
         gts.exists(x =>
           g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
       }
-      .filter(_.alleleCount.values.forall(_.map(_.total).sum >= 50))
+      .filter(_.alleleCount.values.forall(_.map(_.total).sum >= minSampleDepth))
   }
 
   def descriptionText: String =
