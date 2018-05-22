@@ -126,18 +126,24 @@ object GroupCall {
   def fromVariantCall(variant: VariantCall,
                       groupsMap: Map[Int, String]): GroupCall = {
     val alleleCounts =
-      variant.samples.groupBy { case (k, _) => groupsMap(k) }.map {
-        case (group, maps) =>
-          group -> maps.values
-            .flatMap(x => x.zipWithIndex)
-            .groupBy { case (_, idx) => idx }
-            .map(_._2.map(_._1).reduce(_ + _))
-            .toArray
-      }
+      variant.samples
+        .groupBy { case (k, _) => groupsMap.get(k) }
+        .flatMap { case (k, v) => k.map(_ -> v) }
+        .map {
+          case (group, maps) =>
+            group -> maps.values
+              .flatMap(x => x.zipWithIndex)
+              .groupBy { case (_, idx) => idx }
+              .map(_._2.map(_._1).reduce(_ + _))
+              .toArray
+        }
     val cellCounts =
-      variant.samples.groupBy { case (k, _) => groupsMap(k) }.map {
-        case (k, v) => k -> v.size
-      }
+      variant.samples
+        .groupBy { case (k, _) => groupsMap.get(k) }
+        .flatMap { case (k, v) => k.map(_ -> v) }
+        .map {
+          case (k, v) => k -> v.size
+        }
     val genotypes = alleleCounts.map {
       case (k, v) => k -> GenotypeCall.fromAd(v.map(_.total))
     }
