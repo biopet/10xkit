@@ -21,6 +21,13 @@
 
 package nl.biopet.tools.tenxkit
 
+/**
+  * A class to store genotype information for a single sample/cell
+  * @param genotype Alleles of the sample, None means not called
+  * @param ad Depth of each allele
+  * @param aq Quality of each allele in phred
+  * @param pl Pgred value for each allele and each possible expected alleles, for ploidy 2 that should be 3 values, 0,1,2
+  */
 case class GenotypeCall(genotype: Array[Option[Int]],
                         ad: Array[Int],
                         aq: Array[Int],
@@ -42,7 +49,12 @@ object GenotypeCall {
     if (v > 1.0 || v < 0.0) 0.0 else v
   }
 
-  /** Generates a [[GenotypeCall]] from a given allele depths */
+  /**
+    * Generates a [[GenotypeCall]] from a given allele depths
+    * @param ad Depth for each allele
+    * @param ploidy ploidy to use
+    * @return
+    */
   def fromAd(ad: Array[Int], ploidy: Int = 2): GenotypeCall = {
     val totalDepth = ad.sum
 
@@ -81,11 +93,9 @@ object GenotypeCall {
       }
     }
 
-    val min = pl.tail.flatten.min
-
     GenotypeCall(getGenotype().sorted.toArray,
                  ad,
                  Array(),
-                 pl.map(_.map(_ - min)))
+                 pl)
   }
 }
