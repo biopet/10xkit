@@ -41,6 +41,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
   def main(args: Array[String]): Unit = {
     val cmdArgs = cmdArrayToArgs(args)
+    logger.info("Start")
     val sparkConf: SparkConf =
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
@@ -86,6 +87,8 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     Await.result(outputFilterFiles, Duration.Inf)
     Await.result(outputFiles, Duration.Inf)
+    sparkSession.stop()
+    logger.info("Done")
   }
 
   /**

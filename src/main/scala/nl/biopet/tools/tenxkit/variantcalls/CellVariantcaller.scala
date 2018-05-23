@@ -85,6 +85,7 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     Await.result(result.totalFuture, Duration.Inf)
 
+    sparkSession.stop()
     logger.info("Done")
   }
 

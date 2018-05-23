@@ -123,7 +123,7 @@ object GroupDistance extends ToolCommand[Args] {
 
     writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
 
-    sc.stop()
+    sparkSession.stop()
     logger.info("Done")
   }
 

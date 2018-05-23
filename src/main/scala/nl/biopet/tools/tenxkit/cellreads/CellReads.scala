@@ -71,6 +71,7 @@ object CellReads extends ToolCommand[Args] {
 
     generateHistograms(reads, cmdArgs.sampleTag, cmdArgs.outputDir)
 
+    sparkSession.stop()
     logger.info("Done")
   }
 

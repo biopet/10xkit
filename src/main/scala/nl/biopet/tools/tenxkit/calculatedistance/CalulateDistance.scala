@@ -201,10 +201,9 @@ object CalulateDistance extends ToolCommand[Args] {
       df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
     }
 
-    //TODO: Grouping
-
     Await.result(Future.sequence(futures), Duration.Inf)
 
+    sparkSession.stop()
     logger.info("Done")
   }
 
