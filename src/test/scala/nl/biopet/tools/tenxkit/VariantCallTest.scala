@@ -247,7 +247,7 @@ class VariantCallTest extends BiopetTest {
       samples =
         mutable.Map(0 -> mutable.Map(SampleAllele("C", 0) -> AlleleCount(5))))
     val region =
-      ReferenceRegion.apply(resourceFile("/reference.fasta"), "chr1", 1, 2000)
+      ReferenceRegion(resourceFile("/reference.fasta"), "chr1", 1, 2000)
     VariantCall.createFromBases(0, 1000, PositionBases(), region, 2) shouldBe None
     val v1 = VariantCall.createFromBases(0, 1000, bases1, region, 2)
     v1 shouldBe Some(

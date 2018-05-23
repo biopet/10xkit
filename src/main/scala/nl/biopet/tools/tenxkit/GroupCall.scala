@@ -31,7 +31,7 @@ import htsjdk.variant.variantcontext.{
   VariantContext,
   VariantContextBuilder
 }
-import htsjdk.variant.vcf.VCFHeader
+import htsjdk.variant.vcf.{VCFFileReader, VCFHeader}
 import nl.biopet.tools.tenxkit.variantcalls.AlleleCount
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
@@ -202,6 +202,61 @@ object GroupCall {
           it.foreach(x => writer.add(x.toVariantContext(dict.value)))
           writer.close()
           Iterator(outputFile)
+      }
+  }
+
+  /** Thi will convert a VariantContext to a [[GroupCall]] */
+  def fromVariantContext(variant: VariantContext,
+                         dict: SAMSequenceDictionary): GroupCall = {
+    val contig = dict.getSequenceIndex(variant.getContig)
+    val pos = variant.getStart
+    val refAllele = variant.getReference.getBaseString
+    val altAlleles =
+      variant.getAlternateAlleles.map(_.getBaseString).toIndexedSeq
+    val alleleIndencies = (IndexedSeq(refAllele) ++ altAlleles).zipWithIndex
+    val att = variant.getGenotypes.flatMap { g =>
+      (Option(g.getExtendedAttribute("ADR"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("ADF"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("ADR-READ"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("ADF-READ"))
+         .map(_.toString.split(",").map(_.toInt)),
+       Option(g.getExtendedAttribute("CN")).map(_.toString.toInt)) match {
+        case (Some(adr), Some(adf), Some(adrRead), Some(adfRead), Some(cn)) =>
+          val alleles = alleleIndencies.map {
+            case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
+          }.toIndexedSeq
+          Some(g.getSampleName -> (alleles, cn))
+        case _ => None
+      }
+    }.toMap
+    val counts = att.map { case (k, (v, _))    => k -> v }
+    val cellCount = att.map { case (k, (_, v)) => k -> v }
+    val genotypes = counts.map {
+      case (k, v) => k -> GenotypeCall.fromAd(v.map(_.total))
+    }
+    GroupCall(contig, pos, refAllele, altAlleles, counts, genotypes, cellCount)
+  }
+
+  /** This will read a partitioned vcf file as a rdd [[GroupCall]] */
+  def fromPartitionedVcf(directory: File,
+                         dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): RDD[GroupCall] = {
+    require(directory.isDirectory, s"'$directory' is not a directory")
+    val files = directory
+      .listFiles()
+      .filter(_.getName.endsWith(".vcf.gz"))
+      .sortBy(_.getName.stripSuffix(".vcf.gz").toInt)
+      .map(_.getAbsoluteFile)
+    sc.parallelize(files, files.length)
+      .mapPartitions { it =>
+        it.flatMap { file =>
+          new VCFFileReader(file)
+            .iterator()
+            .map(GroupCall.fromVariantContext(_, dict.value))
+        }
       }
   }
 }
