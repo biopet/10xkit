@@ -130,7 +130,7 @@ object GroupDistance extends ToolCommand[Args] {
   def writeGroups(groups: RDD[GroupSample],
                   trash: RDD[Int],
                   outputDir: File,
-                  correctCells: Broadcast[Array[String]]): Unit = {
+                  correctCells: Broadcast[IndexedSeq[String]]): Unit = {
     val trashData = trash.collect()
 
     val writer =
@@ -197,7 +197,7 @@ object GroupDistance extends ToolCommand[Args] {
                 maxIterations: Int,
                 trash: RDD[Int],
                 outputDir: File,
-                correctCells: Broadcast[Array[String]],
+                correctCells: Broadcast[IndexedSeq[String]],
                 iteration: Int = 1)(
       implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys
@@ -513,9 +513,9 @@ object GroupDistance extends ToolCommand[Args] {
   }
 
   def distanceMatrixToVectors(matrix: DistanceMatrix,
-                              correctSamples: Broadcast[Array[String]])(
+                              correctSamples: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext): (RDD[(Int, linalg.Vector)], RDD[Int]) = {
-    require(matrix.samples sameElements correctSamples.value)
+    require(matrix.samples == correctSamples.value)
     val samples = matrix.samples.indices.toList
     val samplesFiltered = samples.filter(s1 =>
       samples.map(s2 => matrix(s1, s2)).count(_.isDefined) >= 1000)

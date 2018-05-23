@@ -26,18 +26,10 @@ import java.io.File
 import cern.jet.random.Binomial
 import cern.jet.random.engine.RandomEngine
 import htsjdk.samtools.SAMSequenceDictionary
-import htsjdk.variant.variantcontext.{
-  Allele,
-  GenotypeBuilder,
-  VariantContext,
-  VariantContextBuilder
-}
-import htsjdk.variant.vcf.VCFFileReader
-import nl.biopet.tools.tenxkit.variantcalls.{
-  AlleleCount,
-  PositionBases,
-  SampleAllele
-}
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
+import htsjdk.variant.variantcontext.{Allele, GenotypeBuilder, VariantContext, VariantContextBuilder}
+import htsjdk.variant.vcf.{VCFFileReader, VCFHeader}
+import nl.biopet.tools.tenxkit.variantcalls.{AlleleCount, PositionBases, SampleAllele}
 import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -77,8 +69,8 @@ case class VariantCall(contig: Int,
     samples.values.exists(_.tail.exists(_.total >= cutoff))
   }
 
-  /** Allele alles in 1 Array */
-  def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
+  /** Allele alles in 1 IndexedSeq */
+  def allAlleles: IndexedSeq[String] = IndexedSeq(refAllele) ++ altAlleles
 
   /** Umi depth for each allele acrosss samples */
   def alleleDepth: Seq[Int] = {
@@ -151,7 +143,7 @@ case class VariantCall(contig: Int,
     }
   }
 
-  def toVariantContext(sampleList: Array[String],
+  def toVariantContext(sampleList: IndexedSeq[String],
                        dict: SAMSequenceDictionary,
                        seqError: Float): VariantContext = {
     val seqErrors = createBinomialPvalues(seqError)
@@ -198,7 +190,7 @@ case class VariantCall(contig: Int,
     GroupCall.fromVariantCall(this, groupsMap)
 
   def getUniqueAlleles(groupsMap: Map[Int, String],
-                       balance: Double = 0.9): Array[(String, String)] = {
+                       balance: Double = 0.9): IndexedSeq[(String, String)] = {
     val groupFactions = samples
       .filter { case (groupId, _) => groupsMap.contains(groupId) }
       .groupBy { case (groupId, _) => groupsMap(groupId) }
@@ -206,7 +198,7 @@ case class VariantCall(contig: Int,
         case (groupName, cells) =>
           groupName -> allAlleles.indices.map { i =>
             cells.values.count(_(i).total > 1).toDouble / cells.size
-          }.toArray
+          }
       }
     allAlleles.zipWithIndex.flatMap {
       case (allele, i) =>
@@ -231,7 +223,7 @@ object VariantCall {
     val refAllele = variant.getReference.getBaseString
     val altAlleles =
       variant.getAlternateAlleles.map(_.getBaseString).toIndexedSeq
-    val alleleIndencies = (Array(refAllele) ++ altAlleles).zipWithIndex
+    val alleleIndencies = (IndexedSeq(refAllele) ++ altAlleles).zipWithIndex
     val genotypes = variant.getGenotypes.flatMap { g =>
       (Option(g.getExtendedAttribute("ADR"))
          .map(_.toString.split(",").map(_.toInt)),
@@ -280,7 +272,7 @@ object VariantCall {
                                              } else refAllele)
     }.toMap
     val altAlleles =
-      newAllelesMap.values.filter(_ != refAllele).toArray.distinct
+      newAllelesMap.values.filter(_ != refAllele).toIndexedSeq.distinct
     val allAlleles = IndexedSeq(refAllele) ++ altAlleles
 
     if (altAlleles.isEmpty) None
@@ -341,5 +333,30 @@ object VariantCall {
             .map(fromVariantContext(_, dict.value, sampleMap.value))
         }
       }
+  }
+
+  /** Writes variants to a partitioned vcf file */
+  def writeToPartitionedVcf(rdd: RDD[VariantCall],
+                            outputDir: File,
+                            correctCells: Broadcast[IndexedSeq[String]],
+                            dict: Broadcast[SAMSequenceDictionary],
+                            vcfHeader: Broadcast[VCFHeader],
+                            seqError: Float): Unit = {
+    outputDir.mkdirs()
+    val outputFiles = rdd
+      .map(_.toVariantContext(correctCells.value, dict.value, seqError))
+      .mapPartitionsWithIndex {
+        case (idx, it) =>
+          val outputFile = new File(outputDir, s"$idx.vcf.gz")
+          val writer =
+            new VariantContextWriterBuilder()
+              .setOutputFile(outputFile)
+              .build()
+          writer.writeHeader(vcfHeader.value)
+          it.foreach(writer.add)
+          writer.close()
+          Iterator(outputFile)
+      }
+      .collect()
   }
 }

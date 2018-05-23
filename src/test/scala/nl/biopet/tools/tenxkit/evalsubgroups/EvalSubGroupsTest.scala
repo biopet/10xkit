@@ -92,11 +92,11 @@ class EvalSubGroupsTest extends ToolTest[Args] {
 
     val distanceMatrixFile = File.createTempFile("distance.", ".tsv")
     val distanceMatrix = DistanceMatrix(
-      Array(Array(None, Option(0.0), Option(1.0), Option(1.0)),
-            Array(None, None, Option(1.0), Option(1.0)),
-            Array(None, None, None, Option(0.0)),
-            Array(None, None, None, None)),
-      (group1 ::: group2).toArray
+      IndexedSeq(IndexedSeq(None, Option(0.0), Option(1.0), Option(1.0)),
+        IndexedSeq(None, None, Option(1.0), Option(1.0)),
+        IndexedSeq(None, None, None, Option(0.0)),
+        IndexedSeq(None, None, None, None)),
+      (group1 ::: group2).toIndexedSeq
     )
     distanceMatrix.writeFile(distanceMatrixFile)
 

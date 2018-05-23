@@ -29,8 +29,8 @@ import org.apache.spark.rdd.RDD
 
 import scala.io.Source
 
-case class DistanceMatrix(values: Array[Array[Option[Double]]],
-                          samples: Array[String])
+case class DistanceMatrix(values: IndexedSeq[IndexedSeq[Option[Double]]],
+                          samples: IndexedSeq[String])
     extends Logging {
 
   def apply(s1: Int, s2: Int): Option[Double] = {
@@ -123,7 +123,7 @@ object DistanceMatrix extends Logging {
     val countReader = countFile.map(Source.fromFile)
     val countIt = countReader.map(_.getLines())
 
-    val samples = readerIt.next().split("\t").tail
+    val samples = readerIt.next().split("\t").tail.toIndexedSeq
     require(countIt.forall(_.next().split("\t").tail sameElements samples),
             "Samples in count file are not the same as the distance matrix")
     val sampleMap = samples.zipWithIndex.toMap
@@ -146,8 +146,8 @@ object DistanceMatrix extends Logging {
                 .map(distance / _)
                 .getOrElse(distance))
           }
-      }
-    }).toArray
+      }.toIndexedSeq
+    }).toIndexedSeq
     reader.close()
     countReader.foreach(_.close())
     DistanceMatrix(data, samples)
@@ -197,13 +197,13 @@ object DistanceMatrix extends Logging {
   }
 
   def rddToMatrix(rdd: RDD[((Int, Int), Double)],
-                  samples: Array[String]): DistanceMatrix = {
+                  samples: IndexedSeq[String]): DistanceMatrix = {
     rdd
       .groupBy { case ((_, x), _) => x }
       .map {
         case (rowId, row) =>
           val map = row.map { case ((columnId, _), value) => columnId -> value }.toMap
-          rowId -> samples.indices.map(map.get).toArray
+          rowId -> samples.indices.map(map.get)
       }
       .repartition(1)
       .mapPartitions { it =>
@@ -212,8 +212,7 @@ object DistanceMatrix extends Logging {
           DistanceMatrix(
             samples.indices
               .map(map
-                .getOrElse(_, Array.fill[Option[Double]](samples.length)(None)))
-              .toArray,
+                .getOrElse(_, IndexedSeq.fill[Option[Double]](samples.length)(None))),
             samples))
       }
       .first()

@@ -27,16 +27,14 @@ import nl.biopet.test.BiopetTest
 import nl.biopet.utils.io.getLinesFromFile
 import org.testng.annotations.Test
 
-import scala.io.Source
-
 class DistanceMatrixTest extends BiopetTest {
 
   def distanceMatrix = DistanceMatrix(
-    Array(Array(None, Option(0.0), Option(1.0), Option(1.0)),
-          Array(None, None, Option(1.0), Option(1.0)),
-          Array(None, None, None, Option(0.0)),
-          Array(None, None, None, None)),
-    Array("cell1", "cell2", "cell3", "cell4")
+    IndexedSeq(IndexedSeq(None, Option(0.0), Option(1.0), Option(1.0)),
+      IndexedSeq(None, None, Option(1.0), Option(1.0)),
+      IndexedSeq(None, None, None, Option(0.0)),
+      IndexedSeq(None, None, None, None)),
+    IndexedSeq("cell1", "cell2", "cell3", "cell4")
   )
 
   def distanceFileContents = List(

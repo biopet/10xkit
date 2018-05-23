@@ -122,8 +122,8 @@ object CalulateDistance extends ToolCommand[Args] {
         .repartition(1)
         .foreachPartitionAsync { it =>
           val map = it.toMap
-          val values = for (s1 <- correctCells.value.indices.toArray) yield {
-            for (s2 <- correctCells.value.indices.toArray) yield {
+          val values = for (s1 <- correctCells.value.indices) yield {
+            for (s2 <- correctCells.value.indices) yield {
               map.get(s1).flatMap(_.lift(s2)).flatten
             }
           }
@@ -209,7 +209,7 @@ object CalulateDistance extends ToolCommand[Args] {
 
   def readBamFile(
       cmdArgs: Args,
-      correctCells: Broadcast[Array[String]],
+      correctCells: Broadcast[IndexedSeq[String]],
       correctCellsMap: Broadcast[Map[String, Int]],
       binsize: Int)(implicit sc: SparkContext): CellVariantcaller.Result = {
     logger.info(s"Starting variant calling on '${cmdArgs.inputFile}'")

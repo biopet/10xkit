@@ -55,8 +55,8 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
-          1 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
 
     v1.allAlleles shouldBe Array("A", "G", "T")
     v1.alleleDepth shouldBe Seq(2, 2, 2)
@@ -70,8 +70,8 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
-          1 -> Array(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
 
     v1.altDepth shouldBe 4
     v1.referenceDepth shouldBe 2
@@ -128,7 +128,7 @@ class VariantCallTest extends BiopetTest {
       1,
       1000,
       "A",
-      Array("G", "T"),
+      IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(1)),
           1 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(1)))
     )
@@ -156,7 +156,7 @@ class VariantCallTest extends BiopetTest {
       Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
           1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
     )
-    val c1 = v1.toVariantContext(Array("sample1", "sample2"), dict, 0.005f)
+    val c1 = v1.toVariantContext(IndexedSeq("sample1", "sample2"), dict, 0.005f)
     val v2 = VariantCall.fromVariantContext(c1,
                                             dict,
                                             Map("sample1" -> 0, "sample2" -> 1))
