@@ -21,10 +21,14 @@
 
 package nl.biopet.tools.tenxkit
 
+import java.io.File
+
 import nl.biopet.test.BiopetTest
 import nl.biopet.tools.tenxkit.variantcalls.AlleleCount
 import org.testng.annotations.Test
 import nl.biopet.utils.ngs.fasta
+import nl.biopet.utils.spark
+import org.apache.spark.SparkContext
 
 class VariantCallTest extends BiopetTest {
   @Test
@@ -56,7 +60,8 @@ class VariantCallTest extends BiopetTest {
       "A",
       IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
-          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)))
+    )
 
     v1.allAlleles shouldBe Array("A", "G", "T")
     v1.alleleDepth shouldBe Seq(2, 2, 2)
@@ -71,7 +76,8 @@ class VariantCallTest extends BiopetTest {
       "A",
       IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
-          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1))))
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)))
+    )
 
     v1.altDepth shouldBe 4
     v1.referenceDepth shouldBe 2
@@ -161,5 +167,70 @@ class VariantCallTest extends BiopetTest {
                                             dict,
                                             Map("sample1" -> 0, "sample2" -> 1))
     v2 shouldBe v1
+  }
+
+  @Test
+  def testVcfFile(): Unit = {
+    implicit val sc: SparkContext =
+      spark.loadSparkContext("test", Some("local[1]"))
+    val cells = sc.broadcast(IndexedSeq("sample1", "sample2"))
+    val cellsMap = sc.broadcast(Map("sample1" -> 0, "sample2" -> 1))
+    val dict =
+      sc.broadcast(fasta.getCachedDict(resourceFile("/reference.fasta")))
+    val header = sc.broadcast(vcfHeader(cells.value))
+    val v1 = VariantCall(
+      0,
+      1000,
+      "A",
+      IndexedSeq("G", "T"),
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+    )
+    val v2 = VariantCall(
+      0,
+      2000,
+      "A",
+      IndexedSeq("G", "T"),
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+    )
+    val outputDir = File.createTempFile("test.", ".vcf")
+    outputDir.delete()
+    outputDir.mkdir()
+    val rdd = sc.parallelize(List(v1, v2), 2)
+    VariantCall.writeToPartitionedVcf(rdd,
+                                      outputDir,
+                                      cells,
+                                      dict,
+                                      header,
+                                      0.005f)
+    outputDir.list().count(_.endsWith(".vcf.gz")) shouldBe 2
+    outputDir.list().count(_.endsWith(".vcf.gz.tbi")) shouldBe 2
+
+    val singleFile1 = VariantCall
+      .fromVcfFile(new File(outputDir, "0.vcf.gz"),
+                   dict,
+                   cellsMap,
+                   Int.MaxValue)
+      .collect()
+    val singleFile2 = VariantCall
+      .fromVcfFile(new File(outputDir, "1.vcf.gz"),
+                   dict,
+                   cellsMap,
+                   Int.MaxValue)
+      .collect()
+    singleFile1(0) shouldBe v1
+    singleFile2(0) shouldBe v2
+
+    val totalRead1 = VariantCall
+      .fromVcfFile(outputDir, dict, cellsMap, Int.MaxValue)
+      .collect()
+      .toList
+    val totalRead2 =
+      VariantCall.fromPartitionedVcf(outputDir, dict, cellsMap).collect().toList
+    totalRead1 shouldBe totalRead2
+    totalRead1 shouldBe List(v1, v2)
+
+    sc.stop()
   }
 }

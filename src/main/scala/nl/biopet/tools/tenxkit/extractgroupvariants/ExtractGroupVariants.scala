@@ -59,13 +59,11 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     val groupsMap = sc.broadcast(groups.value.flatMap {
       case (k, l) => l.map(_ -> k)
     })
-    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toIndexedSeq))
+    val vcfHeader =
+      sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toIndexedSeq))
 
     val variants = VariantCall
-      .fromVcfFile(cmdArgs.inputVcfFile,
-                   cmdArgs.reference,
-                   correctCellsMap,
-                   1000000)
+      .fromVcfFile(cmdArgs.inputVcfFile, dict, correctCellsMap, 1000000)
     val groupCalls = variants
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
@@ -115,8 +113,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
           .filter(_.genotype.exists(_.isDefined))
           .toList
           .distinct
-        gts.exists(x =>
-          g.genotypes.values.count(_.genotype == x.genotype) == 1)
+        gts.exists(x => g.genotypes.values.count(_.genotype == x.genotype) == 1)
       }
       .filter(_.alleleCount.values.forall(_.map(_.total).sum >= minSampleDepth))
   }

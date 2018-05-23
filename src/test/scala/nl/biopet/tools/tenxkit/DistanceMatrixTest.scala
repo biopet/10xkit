@@ -30,10 +30,12 @@ import org.testng.annotations.Test
 class DistanceMatrixTest extends BiopetTest {
 
   def distanceMatrix = DistanceMatrix(
-    IndexedSeq(IndexedSeq(None, Option(0.0), Option(1.0), Option(1.0)),
+    IndexedSeq(
+      IndexedSeq(None, Option(0.0), Option(1.0), Option(1.0)),
       IndexedSeq(None, None, Option(1.0), Option(1.0)),
       IndexedSeq(None, None, None, Option(0.0)),
-      IndexedSeq(None, None, None, None)),
+      IndexedSeq(None, None, None, None)
+    ),
     IndexedSeq("cell1", "cell2", "cell3", "cell4")
   )
 

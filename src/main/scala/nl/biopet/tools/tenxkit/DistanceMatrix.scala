@@ -209,11 +209,13 @@ object DistanceMatrix extends Logging {
       .mapPartitions { it =>
         val map = it.toMap
         Iterator(
-          DistanceMatrix(
-            samples.indices
-              .map(map
-                .getOrElse(_, IndexedSeq.fill[Option[Double]](samples.length)(None))),
-            samples))
+          DistanceMatrix(samples.indices
+                           .map(
+                             map
+                               .getOrElse(_,
+                                          IndexedSeq.fill[Option[Double]](
+                                            samples.length)(None))),
+                         samples))
       }
       .first()
 

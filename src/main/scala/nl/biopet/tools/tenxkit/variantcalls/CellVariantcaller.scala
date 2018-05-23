@@ -142,11 +142,11 @@ object CellVariantcaller extends ToolCommand[Args] {
     val writeAllVcfFuture = {
       if (writeRawVcf) Some(Future {
         VariantCall.writeToPartitionedVcf(allVariants.cache(),
-                 new File(outputDir, "raw-vcf"),
-                 correctCells,
-                 dict,
-                 vcfHeader,
-                 seqError)
+                                          new File(outputDir, "raw-vcf"),
+                                          correctCells,
+                                          dict,
+                                          vcfHeader,
+                                          seqError)
       })
       else None
     }

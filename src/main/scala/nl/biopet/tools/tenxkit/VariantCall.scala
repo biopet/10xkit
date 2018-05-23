@@ -27,9 +27,18 @@ import cern.jet.random.Binomial
 import cern.jet.random.engine.RandomEngine
 import htsjdk.samtools.SAMSequenceDictionary
 import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
-import htsjdk.variant.variantcontext.{Allele, GenotypeBuilder, VariantContext, VariantContextBuilder}
+import htsjdk.variant.variantcontext.{
+  Allele,
+  GenotypeBuilder,
+  VariantContext,
+  VariantContextBuilder
+}
 import htsjdk.variant.vcf.{VCFFileReader, VCFHeader}
-import nl.biopet.tools.tenxkit.variantcalls.{AlleleCount, PositionBases, SampleAllele}
+import nl.biopet.tools.tenxkit.variantcalls.{
+  AlleleCount,
+  PositionBases,
+  SampleAllele
+}
 import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.ngs.intervals.BedRecordList
@@ -296,15 +305,14 @@ object VariantCall {
   }
 
   def fromVcfFile(inputFile: File,
-                  reference: File,
+                  dict: Broadcast[SAMSequenceDictionary],
                   sampleMap: Broadcast[Map[String, Int]],
                   binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
     if (inputFile.isDirectory) {
-      fromPartitionedVcf(inputFile, reference, sampleMap)
+      fromPartitionedVcf(inputFile, dict, sampleMap)
     } else {
-      val dict = sc.broadcast(fasta.getCachedDict(reference))
       val regions =
-        BedRecordList.fromReference(reference).scatter(binsize)
+        BedRecordList.fromDict(dict.value).scatter(binsize)
       sc.parallelize(regions, regions.size).mapPartitions { it =>
         it.flatMap { list =>
           vcf
@@ -316,16 +324,16 @@ object VariantCall {
   }
 
   def fromPartitionedVcf(directory: File,
-                         reference: File,
+                         dict: Broadcast[SAMSequenceDictionary],
                          sampleMap: Broadcast[Map[String, Int]])(
       implicit sc: SparkContext): RDD[VariantCall] = {
-    val dict = sc.broadcast(fasta.getCachedDict(reference))
     require(directory.isDirectory, s"'$directory' is not a directory")
     val files = directory
       .listFiles()
       .filter(_.getName.endsWith(".vcf.gz"))
+      .sortBy(_.getName.stripSuffix(".vcf.gz").toInt)
       .map(_.getAbsoluteFile)
-    sc.parallelize(files, files.size)
+    sc.parallelize(files, files.length)
       .mapPartitions { it =>
         it.flatMap { file =>
           new VCFFileReader(file)

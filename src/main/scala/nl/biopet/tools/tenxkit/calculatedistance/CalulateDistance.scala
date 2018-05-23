@@ -32,7 +32,7 @@ import nl.biopet.tools.tenxkit.{
   VariantCall,
   variantcalls
 }
-import nl.biopet.utils.ngs.bam
+import nl.biopet.utils.ngs.{bam, fasta}
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -62,6 +62,7 @@ object CalulateDistance extends ToolCommand[Args] {
 
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
+    val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
 
     val futures: ListBuffer[Future[Any]] = ListBuffer()
 
@@ -74,7 +75,7 @@ object CalulateDistance extends ToolCommand[Args] {
           Await.result(result.filteredVariants, Duration.Inf)
         case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
           VariantCall.fromVcfFile(cmdArgs.inputFile,
-                                  cmdArgs.reference,
+                                  dict,
                                   correctCellsMap,
                                   cmdArgs.binSize)
         case _ =>
