@@ -269,17 +269,24 @@ class VariantCallTest extends BiopetTest {
                   Map(0 -> IndexedSeq(AlleleCount(), AlleleCount(5)))))
 
     val bases3 = PositionBases(
-      samples =
-        mutable.Map(0 -> mutable.Map(SampleAllele("A", 2) -> AlleleCount(5)),
-                    1 -> mutable.Map(SampleAllele("A", 0) -> AlleleCount(5))))
+      samples = mutable.Map(
+        0 -> mutable.Map(SampleAllele("A", 2) -> AlleleCount(5)),
+        1 -> mutable.Map(SampleAllele("A", 0) -> AlleleCount(5)),
+        2 -> mutable.Map(SampleAllele("AG", 0) -> AlleleCount(5))
+      ))
     val v3 = VariantCall.createFromBases(0, 1000, bases3, region, 2)
     v3 shouldBe Some(
-      VariantCall(0,
-                  1000,
-                  "ACA",
-                  IndexedSeq("A"),
-                  Map(1 -> IndexedSeq(AlleleCount(5), AlleleCount()),
-                      0 -> IndexedSeq(AlleleCount(), AlleleCount(5)))))
+      VariantCall(
+        0,
+        1000,
+        "ACA",
+        IndexedSeq("AGA", "A"),
+        Map(
+          2 -> IndexedSeq(AlleleCount(), AlleleCount(5), AlleleCount()),
+          1 -> IndexedSeq(AlleleCount(5), AlleleCount(), AlleleCount()),
+          0 -> IndexedSeq(AlleleCount(), AlleleCount(), AlleleCount(5))
+        )
+      ))
 
   }
 }
