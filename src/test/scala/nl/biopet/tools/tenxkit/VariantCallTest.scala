@@ -29,18 +29,19 @@ import nl.biopet.utils.ngs.fasta
 class VariantCallTest extends BiopetTest {
   @Test
   def testUniqueAlleles(): Unit = {
-    val call1 = VariantCall(1,
-                            1,
-                            "A",
+    val call1 = VariantCall(
+      1,
+      1,
+      "A",
       IndexedSeq("C"),
-                            Map(1 -> IndexedSeq(AlleleCount(2), AlleleCount(2)),
-                                2 -> IndexedSeq(AlleleCount(2), AlleleCount(2))))
+      Map(1 -> IndexedSeq(AlleleCount(2), AlleleCount(2)),
+          2 -> IndexedSeq(AlleleCount(2), AlleleCount(2))))
     call1.getUniqueAlleles(Map(1 -> "group1", 2 -> "group2")) shouldBe empty
 
     val call2 = VariantCall(1,
                             1,
                             "A",
-      IndexedSeq("C"),
+                            IndexedSeq("C"),
                             Map(1 -> IndexedSeq(AlleleCount(2), AlleleCount(2)),
                                 2 -> IndexedSeq(AlleleCount(), AlleleCount(2))))
     call2.getUniqueAlleles(Map(1 -> "group1", 2 -> "group2")) shouldBe Array(
@@ -91,8 +92,10 @@ class VariantCallTest extends BiopetTest {
       "A",
       IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(1)),
-        1 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(1))))
-    v1.setAllelesToZeroDepth(2).samples shouldBe Map(0 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(0)),
+          1 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(1)))
+    )
+    v1.setAllelesToZeroDepth(2).samples shouldBe Map(
+      0 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(0)),
       1 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(0)))
   }
 
@@ -104,7 +107,8 @@ class VariantCallTest extends BiopetTest {
       "A",
       IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
-        1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0))))
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+    )
     v1.cleanupAlleles().get.altAlleles shouldBe Array("G")
 
     val v2 = VariantCall(
@@ -113,7 +117,8 @@ class VariantCallTest extends BiopetTest {
       "A",
       IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(0), AlleleCount(0), AlleleCount(0)),
-        1 -> IndexedSeq(AlleleCount(0), AlleleCount(0), AlleleCount(0))))
+          1 -> IndexedSeq(AlleleCount(0), AlleleCount(0), AlleleCount(0)))
+    )
     v2.cleanupAlleles() shouldBe None
   }
 
@@ -125,9 +130,19 @@ class VariantCallTest extends BiopetTest {
       "A",
       Array("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(1)),
-        1 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(1))))
-    v1.setAllelesToZeroPvalue(0.005f, 0.05f).samples.values.flatten.toList shouldBe Map(0 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(0)),
-      1 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(0))).values.flatten.toList
+          1 -> IndexedSeq(AlleleCount(1000), AlleleCount(1000), AlleleCount(1)))
+    )
+    v1.setAllelesToZeroPvalue(0.005f, 0.05f)
+      .samples
+      .values
+      .flatten
+      .toList shouldBe Map(0 -> IndexedSeq(AlleleCount(1000),
+                                           AlleleCount(1000),
+                                           AlleleCount(0)),
+                           1 -> IndexedSeq(
+                             AlleleCount(1000),
+                             AlleleCount(1000),
+                             AlleleCount(0))).values.flatten.toList
   }
 
   @Test
@@ -139,9 +154,12 @@ class VariantCallTest extends BiopetTest {
       "A",
       IndexedSeq("G", "T"),
       Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
-        1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0))))
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+    )
     val c1 = v1.toVariantContext(Array("sample1", "sample2"), dict, 0.005f)
-    val v2 = VariantCall.fromVariantContext(c1, dict, Map("sample1" -> 0, "sample2" -> 1))
+    val v2 = VariantCall.fromVariantContext(c1,
+                                            dict,
+                                            Map("sample1" -> 0, "sample2" -> 1))
     v2 shouldBe v1
   }
 }

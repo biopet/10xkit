@@ -96,8 +96,7 @@ case class VariantCall(contig: Int,
   def setAllelesToZeroDepth(minAlleleDepth: Int): VariantCall = {
     val newSamples = samples.map {
       case (s, a) =>
-        s -> a.map(a =>
-          if (a.total >= minAlleleDepth) a else AlleleCount())
+        s -> a.map(a => if (a.total >= minAlleleDepth) a else AlleleCount())
     }
     this.copy(samples = newSamples)
   }
@@ -230,7 +229,8 @@ object VariantCall {
     val contig = dict.getSequenceIndex(variant.getContig)
     val pos = variant.getStart
     val refAllele = variant.getReference.getBaseString
-    val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toIndexedSeq
+    val altAlleles =
+      variant.getAlternateAlleles.map(_.getBaseString).toIndexedSeq
     val alleleIndencies = (Array(refAllele) ++ altAlleles).zipWithIndex
     val genotypes = variant.getGenotypes.flatMap { g =>
       (Option(g.getExtendedAttribute("ADR"))

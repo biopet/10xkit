@@ -23,7 +23,8 @@ package nl.biopet.tools.tenxkit.calculatedistance.methods
 
 class Chi2 extends Method {
 
-  def calulateValue(cell1: IndexedSeq[Double], cell2: IndexedSeq[Double]): Double = {
+  def calulateValue(cell1: IndexedSeq[Double],
+                    cell2: IndexedSeq[Double]): Double = {
     val cell1Total = cell1.sum
     val cell2Total = cell2.sum
     require(cell1Total > 0 && cell2Total > 0,
@@ -42,6 +43,7 @@ class Chi2 extends Method {
     }.sum
   }
 
-  protected def calulateInternal(cell1: IndexedSeq[Int], cell2: IndexedSeq[Int]): Double =
+  protected def calulateInternal(cell1: IndexedSeq[Int],
+                                 cell2: IndexedSeq[Int]): Double =
     calulateValue(cell1.map(_.toDouble), cell2.map(_.toDouble))
 }
