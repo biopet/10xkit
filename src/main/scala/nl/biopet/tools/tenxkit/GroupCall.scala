@@ -43,8 +43,8 @@ import scala.collection.JavaConversions._
 case class GroupCall(contig: Int,
                      pos: Long,
                      refAllele: String,
-                     altAlleles: Array[String],
-                     alleleCount: Map[String, Array[AlleleCount]],
+                     altAlleles: IndexedSeq[String],
+                     alleleCount: Map[String, IndexedSeq[AlleleCount]],
                      genotypes: Map[String, GenotypeCall],
                      cellCounts: Map[String, Int]) {
 
@@ -106,7 +106,7 @@ case class GroupCall(contig: Int,
         )
         new GenotypeBuilder(groupName)
           .alleles(genotypeCall.genotype.flatten.map(a => alleles(a)).toList)
-          .AD(a.map(_.total))
+          .AD(a.map(_.total).toArray)
           .DP(a.map(_.total).sum)
           .attributes(attributes)
           .make()
@@ -154,7 +154,7 @@ object GroupCall {
                 case (_, counts) =>
                   counts.map { case (c, _) => c }.reduce(_ + _)
               }
-              .toArray
+              .toIndexedSeq
         }
     val cellCounts =
       variant.samples

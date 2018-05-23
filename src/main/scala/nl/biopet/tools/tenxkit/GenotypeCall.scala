@@ -28,10 +28,10 @@ package nl.biopet.tools.tenxkit
   * @param aq Quality of each allele in phred
   * @param pl Pgred value for each allele and each possible expected alleles, for ploidy 2 that should be 3 values, 0,1,2
   */
-case class GenotypeCall(genotype: Array[Option[Int]],
-                        ad: Array[Int],
-                        aq: Array[Int],
-                        pl: Array[Array[Int]])
+case class GenotypeCall(genotype: IndexedSeq[Option[Int]],
+                        ad: IndexedSeq[Int],
+                        aq: IndexedSeq[Int],
+                        pl: IndexedSeq[IndexedSeq[Int]])
 
 object GenotypeCall {
 
@@ -55,7 +55,7 @@ object GenotypeCall {
     * @param ploidy ploidy to use
     * @return
     */
-  def fromAd(ad: Array[Int], ploidy: Int = 2): GenotypeCall = {
+  def fromAd(ad: IndexedSeq[Int], ploidy: Int = 2): GenotypeCall = {
     val totalDepth = ad.sum
 
     val probabilities = ad
@@ -63,8 +63,7 @@ object GenotypeCall {
       .map(
         f =>
           (0 to ploidy)
-            .map(adToProbability(f, _, ploidy))
-            .toArray)
+            .map(adToProbability(f, _, ploidy)))
     val pl = probabilities.map(_.map(probabilityToPhred))
 
     def getGenotype(genotype: List[Option[Int]] = Nil): List[Option[Int]] = {
@@ -93,9 +92,9 @@ object GenotypeCall {
       }
     }
 
-    GenotypeCall(getGenotype().sorted.toArray,
+    GenotypeCall(getGenotype().sorted.toIndexedSeq,
                  ad,
-                 Array(),
+                 IndexedSeq(),
                  pl)
   }
 }

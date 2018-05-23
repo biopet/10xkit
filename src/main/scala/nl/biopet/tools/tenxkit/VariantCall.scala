@@ -50,8 +50,8 @@ import scala.collection.JavaConversions._
 case class VariantCall(contig: Int,
                        pos: Long,
                        refAllele: String,
-                       altAlleles: Array[String],
-                       samples: Map[Int, Array[AlleleCount]]) {
+                       altAlleles: IndexedSeq[String],
+                       samples: Map[Int, IndexedSeq[AlleleCount]]) {
 
   /** true if there is coverage on a alt allele */
   def hasNonReference: Boolean = altDepth > 0
@@ -92,15 +92,18 @@ case class VariantCall(contig: Int,
       samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
   }
 
+  /** This sets the depth of alleles back to 0 if they are below the cutoff */
   def setAllelesToZeroDepth(minAlleleDepth: Int): VariantCall = {
     val newSamples = samples.map {
       case (s, a) =>
         s -> a.map(a =>
-          if (a.totalReads >= minAlleleDepth) a else AlleleCount())
+          if (a.total >= minAlleleDepth) a else AlleleCount())
     }
     this.copy(samples = newSamples)
   }
 
+  /** This will remove all alleles that does not have any coverage anymore
+    * When no alleles are left a None is returned */
   def cleanupAlleles(): Option[VariantCall] = {
     val ad = alleleDepth
     val alleles = allAlleles
@@ -122,6 +125,7 @@ case class VariantCall(contig: Int,
     else None
   }
 
+  /** This will calculate a pvalue with a binominal test. All above the cutoff will be set to 0 depth */
   def setAllelesToZeroPvalue(seqError: Float,
                              cutoffPvalue: Float): VariantCall = {
     val pvalues = createBinomialPvalues(seqError)
@@ -135,7 +139,8 @@ case class VariantCall(contig: Int,
     this.copy(samples = newSamples)
   }
 
-  def createBinomialPvalues(seqError: Float): Map[Int, Array[Double]] = {
+  /** This will calculate a pvalue with a binominal test for each allele and each sample */
+  def createBinomialPvalues(seqError: Float): Map[Int, IndexedSeq[Double]] = {
     samples.map {
       case (s, a) =>
         val totalReads = a.map(_.totalReads).sum
@@ -166,7 +171,7 @@ case class VariantCall(contig: Int,
           "ADR" -> a.map(_.reverseUmi).mkString(",")
         )
         new GenotypeBuilder(sampleList(sample))
-          .AD(a.map(_.total))
+          .AD(a.map(_.total).toArray)
           .DP(a.map(_.total).sum)
           .attributes(attributes)
           .make()
@@ -225,7 +230,7 @@ object VariantCall {
     val contig = dict.getSequenceIndex(variant.getContig)
     val pos = variant.getStart
     val refAllele = variant.getReference.getBaseString
-    val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toArray
+    val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toIndexedSeq
     val alleleIndencies = (Array(refAllele) ++ altAlleles).zipWithIndex
     val genotypes = variant.getGenotypes.flatMap { g =>
       (Option(g.getExtendedAttribute("ADR"))
@@ -239,7 +244,7 @@ object VariantCall {
         case (Some(adr), Some(adf), Some(adrRead), Some(adfRead)) =>
           val alleles = alleleIndencies.map {
             case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
-          }
+          }.toIndexedSeq
           Some(sampleMap(g.getSampleName) -> alleles)
         case _ => None
       }
@@ -276,7 +281,7 @@ object VariantCall {
     }.toMap
     val altAlleles =
       newAllelesMap.values.filter(_ != refAllele).toArray.distinct
-    val allAlleles = Array(refAllele) ++ altAlleles
+    val allAlleles = IndexedSeq(refAllele) ++ altAlleles
 
     if (altAlleles.isEmpty) None
     else {
