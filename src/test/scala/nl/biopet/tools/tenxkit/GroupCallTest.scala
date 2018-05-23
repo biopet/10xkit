@@ -127,5 +127,6 @@ class GroupCallTest extends BiopetTest {
     GroupCall.writeAsPartitionedVcfFile(rdd, outputDir, header, dict).collect()
     val fromVcf = GroupCall.fromPartitionedVcf(outputDir, dict).collect().toList
     fromVcf shouldBe List(g1, g2)
+    sc.stop()
   }
 }
