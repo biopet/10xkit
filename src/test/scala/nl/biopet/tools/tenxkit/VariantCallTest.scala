@@ -24,11 +24,18 @@ package nl.biopet.tools.tenxkit
 import java.io.File
 
 import nl.biopet.test.BiopetTest
-import nl.biopet.tools.tenxkit.variantcalls.AlleleCount
+import nl.biopet.tools.tenxkit.variantcalls.{
+  AlleleCount,
+  PositionBases,
+  SampleAllele
+}
 import org.testng.annotations.Test
 import nl.biopet.utils.ngs.fasta
+import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.spark
 import org.apache.spark.SparkContext
+
+import scala.collection.mutable
 
 class VariantCallTest extends BiopetTest {
   @Test
@@ -232,5 +239,47 @@ class VariantCallTest extends BiopetTest {
     totalRead1 shouldBe List(v1, v2)
 
     sc.stop()
+  }
+
+  @Test
+  def testCreateFromBases(): Unit = {
+    val bases1 = PositionBases(
+      samples =
+        mutable.Map(0 -> mutable.Map(SampleAllele("C", 0) -> AlleleCount(5))))
+    val region =
+      ReferenceRegion.apply(resourceFile("/reference.fasta"), "chr1", 1, 2000)
+    VariantCall.createFromBases(0, 1000, PositionBases(), region, 2) shouldBe None
+    val v1 = VariantCall.createFromBases(0, 1000, bases1, region, 2)
+    v1 shouldBe Some(
+      VariantCall(0,
+                  1000,
+                  "A",
+                  IndexedSeq("C"),
+                  Map(0 -> IndexedSeq(AlleleCount(), AlleleCount(5)))))
+
+    val bases2 = PositionBases(
+      samples =
+        mutable.Map(0 -> mutable.Map(SampleAllele("A", 2) -> AlleleCount(5))))
+    val v2 = VariantCall.createFromBases(0, 1000, bases2, region, 2)
+    v2 shouldBe Some(
+      VariantCall(0,
+                  1000,
+                  "ACA",
+                  IndexedSeq("A"),
+                  Map(0 -> IndexedSeq(AlleleCount(), AlleleCount(5)))))
+
+    val bases3 = PositionBases(
+      samples =
+        mutable.Map(0 -> mutable.Map(SampleAllele("A", 2) -> AlleleCount(5)),
+                    1 -> mutable.Map(SampleAllele("A", 0) -> AlleleCount(5))))
+    val v3 = VariantCall.createFromBases(0, 1000, bases3, region, 2)
+    v3 shouldBe Some(
+      VariantCall(0,
+                  1000,
+                  "ACA",
+                  IndexedSeq("A"),
+                  Map(1 -> IndexedSeq(AlleleCount(5), AlleleCount()),
+                      0 -> IndexedSeq(AlleleCount(), AlleleCount(5)))))
+
   }
 }

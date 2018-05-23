@@ -39,9 +39,9 @@ import nl.biopet.tools.tenxkit.variantcalls.{
   PositionBases,
   SampleAllele
 }
-import nl.biopet.utils.ngs.{fasta, vcf}
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.ngs.intervals.BedRecordList
+import nl.biopet.utils.ngs.vcf
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -258,49 +258,53 @@ object VariantCall {
                       bases: PositionBases,
                       referenceRegion: ReferenceRegion,
                       minCellAlleleCoverage: Int): Option[VariantCall] = {
-    val maxDel = bases.samples.values.flatMap(_.keys.map(_.delBases)).max
-    val end = position + maxDel
-    val refAllele = new String(
-      referenceRegion.sequence.slice(
-        position - referenceRegion.start,
-        position - referenceRegion.start + maxDel + 1)).toUpperCase
-    val oldAlleles = bases.samples.values.flatMap(_.keySet)
-    val newAllelesMap = oldAlleles.map { a =>
-      SampleAllele(a.allele, a.delBases) -> (if (a.delBases > 0 || !refAllele
-                                                   .startsWith(a.allele)) {
-                                               if (a.allele.length == refAllele.length || a.delBases > 0)
-                                                 a.allele
-                                               else
-                                                 new String(
-                                                   refAllele.zipWithIndex.map {
-                                                     case (nuc, idx) =>
-                                                       a.allele
-                                                         .lift(idx)
-                                                         .getOrElse(nuc)
-                                                   }.toArray)
-                                             } else refAllele)
-    }.toMap
-    val altAlleles =
-      newAllelesMap.values.filter(_ != refAllele).toIndexedSeq.distinct
-    val allAlleles = IndexedSeq(refAllele) ++ altAlleles
-
-    if (altAlleles.isEmpty) None
+    if (bases.samples.isEmpty) None
     else {
-      val samples = bases.samples
-        .map {
-          case (sample, sampleBases) =>
-            val alleles =
-              sampleBases.map {
-                case (allele, alleleBases) =>
-                  newAllelesMap(allele) -> alleleBases
-              }
-            sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
-        }
-        .filter {
-          case (sample, alleles) =>
-            alleles.exists(_.total >= minCellAlleleCoverage)
-        }
-      Some(VariantCall(contig, position, refAllele, altAlleles, samples.toMap))
+      val maxDel = bases.samples.values.flatMap(_.keys.map(_.delBases)).max
+      val end = position + maxDel
+      val refAllele = new String(
+        referenceRegion.sequence.slice(
+          position - referenceRegion.start,
+          position - referenceRegion.start + maxDel + 1)).toUpperCase
+      val oldAlleles = bases.samples.values.flatMap(_.keySet)
+      val newAllelesMap = oldAlleles.map { a =>
+        SampleAllele(a.allele, a.delBases) -> (if (a.delBases > 0 || !refAllele
+                                                     .startsWith(a.allele)) {
+                                                 if (a.allele.length == refAllele.length || a.delBases > 0)
+                                                   a.allele
+                                                 else
+                                                   new String(
+                                                     refAllele.zipWithIndex.map {
+                                                       case (nuc, idx) =>
+                                                         a.allele
+                                                           .lift(idx)
+                                                           .getOrElse(nuc)
+                                                     }.toArray)
+                                               } else refAllele)
+      }.toMap
+      val altAlleles =
+        newAllelesMap.values.filter(_ != refAllele).toIndexedSeq.distinct
+      val allAlleles = IndexedSeq(refAllele) ++ altAlleles
+
+      if (altAlleles.isEmpty) None
+      else {
+        val samples = bases.samples
+          .map {
+            case (sample, sampleBases) =>
+              val alleles =
+                sampleBases.map {
+                  case (allele, alleleBases) =>
+                    newAllelesMap(allele) -> alleleBases
+                }
+              sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
+          }
+          .filter {
+            case (sample, alleles) =>
+              alleles.exists(_.total >= minCellAlleleCoverage)
+          }
+        Some(
+          VariantCall(contig, position, refAllele, altAlleles, samples.toMap))
+      }
     }
   }
 
