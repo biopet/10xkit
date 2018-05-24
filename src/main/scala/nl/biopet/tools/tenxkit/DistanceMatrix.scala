@@ -199,10 +199,10 @@ object DistanceMatrix extends Logging {
   def rddToMatrix(rdd: RDD[((Int, Int), Double)],
                   samples: IndexedSeq[String]): DistanceMatrix = {
     rdd
-      .groupBy { case ((_, x), _) => x }
+      .groupBy { case ((x, _), _) => x }
       .map {
         case (rowId, row) =>
-          val map = row.map { case ((columnId, _), value) => columnId -> value }.toMap
+          val map = row.map { case ((_, columnId), value) => columnId -> value }.toMap
           rowId -> samples.indices.map(map.get)
       }
       .repartition(1)

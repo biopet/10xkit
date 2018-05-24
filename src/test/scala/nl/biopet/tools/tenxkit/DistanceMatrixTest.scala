@@ -25,6 +25,8 @@ import java.io.File
 
 import nl.biopet.test.BiopetTest
 import nl.biopet.utils.io.getLinesFromFile
+import nl.biopet.utils.spark
+import org.apache.spark.SparkContext
 import org.testng.annotations.Test
 
 class DistanceMatrixTest extends BiopetTest {
@@ -96,7 +98,20 @@ class DistanceMatrixTest extends BiopetTest {
     matrix.writeFile(outputFile)
     getLinesFromFile(outputFile) shouldBe distanceFileContents
     val matrix2 = DistanceMatrix.fromFile(outputFile)
-    matrix.samples shouldBe matrix2.samples
-    matrix.values shouldBe matrix2.values
+    matrix shouldBe matrix2
+
+    implicit val sc: SparkContext =
+      spark.loadSparkContext("test", Some("local[1]"))
+
+    val matrix3 = DistanceMatrix.fromFileSpark(outputFile)
+    matrix3.samples shouldBe matrix.samples
+
+    for (s1 <- 0 to 3; s2 <- 0 to 3) {
+      matrix(s1, s2) shouldBe matrix3(s1, s2)
+    }
+
+    matrix3.values shouldBe matrix.values
+
+    sc.stop()
   }
 }
