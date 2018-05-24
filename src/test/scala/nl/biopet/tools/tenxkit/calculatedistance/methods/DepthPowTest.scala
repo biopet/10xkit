@@ -24,13 +24,19 @@ package nl.biopet.tools.tenxkit.calculatedistance.methods
 import nl.biopet.test.BiopetTest
 import org.testng.annotations.Test
 
-class Chi2Test extends BiopetTest {
+class DepthPowTest extends BiopetTest {
   @Test
   def test(): Unit = {
-    val method = new Chi2()
-    val value = method.calculate(IndexedSeq(2, 0, 0), IndexedSeq(0, 2, 0))
+    val pow1 = new DepthPow(1)
+    val pow2 = new DepthPow(2)
+    val value = pow1.calculate(IndexedSeq(2, 0, 0), IndexedSeq(0, 2, 0))
     value.isNaN shouldBe false
 
-    method.calulateValue(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0
+    pow1.calculate(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0.0
+    pow1.calculate(IndexedSeq(0, 1), IndexedSeq(1, 1)) shouldBe math.sqrt(2.0) / 2 / 2
+    pow2.calculate(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0.0
+    pow2.calculate(IndexedSeq(0, 1), IndexedSeq(1, 0)) shouldBe math.pow(
+      math.sqrt(2.0) / 2,
+      2)
   }
 }
