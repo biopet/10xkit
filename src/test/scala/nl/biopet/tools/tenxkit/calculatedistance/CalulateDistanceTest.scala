@@ -139,6 +139,60 @@ class CalulateDistanceTest extends ToolTest[Args] {
   }
 
   @Test
+  def testOtherMethodVcf(): Unit = {
+    val outputDir = File.createTempFile("calculate_distance.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    CalulateDistance.main(
+      Array(
+        "-i",
+        testVcfFile.getAbsolutePath,
+        "-o",
+        outputDir.getAbsolutePath,
+        "--sparkMaster",
+        "local[1]",
+        "-R",
+        resourcePath("/reference.fasta"),
+        "--correctCells",
+        resourcePath("/samples.txt"),
+        "--method",
+        "pow3"
+      ))
+
+    new File(outputDir, "distance.pow4.csv") shouldNot exist
+    new File(outputDir, "distance.pow3.csv") should exist
+    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "filter-vcf") shouldNot exist
+  }
+
+  @Test
+  def testExtraMethodVcf(): Unit = {
+    val outputDir = File.createTempFile("calculate_distance.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    CalulateDistance.main(
+      Array(
+        "-i",
+        testVcfFile.getAbsolutePath,
+        "-o",
+        outputDir.getAbsolutePath,
+        "--sparkMaster",
+        "local[1]",
+        "-R",
+        resourcePath("/reference.fasta"),
+        "--correctCells",
+        resourcePath("/samples.txt"),
+        "--additionalMethod",
+        "pow3"
+      ))
+
+    new File(outputDir, "distance.pow4.csv") should exist
+    new File(outputDir, "distance.pow3.csv") should exist
+    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "filter-vcf") shouldNot exist
+  }
+
+  @Test
   def testScatterVcf(): Unit = {
     val outputDir = File.createTempFile("calculate_distance.", ".out")
     outputDir.delete()
