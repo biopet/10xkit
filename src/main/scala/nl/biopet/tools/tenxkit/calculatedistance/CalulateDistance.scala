@@ -71,62 +71,90 @@ object CalulateDistance extends ToolCommand[Args] {
       getVariants(cmdArgs, correctCells, correctCellsMap, dict)
     futures ++= variantFutures
 
-    val combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])] =
-      variants
-        .flatMap { variant =>
-          val samples = variant.samples.filter {
-            case (_, alleles) =>
-              alleles.map(_.total).sum > cmdArgs.minAlleleCoverage
-          }.keys
-          for (s1 <- samples; s2 <- samples if s2 > s1) yield {
-            SampleCombinationKey(s1, s2) -> AlleleDepth(
-              variant.samples(s1).map(_.total),
-              variant.samples(s2).map(_.total))
-          }
-        }
-        .groupByKey()
-
-    def combinationDistance(methodString: String): Future[Unit] = {
-      val method = sc.broadcast(Method.fromString(methodString))
-      combinations
-        .map {
-          case (key, alleleDepts) =>
-            key -> alleleDepts
-              .map(x => method.value.calculate(x.ad1, x.ad2))
-              .sum
-        }
-        .groupBy { case (key, _) => key.sample1 }
-        .map {
-          case (s1, list) =>
-            val map = list.groupBy { case (key, _) => key.sample2 }.map {
-              case (key, l) =>
-                key -> l.headOption.map { case (_, d) => d }.getOrElse(0.0)
-            }
-            s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
-              map.get(s2)
-            })
-        }
-        .repartition(1)
-        .foreachPartitionAsync { it =>
-          val map = it.toMap
-          val values = for (s1 <- correctCells.value.indices) yield {
-            for (s2 <- correctCells.value.indices) yield {
-              map.get(s1).flatMap(_.lift(s2)).flatten
-            }
-          }
-          val matrix = DistanceMatrix(values, correctCells.value)
-          matrix.writeFile(
-            new File(cmdArgs.outputDir, s"distance.$methodString.csv"))
-        }
-    }
+    val combinations = createCombinations(variants, cmdArgs.minAlleleCoverage)
 
     (cmdArgs.method :: cmdArgs.additionalMethods).distinct.sorted
-      .foreach(futures += combinationDistance(_))
+      .foreach(
+        m =>
+          futures += combinationDistance(m,
+                                         cmdArgs.outputDir,
+                                         combinations,
+                                         correctCells)
+            .foreachAsync(
+              _.writeFile(new File(cmdArgs.outputDir, s"distance.$m.csv"))))
 
     if (cmdArgs.writeScatters)
       futures += writeScatters(cmdArgs.outputDir, combinations, correctCells)
 
-    futures += combinations
+    futures += writeCountPositions(cmdArgs.outputDir,
+                                   combinations,
+                                   correctCells)
+
+    Await.result(Future.sequence(futures), Duration.Inf)
+
+    sparkSession.stop()
+    logger.info("Done")
+  }
+
+  def combinationDistance(
+      methodString: String,
+      outputDir: File,
+      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
+      correctCells: Broadcast[IndexedSeq[String]])(
+      implicit sc: SparkContext): RDD[DistanceMatrix] = {
+    val method = sc.broadcast(Method.fromString(methodString))
+    combinations
+      .map {
+        case (key, alleleDepts) =>
+          key -> alleleDepts
+            .map(x => method.value.calculate(x.ad1, x.ad2))
+            .sum
+      }
+      .groupBy { case (key, _) => key.sample1 }
+      .map {
+        case (s1, list) =>
+          val map = list.groupBy { case (key, _) => key.sample2 }.map {
+            case (key, l) =>
+              key -> l.headOption.map { case (_, d) => d }.getOrElse(0.0)
+          }
+          s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
+            map.get(s2)
+          })
+      }
+      .repartition(1)
+      .mapPartitions { it =>
+        val map = it.toMap
+        val values = for (s1 <- correctCells.value.indices) yield {
+          for (s2 <- correctCells.value.indices) yield {
+            map.get(s1).flatMap(_.lift(s2)).flatten
+          }
+        }
+        Iterator(DistanceMatrix(values, correctCells.value))
+      }
+  }
+
+  def createCombinations(variants: RDD[VariantCall], minAlleleCoverage: Int)
+    : RDD[(SampleCombinationKey, Iterable[AlleleDepth])] = {
+    variants
+      .flatMap { variant =>
+        val samples = variant.samples.filter {
+          case (_, alleles) =>
+            alleles.map(_.total).sum > minAlleleCoverage
+        }.keys
+        for (s1 <- samples; s2 <- samples if s2 > s1) yield {
+          SampleCombinationKey(s1, s2) -> AlleleDepth(
+            variant.samples(s1).map(_.total),
+            variant.samples(s2).map(_.total))
+        }
+      }
+      .groupByKey()
+  }
+
+  def writeCountPositions(
+      outputDir: File,
+      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
+      correctCells: Broadcast[IndexedSeq[String]]): Future[Unit] = {
+    combinations
       .map { case (key, list) => key -> list.size }
       .groupBy { case (key, _) => key.sample1 }
       .map {
@@ -143,7 +171,7 @@ object CalulateDistance extends ToolCommand[Args] {
       .foreachPartitionAsync { it =>
         val map = it.toMap
         val writer =
-          new PrintWriter(new File(cmdArgs.outputDir, "count.positions.csv"))
+          new PrintWriter(new File(outputDir, "count.positions.csv"))
         writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
         for (s1 <- correctCells.value.indices) {
           writer.print(s"${correctCells.value(s1)}\t")
@@ -155,17 +183,12 @@ object CalulateDistance extends ToolCommand[Args] {
         }
         writer.close()
       }
-
-    Await.result(Future.sequence(futures), Duration.Inf)
-
-    sparkSession.stop()
-    logger.info("Done")
   }
 
   def writeScatters(
       outputDir: File,
       combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
-      correctCells: Broadcast[IndexedSeq[String]]): FutureAction[Unit] = {
+      correctCells: Broadcast[IndexedSeq[String]]): Future[Unit] = {
     val scatterDir = new File(outputDir, "scatters")
     val fractionPairs = combinations.map {
       case (key, alleles) =>
