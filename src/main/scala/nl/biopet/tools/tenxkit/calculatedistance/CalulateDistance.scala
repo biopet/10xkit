@@ -23,6 +23,7 @@ package nl.biopet.tools.tenxkit.calculatedistance
 
 import java.io.{File, PrintWriter}
 
+import htsjdk.samtools.SAMSequenceDictionary
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.calculatedistance.methods.Method
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
@@ -73,7 +74,8 @@ object CalulateDistance extends ToolCommand[Args] {
             readBamFile(cmdArgs, correctCells, correctCellsMap, cmdArgs.binSize)
           futures += result.totalFuture
           Await.result(result.filteredVariants, Duration.Inf)
-        case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
+        case name
+            if name.endsWith(".vcf") | name.endsWith(".vcf.gz") | cmdArgs.inputFile.isDirectory =>
           VariantCall.fromVcfFile(cmdArgs.inputFile,
                                   dict,
                                   correctCellsMap,
@@ -197,14 +199,36 @@ object CalulateDistance extends ToolCommand[Args] {
         writer.close()
       }
 
-    def sufixColumns(df: DataFrame, sufix: String): DataFrame = {
-      df.columns.foldLeft(df)((a, b) => a.withColumnRenamed(b, b + sufix))
-    }
-
     Await.result(Future.sequence(futures), Duration.Inf)
 
     sparkSession.stop()
     logger.info("Done")
+  }
+
+  def getVariants(cmdArgs: Args,
+                  correctCells: Broadcast[IndexedSeq[String]],
+                  correctCellsMap: Broadcast[Map[String, Int]],
+                  dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): (RDD[VariantCall], List[Future[_]]) = {
+    val futures = new ListBuffer[Future[_]]()
+    val v = cmdArgs.inputFile.getName match {
+      case name if name.endsWith(".bam") =>
+        val result =
+          readBamFile(cmdArgs, correctCells, correctCellsMap, cmdArgs.binSize)
+        futures += result.totalFuture
+        Await.result(result.filteredVariants, Duration.Inf)
+      case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
+        VariantCall.fromVcfFile(cmdArgs.inputFile,
+                                dict,
+                                correctCellsMap,
+                                cmdArgs.binSize)
+      case _ =>
+        throw new IllegalArgumentException(
+          "Input file must be a bam or vcf file")
+    }
+    (v.filter(_.totalAltRatio >= cmdArgs.minTotalAltRatio)
+       .repartition(v.partitions.length),
+     futures.toList)
   }
 
   def readBamFile(
