@@ -119,15 +119,15 @@ class CalulateDistanceTest extends ToolTest[Args] {
         "-R",
         resourcePath("/reference.fasta"),
         "--correctCells",
-        resourcePath("/samples.txt"),
-        "--sampleTag",
-        "RG"
+        resourcePath("/samples.txt")
       ))
 
     val distanceMatrixFile = new File(outputDir, "distance.pow4.csv")
     distanceMatrixFile should exist
     new File(outputDir, "count.positions.csv") should exist
     new File(outputDir, "filter-vcf") shouldNot exist
+    val scatterDir = new File(outputDir, "scatters")
+    scatterDir shouldNot exist
 
     val matrix = DistanceMatrix.fromFile(distanceMatrixFile)
     matrix.samples shouldBe IndexedSeq("sample1", "sample2", "sample3")
@@ -138,4 +138,31 @@ class CalulateDistanceTest extends ToolTest[Args] {
     )
   }
 
+  @Test
+  def testScatterVcf(): Unit = {
+    val outputDir = File.createTempFile("calculate_distance.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    CalulateDistance.main(
+      Array(
+        "-i",
+        testVcfFile.getAbsolutePath,
+        "-o",
+        outputDir.getAbsolutePath,
+        "--sparkMaster",
+        "local[1]",
+        "-R",
+        resourcePath("/reference.fasta"),
+        "--correctCells",
+        resourcePath("/samples.txt"),
+        "--writeScatters"
+      ))
+
+    val distanceMatrixFile = new File(outputDir, "distance.pow4.csv")
+    distanceMatrixFile should exist
+    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "filter-vcf") shouldNot exist
+    val scatterDir = new File(outputDir, "scatters")
+    scatterDir should exist
+  }
 }
