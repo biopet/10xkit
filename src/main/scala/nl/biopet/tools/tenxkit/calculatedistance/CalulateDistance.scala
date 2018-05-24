@@ -67,26 +67,9 @@ object CalulateDistance extends ToolCommand[Args] {
 
     val futures: ListBuffer[Future[Any]] = ListBuffer()
 
-    val variants: RDD[VariantCall] = {
-      val v = cmdArgs.inputFile.getName match {
-        case name if name.endsWith(".bam") =>
-          val result =
-            readBamFile(cmdArgs, correctCells, correctCellsMap, cmdArgs.binSize)
-          futures += result.totalFuture
-          Await.result(result.filteredVariants, Duration.Inf)
-        case name
-            if name.endsWith(".vcf") | name.endsWith(".vcf.gz") | cmdArgs.inputFile.isDirectory =>
-          VariantCall.fromVcfFile(cmdArgs.inputFile,
-                                  dict,
-                                  correctCellsMap,
-                                  cmdArgs.binSize)
-        case _ =>
-          throw new IllegalArgumentException(
-            "Input file must be a bam or vcf file")
-      }
-      v.filter(_.totalAltRatio >= cmdArgs.minTotalAltRatio)
-        .repartition(v.partitions.length)
-    }
+    val (variants, variantFutures) =
+      getVariants(cmdArgs, correctCells, correctCellsMap, dict)
+    futures ++= variantFutures
 
     val combinations = variants
       .flatMap { variant =>
@@ -217,7 +200,8 @@ object CalulateDistance extends ToolCommand[Args] {
           readBamFile(cmdArgs, correctCells, correctCellsMap, cmdArgs.binSize)
         futures += result.totalFuture
         Await.result(result.filteredVariants, Duration.Inf)
-      case name if name.endsWith(".vcf") || name.endsWith(".vcf.gz") =>
+      case name
+          if name.endsWith(".vcf") | name.endsWith(".vcf.gz") | cmdArgs.inputFile.isDirectory =>
         VariantCall.fromVcfFile(cmdArgs.inputFile,
                                 dict,
                                 correctCellsMap,
