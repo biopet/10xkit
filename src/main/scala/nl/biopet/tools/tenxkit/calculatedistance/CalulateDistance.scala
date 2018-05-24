@@ -38,7 +38,7 @@ import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{FutureAction, SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -71,19 +71,20 @@ object CalulateDistance extends ToolCommand[Args] {
       getVariants(cmdArgs, correctCells, correctCellsMap, dict)
     futures ++= variantFutures
 
-    val combinations = variants
-      .flatMap { variant =>
-        val samples = variant.samples.filter {
-          case (_, alleles) =>
-            alleles.map(_.total).sum > cmdArgs.minAlleleCoverage
-        }.keys
-        for (s1 <- samples; s2 <- samples if s2 > s1) yield {
-          SampleCombinationKey(s1, s2) -> AlleleDepth(
-            variant.samples(s1).map(_.total),
-            variant.samples(s2).map(_.total))
+    val combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])] =
+      variants
+        .flatMap { variant =>
+          val samples = variant.samples.filter {
+            case (_, alleles) =>
+              alleles.map(_.total).sum > cmdArgs.minAlleleCoverage
+          }.keys
+          for (s1 <- samples; s2 <- samples if s2 > s1) yield {
+            SampleCombinationKey(s1, s2) -> AlleleDepth(
+              variant.samples(s1).map(_.total),
+              variant.samples(s2).map(_.total))
+          }
         }
-      }
-      .groupByKey()
+        .groupByKey()
 
     def combinationDistance(methodString: String): Future[Unit] = {
       val method = sc.broadcast(Method.fromString(methodString))
@@ -122,35 +123,8 @@ object CalulateDistance extends ToolCommand[Args] {
     (cmdArgs.method :: cmdArgs.additionalMethods).distinct.sorted
       .foreach(futures += combinationDistance(_))
 
-    if (cmdArgs.writeScatters) {
-      val scatterDir = new File(cmdArgs.outputDir, "scatters")
-
-      val fractionPairs = combinations.map {
-        case (key, alleles) =>
-          key -> alleles.map { pos =>
-            val total1 = pos.ad1.sum
-            val total2 = pos.ad2.sum
-            val fractions1 = pos.ad1.map(_.toDouble / total1)
-            val fractions2 = pos.ad2.map(_.toDouble / total2)
-            fractions1.zip(fractions2).map {
-              case (f1, f2) => FractionPairDistance(f1, f2)
-            }
-          }
-      }
-
-      futures += fractionPairs.foreachAsync {
-        case (c, b) =>
-          val sample1 = correctCells.value(c.sample1)
-          val sample2 = correctCells.value(c.sample2)
-          val dir = new File(scatterDir, sample1)
-          dir.mkdirs()
-          val writer = new PrintWriter(new File(dir, sample2 + ".tsv"))
-          writer.println(s"#$sample1\t$sample2\tDistance")
-          b.flatten.foreach(x =>
-            writer.println(x.f1 + "\t" + x.f2 + "\t" + x.distance))
-          writer.close()
-      }
-    }
+    if (cmdArgs.writeScatters)
+      futures += writeScatters(cmdArgs.outputDir, combinations, correctCells)
 
     futures += combinations
       .map { case (key, list) => key -> list.size }
@@ -186,6 +160,38 @@ object CalulateDistance extends ToolCommand[Args] {
 
     sparkSession.stop()
     logger.info("Done")
+  }
+
+  def writeScatters(
+      outputDir: File,
+      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
+      correctCells: Broadcast[IndexedSeq[String]]): FutureAction[Unit] = {
+    val scatterDir = new File(outputDir, "scatters")
+    val fractionPairs = combinations.map {
+      case (key, alleles) =>
+        key -> alleles.map { pos =>
+          val total1 = pos.ad1.sum
+          val total2 = pos.ad2.sum
+          val fractions1 = pos.ad1.map(_.toDouble / total1)
+          val fractions2 = pos.ad2.map(_.toDouble / total2)
+          fractions1.zip(fractions2).map {
+            case (f1, f2) => FractionPairDistance(f1, f2)
+          }
+        }
+    }
+
+    fractionPairs.foreachAsync {
+      case (c, b) =>
+        val sample1 = correctCells.value(c.sample1)
+        val sample2 = correctCells.value(c.sample2)
+        val dir = new File(scatterDir, sample1)
+        dir.mkdirs()
+        val writer = new PrintWriter(new File(dir, sample2 + ".tsv"))
+        writer.println(s"#$sample1\t$sample2\tDistance")
+        b.flatten.foreach(x =>
+          writer.println(x.f1 + "\t" + x.f2 + "\t" + x.distance))
+        writer.close()
+    }
   }
 
   def getVariants(cmdArgs: Args,
