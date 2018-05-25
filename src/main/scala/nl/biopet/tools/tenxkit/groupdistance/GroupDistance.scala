@@ -24,7 +24,7 @@ package nl.biopet.tools.tenxkit.groupdistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
+import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit}
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.clustering._
@@ -35,10 +35,10 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object GroupDistance extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -64,7 +64,6 @@ object GroupDistance extends ToolCommand[Args] {
         DistanceMatrix.fromFileSpark(cmdArgs.distanceMatrix,
                                      cmdArgs.countMatrix))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
-    val correctCellsMap = tenxkit.correctCellsMap(correctCells)
 
     val (initGroups, trashInit): (RDD[GroupSample], RDD[Int]) =
       if (cmdArgs.skipKmeans) {
@@ -189,10 +188,16 @@ object GroupDistance extends ToolCommand[Args] {
       implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys
       .filter(_ < iteration - 1)
-      .foreach(
-        cache(_)
-          .filter(_.getStorageLevel != StorageLevel.NONE)
-          .foreach(x => x.unpersist()))
+      .foreach(cache(_)
+        .foreach { x =>
+          try {
+            if (x.getStorageLevel != StorageLevel.NONE)
+              x.unpersist()
+          } catch {
+            case _: NullPointerException =>
+          }
+
+        })
     cache += (iteration - 1) -> (groups
       .cache() :: cache.getOrElse(iteration - 1, Nil))
     cache += (iteration - 1) -> (trash.cache() :: cache.getOrElse(iteration - 1,
@@ -227,7 +232,16 @@ object GroupDistance extends ToolCommand[Args] {
 
     if (maxIterations - iteration <= 0 && numberOfGroups == expectedGroups)
       (groups, trash)
-    else {
+    else if (numberOfGroups == 0) {
+      reCluster(trash.map(GroupSample(0, _)),
+                distanceMatrix,
+                expectedGroups,
+                maxIterations,
+                sc.emptyRDD,
+                outputDir,
+                correctCells,
+                iteration)
+    } else {
       val avgDistance = groupDistances.value.values.sum / groupDistances.value.size
       if (numberOfGroups > expectedGroups) {
         val removecosts = calculateSampleMoveCosts(groupBy.map {
@@ -475,31 +489,6 @@ object GroupDistance extends ToolCommand[Args] {
          sc.emptyRDD[Int])
       case _ => (restGroups, splitGroup.map(_.sample))
     }
-  }
-
-  def variantsToVectors(
-      variants: RDD[VariantCall],
-      correctCells: Broadcast[Array[String]]): RDD[(Int, linalg.Vector)] = {
-    variants
-      .flatMap { v =>
-        val alleles = 0 :: v.altAlleles.indices.map(_ + 1).toList
-        correctCells.value.indices.map { sample =>
-          val sa = v.samples.get(sample) match {
-            case Some(a) =>
-              val total = a.map(_.total).sum
-              alleles.map(a(_).total.toDouble / total)
-            case _ => alleles.map(_ => 0.0)
-          }
-          sample -> (v.contig, v.pos, sa)
-        }
-      }
-      .groupByKey(correctCells.value.length)
-      .map {
-        case (sample, list) =>
-          val sorted = list.toList.sortBy { case (y1, y2, _) => (y1, y2) }
-          (sample,
-           Vectors.dense(sorted.flatMap { case (_, _, x) => x }.toArray))
-      }
   }
 
   def distanceMatrixToVectors(matrix: DistanceMatrix,

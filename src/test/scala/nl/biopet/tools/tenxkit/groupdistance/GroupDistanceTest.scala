@@ -24,9 +24,12 @@ package nl.biopet.tools.tenxkit.groupdistance
 import java.io.File
 
 import nl.biopet.tools.tenxkit.DistanceMatrix
+import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
 import nl.biopet.utils.test.tools.ToolTest
 import nl.biopet.utils.io.getLinesFromFile
-import org.testng.annotations.Test
+import nl.biopet.utils.spark
+import org.apache.spark.SparkContext
+import org.testng.annotations.{DataProvider, Test}
 
 class GroupDistanceTest extends ToolTest[Args] {
   def toolCommand: GroupDistance.type = GroupDistance
@@ -46,6 +49,7 @@ class GroupDistanceTest extends ToolTest[Args] {
     ),
     IndexedSeq("sample1", "sample2", "sample3", "sample4")
   )
+
   @Test
   def testDefault(): Unit = {
     val matrixFile = File.createTempFile("matrix.", ".tsv")
@@ -111,5 +115,64 @@ class GroupDistanceTest extends ToolTest[Args] {
     val clusters = clusterFiles.map(getLinesFromFile(_).sorted)
     clusters.contains(List("sample1", "sample2")) shouldBe true
     clusters.contains(List("sample3", "sample4")) shouldBe true
+  }
+
+  @DataProvider(name = "recluster")
+  def reCLusterProvider: Array[Array[List[Any]]] = {
+    Array(
+      Array(List(GroupSample(0, 0), GroupSample(4, 1)), List[Int](1, 2)),
+      Array(List(GroupSample(1, 0),
+                 GroupSample(2, 1),
+                 GroupSample(3, 2),
+                 GroupSample(4, 3)),
+            List[Int]()),
+      Array(List(GroupSample(0, 0),
+                 GroupSample(1, 1),
+                 GroupSample(1, 2),
+                 GroupSample(0, 3)),
+            List[Int]()),
+      Array(List(GroupSample(0, 0),
+                 GroupSample(0, 1),
+                 GroupSample(1, 2),
+                 GroupSample(1, 3)),
+            List[Int]()),
+      Array(List(GroupSample(0, 0),
+                 GroupSample(0, 1),
+                 GroupSample(0, 2),
+                 GroupSample(0, 3)),
+            List[Int]())
+    )
+  }
+
+  @Test(dataProvider = "recluster")
+  def testRecluster(startGroups: List[GroupSample],
+                    startTrash: List[Int]): Unit = {
+    implicit val sc: SparkContext =
+      spark.loadSparkContext("test", Some("local[1]"))
+    val outputDir = File.createTempFile("GroupDistance.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+
+    val cells =
+      sc.broadcast(IndexedSeq("sample1", "sample2", "sample3", "sample4"))
+
+    val matrixBroadcast = sc.broadcast(matrix)
+    val (groups, trash) = GroupDistance.reCluster(sc.parallelize(startGroups),
+                                                  matrixBroadcast,
+                                                  2,
+                                                  20,
+                                                  sc.parallelize(startTrash),
+                                                  outputDir,
+                                                  cells)
+
+    trash.collect() shouldBe empty
+    val g = groups
+      .collect()
+      .groupBy(_.group)
+      .map(x => x._1 -> x._2.map(_.sample).toList.sorted)
+    g.values.toList.contains(List(0, 1))
+    g.values.toList.contains(List(2, 3))
+
+    sc.stop()
   }
 }
