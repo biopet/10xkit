@@ -26,7 +26,6 @@ import java.io.File
 case class Args(distanceMatrix: File = null,
                 countMatrix: Option[File] = None,
                 outputDir: File = null,
-                reference: File = null,
                 correctCells: File = null,
                 skipKmeans: Boolean = false,
                 numClusters: Int = 0,

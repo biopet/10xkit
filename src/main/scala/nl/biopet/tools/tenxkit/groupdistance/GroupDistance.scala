@@ -534,8 +534,6 @@ object GroupDistance extends ToolCommand[Args] {
          "GroupDistance",
          "--sparkMaster",
          "<spark master>",
-         "-R",
-         "<reference fasta>",
          "-d",
          "<distance matrix>",
          "-o",
