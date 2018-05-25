@@ -32,6 +32,7 @@ import org.apache.spark.ml.linalg
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -188,7 +189,10 @@ object GroupDistance extends ToolCommand[Args] {
       implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys
       .filter(_ < iteration - 1)
-      .foreach(cache(_).foreach(_.unpersist()))
+      .foreach(
+        cache(_)
+          .filter(_.getStorageLevel != StorageLevel.NONE)
+          .foreach(x => x.unpersist()))
     cache += (iteration - 1) -> (groups
       .cache() :: cache.getOrElse(iteration - 1, Nil))
     cache += (iteration - 1) -> (trash.cache() :: cache.getOrElse(iteration - 1,
@@ -503,8 +507,13 @@ object GroupDistance extends ToolCommand[Args] {
       implicit sc: SparkContext): (RDD[(Int, linalg.Vector)], RDD[Int]) = {
     require(matrix.samples == correctSamples.value)
     val samples = matrix.samples.indices.toList
-    val samplesFiltered = samples.filter(s1 =>
-      samples.map(s2 => matrix(s1, s2)).count(_.isDefined) >= 1000)
+    val totalSamples = samples.length
+    val samplesFiltered = samples.filter(
+      s1 =>
+        samples
+          .map(s2 => matrix(s1, s2))
+          .count(_.isDefined)
+          .toDouble / totalSamples >= 0.25)
     val trash = samples.diff(samplesFiltered)
     logger.info(s"Removed ${samples.size - samplesFiltered.size} samples")
     val vectors = samplesFiltered.map(
