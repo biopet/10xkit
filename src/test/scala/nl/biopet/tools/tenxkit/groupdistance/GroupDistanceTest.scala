@@ -49,6 +49,7 @@ class GroupDistanceTest extends ToolTest[Args] {
   @Test
   def testDefault(): Unit = {
     val matrixFile = File.createTempFile("matrix.", ".tsv")
+    matrixFile.deleteOnExit()
     matrix.writeFile(matrixFile)
     val outputDir = File.createTempFile("GroupDistance.", ".out")
     outputDir.delete()
@@ -81,6 +82,7 @@ class GroupDistanceTest extends ToolTest[Args] {
   @Test
   def testNoKmeans(): Unit = {
     val matrixFile = File.createTempFile("matrix.", ".tsv")
+    matrixFile.deleteOnExit()
     matrix.writeFile(matrixFile)
     val outputDir = File.createTempFile("GroupDistance.", ".out")
     outputDir.delete()
