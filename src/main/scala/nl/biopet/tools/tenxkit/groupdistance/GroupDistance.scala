@@ -65,20 +65,6 @@ object GroupDistance extends ToolCommand[Args] {
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
 
-    //TODO: add variants to clustering
-//    val variants = if (cmdArgs.inputFile.isDirectory) {
-//      VariantCall
-//        .fromPartitionedVcf(cmdArgs.inputFile,
-//          cmdArgs.reference,
-//          correctCellsMap)
-//    } else {
-//      VariantCall
-//        .fromVcfFile(cmdArgs.inputFile,
-//          cmdArgs.reference,
-//          correctCellsMap,
-//          50000000)
-//    }
-
     val (initGroups, trashInit): (RDD[GroupSample], RDD[Int]) =
       if (cmdArgs.skipKmeans) {
         (sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
@@ -550,8 +536,6 @@ object GroupDistance extends ToolCommand[Args] {
          "<spark master>",
          "-R",
          "<reference fasta>",
-         "-i",
-         "<distance matrix>",
          "-d",
          "<distance matrix>",
          "-o",

@@ -27,10 +27,6 @@ import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 
 class ArgsParser(toolCommand: ToolCommand[Args])
     extends AbstractOptParser[Args](toolCommand) {
-  opt[File]('i', "inputFile")
-    .required()
-    .action((x, c) => c.copy(inputFile = x))
-    .text("Input bam file")
   opt[File]('d', "distanceMatrix")
     .required()
     .action((x, c) => c.copy(distanceMatrix = x))
