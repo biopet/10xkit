@@ -80,6 +80,7 @@ class ReadBam(samReader: SamReader,
     sample match {
       case Some(s) =>
         val umi = ReadBam.extractUmi(read, umiTag)
+        val duplicate = read.getDuplicateReadFlag
         val bases = SampleBase
           .createBases(read)
           .filter { case (_, base) => base.avgQual.exists(_ >= minBaseQual) }
@@ -95,10 +96,12 @@ class ReadBam(samReader: SamReader,
               val current = buffer(position)
                 .samples(s)
                 .getOrElse(sampleAllele, AlleleCount())
-              val seen = umi.exists { u =>
-                val alreadySeen = buffer(position).umis.contains(u)
-                if (!alreadySeen) buffer(position).umis.add(u)
-                alreadySeen
+              val seen = umi match {
+                case Some(u) =>
+                  val alreadySeen = buffer(position).umis.contains(u)
+                  if (!alreadySeen) buffer(position).umis.add(u)
+                  alreadySeen
+                case _ => duplicate
               }
               (base.strand, seen) match {
                 case (true, true) =>
@@ -118,7 +121,7 @@ class ReadBam(samReader: SamReader,
               }
             }
         }
-      case _ =>
+      case _ => // This will skip reads without a correct cell barcode
     }
   }
 
