@@ -39,6 +39,7 @@ import nl.biopet.tools.tenxkit.variantcalls.{
   PositionBases,
   SampleAllele
 }
+import nl.biopet.utils.Logging
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.ngs.intervals.BedRecordList
 import nl.biopet.utils.ngs.vcf
@@ -140,11 +141,13 @@ case class VariantCall(contig: Int,
   }
 
   /** This will calculate a pvalue with a binominal test for each allele and each sample */
-  def createBinomialPvalues(seqError: Float): Map[Int, IndexedSeq[Double]] = {
+  def createBinomialPvalues(
+      seqError: Float,
+      minAlleleDepth: Int = 2): Map[Int, IndexedSeq[Double]] = {
     samples.map {
       case (s, a) =>
         val totalReads = a.map(_.totalReads).sum
-        if (totalReads > 1) {
+        if (totalReads >= minAlleleDepth) {
           val binomial =
             new Binomial(totalReads, seqError, RandomEngine.makeDefault())
           s -> a.map(b => 1.0 - binomial.cdf(b.totalReads))
@@ -222,7 +225,7 @@ case class VariantCall(contig: Int,
   }
 }
 
-object VariantCall {
+object VariantCall extends Logging {
 
   def fromVariantContext(variant: VariantContext,
                          dict: SAMSequenceDictionary,
@@ -247,7 +250,11 @@ object VariantCall {
             case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
           }.toIndexedSeq
           Some(sampleMap(g.getSampleName) -> alleles)
-        case _ => None
+        case _ =>
+          logger.warn(
+            s"Genotype '${g.getSampleName}' at ${variant.getContig}:$pos skipped because not all required field are there. " +
+              s"Required fields: ADR, ADF, ADR-READ, ADF-READ")
+          None
       }
     }
     VariantCall(contig, pos, refAllele, altAlleles, genotypes.toMap)

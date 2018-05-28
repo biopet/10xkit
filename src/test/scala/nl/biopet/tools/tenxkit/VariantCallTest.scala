@@ -23,6 +23,12 @@ package nl.biopet.tools.tenxkit
 
 import java.io.File
 
+import htsjdk.variant.variantcontext.{
+  Allele,
+  Genotype,
+  GenotypeBuilder,
+  VariantContextBuilder
+}
 import nl.biopet.test.BiopetTest
 import nl.biopet.tools.tenxkit.variantcalls.{
   AlleleCount,
@@ -35,6 +41,7 @@ import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.spark
 import org.apache.spark.SparkContext
 
+import scala.collection.JavaConversions._
 import scala.collection.mutable
 
 class VariantCallTest extends BiopetTest {
@@ -95,6 +102,42 @@ class VariantCallTest extends BiopetTest {
 
     v1.minSampleAltDepth(1) shouldBe true
     v1.minSampleAltDepth(2) shouldBe false
+  }
+
+  @Test
+  def testCreateBinomialPvalues(): Unit = {
+    val v1 = VariantCall(
+      1,
+      1000,
+      "A",
+      IndexedSeq("G", "T"),
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)))
+    )
+    v1.createBinomialPvalues(0.005f) shouldBe Map(
+      0 -> IndexedSeq(7.474999666401416E-5,
+                      7.474999666401416E-5,
+                      7.474999666401416E-5),
+      1 -> IndexedSeq(7.474999666401416E-5,
+                      7.474999666401416E-5,
+                      7.474999666401416E-5)
+    )
+
+    val v2 = VariantCall(
+      1,
+      1000,
+      "A",
+      IndexedSeq("G", "T"),
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(0), AlleleCount(0)),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)))
+    )
+    v2.createBinomialPvalues(0.005f) shouldBe Map(
+      0 -> IndexedSeq(1.0, 1.0, 1.0),
+      1 -> IndexedSeq(7.474999666401416E-5,
+                      7.474999666401416E-5,
+                      7.474999666401416E-5)
+    )
+
   }
 
   @Test
@@ -174,6 +217,37 @@ class VariantCallTest extends BiopetTest {
                                             dict,
                                             Map("sample1" -> 0, "sample2" -> 1))
     v2 shouldBe v1
+  }
+
+  @Test
+  def testMissingFields(): Unit = {
+    val dict = fasta.getCachedDict(resourceFile("/reference.fasta"))
+
+    val base = new VariantContextBuilder()
+      .chr("chr1")
+      .start(2)
+      .alleles("G", "C")
+      .computeEndFromAlleles(List(Allele.create("G", true), Allele.create("C")),
+                             2)
+
+    val c1 = base
+      .genotypes(
+        new GenotypeBuilder()
+          .name("sample1")
+          .attribute("ADR", Array(5, 5).mkString(","))
+          .attribute("ADF", Array(5, 5).mkString(","))
+          .attribute("ADR-READ", Array(5, 5).mkString(","))
+          .attribute("ADF-READ", Array(5, 5).mkString(","))
+          .make())
+      .make()
+    val v1 = VariantCall.fromVariantContext(c1, dict, Map("sample1" -> 0))
+    v1.contig shouldBe 0
+    v1.samples.keySet shouldBe Set(0)
+
+    val c2 = base.genotypes(new GenotypeBuilder().name("sample1").make()).make()
+    val v2 = VariantCall.fromVariantContext(c2, dict, Map("sample1" -> 0))
+    v2.contig shouldBe 0
+    v2.samples.keySet shouldBe Set()
   }
 
   @Test
