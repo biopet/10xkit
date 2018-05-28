@@ -150,6 +150,8 @@ object GroupCall {
             group -> maps.values
               .flatMap(x => x.zipWithIndex)
               .groupBy { case (_, idx) => idx }
+              .toList
+              .sortBy { case (idx, _) => idx }
               .map {
                 case (_, counts) =>
                   counts.map { case (c, _) => c }.reduce(_ + _)

@@ -71,6 +71,7 @@ class GroupCallTest extends BiopetTest {
     g1.hasNonReference shouldBe true
     g1.totalAltRatio shouldBe 0.5
   }
+
   @Test
   def testCreate(): Unit = {
     val groupsMap = Map(0 -> "g2", 1 -> "g1", 2 -> "g2")
@@ -79,21 +80,34 @@ class GroupCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G"),
-      Map(0 -> IndexedSeq(AlleleCount(10), AlleleCount(0)),
+      Map(0 -> IndexedSeq(AlleleCount(20), AlleleCount(0)),
           1 -> IndexedSeq(AlleleCount(5), AlleleCount(5)),
           2 -> IndexedSeq(AlleleCount(0), AlleleCount(10)))
     )
     val g1 = v1.toGroupCall(groupsMap)
+
+    g1.contig shouldBe v1.contig
+    g1.pos shouldBe v1.pos
+    g1.allAlleles shouldBe v1.allAlleles
+    g1.refAllele shouldBe v1.refAllele
+    g1.altAlleles shouldBe v1.altAlleles
+    g1.alleleCount("g1") shouldBe IndexedSeq(AlleleCount(5), AlleleCount(5))
+    g1.alleleCount("g2") shouldBe IndexedSeq(AlleleCount(20), AlleleCount(10))
+    g1.genotypes("g1") shouldBe GenotypeCall.fromAd(IndexedSeq(5, 5))
+    g1.genotypes("g2") shouldBe GenotypeCall.fromAd(IndexedSeq(20, 10))
+    g1.cellCounts("g1") shouldBe 1
+    g1.cellCounts("g2") shouldBe 2
+
     g1 shouldBe GroupCall(
       v1.contig,
       v1.pos,
       v1.refAllele,
       v1.altAlleles,
       Map("g1" -> IndexedSeq(AlleleCount(5, 0, 5, 0), AlleleCount(5, 0, 5, 0)),
-          "g2" -> IndexedSeq(AlleleCount(10, 0, 10, 0),
+          "g2" -> IndexedSeq(AlleleCount(20, 0, 20, 0),
                              AlleleCount(10, 0, 10, 0))),
       Map("g1" -> GenotypeCall.fromAd(IndexedSeq(5, 5)),
-          "g2" -> GenotypeCall.fromAd(IndexedSeq(10, 10))),
+          "g2" -> GenotypeCall.fromAd(IndexedSeq(20, 10))),
       Map("g1" -> 1, "g2" -> 2)
     )
   }
