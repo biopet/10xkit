@@ -25,7 +25,6 @@ import java.io.File
 
 import htsjdk.variant.variantcontext.{
   Allele,
-  Genotype,
   GenotypeBuilder,
   VariantContextBuilder
 }
@@ -128,7 +127,7 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(0), AlleleCount(0)),
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(), AlleleCount()),
           1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(1)))
     )
     v2.createBinomialPvalues(0.005f) shouldBe Map(
@@ -151,8 +150,8 @@ class VariantCallTest extends BiopetTest {
           1 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(1)))
     )
     v1.setAllelesToZeroDepth(2).samples shouldBe Map(
-      0 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(0)),
-      1 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount(0)))
+      0 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount()),
+      1 -> IndexedSeq(AlleleCount(2), AlleleCount(2), AlleleCount()))
   }
 
   @Test
@@ -162,8 +161,8 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
-          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()))
     )
     v1.cleanupAlleles().map(_.altAlleles) shouldBe Some(IndexedSeq("G"))
 
@@ -172,8 +171,8 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> IndexedSeq(AlleleCount(0), AlleleCount(0), AlleleCount(0)),
-          1 -> IndexedSeq(AlleleCount(0), AlleleCount(0), AlleleCount(0)))
+      Map(0 -> IndexedSeq(AlleleCount(), AlleleCount(), AlleleCount()),
+          1 -> IndexedSeq(AlleleCount(), AlleleCount(), AlleleCount()))
     )
     v2.cleanupAlleles() shouldBe None
   }
@@ -194,11 +193,11 @@ class VariantCallTest extends BiopetTest {
       .flatten
       .toList shouldBe Map(0 -> IndexedSeq(AlleleCount(1000),
                                            AlleleCount(1000),
-                                           AlleleCount(0)),
+                                           AlleleCount()),
                            1 -> IndexedSeq(
                              AlleleCount(1000),
                              AlleleCount(1000),
-                             AlleleCount(0))).values.flatten.toList
+                             AlleleCount())).values.flatten.toList
   }
 
   @Test
@@ -209,8 +208,8 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
-          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()))
     )
     val c1 = v1.toVariantContext(IndexedSeq("sample1", "sample2"), dict, 0.005f)
     val v2 = VariantCall.fromVariantContext(c1,
@@ -264,16 +263,16 @@ class VariantCallTest extends BiopetTest {
       1000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
-          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()))
     )
     val v2 = VariantCall(
       0,
       2000,
       "A",
       IndexedSeq("G", "T"),
-      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
-          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
+      Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()),
+          1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount()))
     )
     val outputDir = File.createTempFile("test.", ".vcf")
     outputDir.delete()
