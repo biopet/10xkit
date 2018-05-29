@@ -165,7 +165,7 @@ class VariantCallTest extends BiopetTest {
       Map(0 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)),
           1 -> IndexedSeq(AlleleCount(1), AlleleCount(1), AlleleCount(0)))
     )
-    v1.cleanupAlleles().get.altAlleles shouldBe Array("G")
+    v1.cleanupAlleles().map(_.altAlleles) shouldBe Some(Array("G"))
 
     val v2 = VariantCall(
       1,

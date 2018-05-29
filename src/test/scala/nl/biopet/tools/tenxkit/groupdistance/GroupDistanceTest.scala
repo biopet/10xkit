@@ -169,7 +169,7 @@ class GroupDistanceTest extends ToolTest[Args] {
     val g = groups
       .collect()
       .groupBy(_.group)
-      .map(x => x._1 -> x._2.map(_.sample).toList.sorted)
+      .map { case (g, c) => g -> c.map(_.sample).toList.sorted }
     g.values.toList.contains(List(0, 1))
     g.values.toList.contains(List(2, 3))
 
