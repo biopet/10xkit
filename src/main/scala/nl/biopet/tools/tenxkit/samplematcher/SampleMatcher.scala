@@ -82,6 +82,8 @@ object SampleMatcher extends ToolCommand[Args] {
 
     //TODO: Extract group variants
 
+    //TODO: Extract bam files
+
     //TODO: Add eval
 
     //TODO: Add CellReads

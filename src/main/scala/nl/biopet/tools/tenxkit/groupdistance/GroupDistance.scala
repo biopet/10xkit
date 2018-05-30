@@ -107,8 +107,19 @@ object GroupDistance extends ToolCommand[Args] {
     )
     sc.clearJobGroup()
 
-    val writeFuture = Future(
-      writeGroups(groups.cache(), trash.cache(), outputDir, correctCells))
+    val reNumberMap = groups
+      .map(_.group)
+      .distinct()
+      .collectAsync()
+      .map(_.zipWithIndex.map { case (g, idx) => g -> (idx + 1) }.toMap)
+
+    val reNumberGroups = reNumberMap.map { m =>
+      val map = sc.broadcast(m)
+      groups.map(x => x.copy(group = map(x.group)))
+    }
+
+    val writeFuture = reNumberGroups.map(g =>
+      writeGroups(g.cache(), trash.cache(), outputDir, correctCells))
 
     Result(groups, trash, writeFuture)
   }
