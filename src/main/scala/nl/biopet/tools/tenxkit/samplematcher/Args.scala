@@ -36,4 +36,7 @@ case class Args(inputFile: File = null,
                 intervals: Option[File] = None,
                 cutoffs: Cutoffs = Cutoffs(),
                 seqError: Float = 0.005f,
+                method: String = "pow4",
+                additionalMethods: List[String] = Nil,
+                writeScatters: Boolean = false,
                 sparkMaster: String = null)

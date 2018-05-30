@@ -21,13 +21,17 @@
 
 package nl.biopet.tools.tenxkit.samplematcher
 
+import java.io.File
+
 import htsjdk.samtools.SAMSequenceDictionary
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.TenxKit
+import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
+import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.fasta.getCachedDict
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -62,7 +66,10 @@ object SampleMatcher extends ToolCommand[Args] {
       variantResults(cmdArgs, correctCells, correctCellsMap, dict)
     futures += variantsResult.totalFuture
 
-    //TODO: Add calculate distance
+    val calculateDistanceResult = variantsResult.filteredVariants.map(v =>
+      calculateDistanceResults(cmdArgs, v, correctCells))
+    futures += calculateDistanceResult.flatMap(r =>
+      Future.sequence(r.writeFileFutures))
 
     //TODO: Add group distance
 
@@ -83,7 +90,7 @@ object SampleMatcher extends ToolCommand[Args] {
       implicit sc: SparkContext): CellVariantcaller.Result = {
     CellVariantcaller.totalRun(
       cmdArgs.inputFile,
-      cmdArgs.outputDir,
+      new File(cmdArgs.outputDir, "variantcalling"),
       cmdArgs.reference,
       dict,
       CellVariantcaller.getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
@@ -94,6 +101,21 @@ object SampleMatcher extends ToolCommand[Args] {
       correctCellsMap,
       sc.broadcast(cmdArgs.cutoffs),
       cmdArgs.seqError
+    )
+  }
+
+  def calculateDistanceResults(
+      cmdArgs: Args,
+      variants: RDD[VariantCall],
+      correctCells: Broadcast[IndexedSeq[String]]): CalulateDistance.Result = {
+    CalulateDistance.totalRun(
+      variants,
+      new File(cmdArgs.outputDir, "calculatedistance"),
+      correctCells,
+      cmdArgs.cutoffs.minAlleleDepth,
+      cmdArgs.method,
+      cmdArgs.additionalMethods,
+      cmdArgs.writeScatters
     )
   }
 

@@ -96,6 +96,37 @@ object CalulateDistance extends ToolCommand[Args] {
     logger.info("Done")
   }
 
+  case class Result(distanceMatrix: Future[DistanceMatrix],
+                    writeFileFutures: List[Future[_]])
+
+  def totalRun(variants: RDD[VariantCall],
+               outputDir: File,
+               correctCells: Broadcast[IndexedSeq[String]],
+               minAlleleCoverage: Int,
+               method: String,
+               additionalMethods: List[String] = Nil,
+               writeScatters: Boolean = false): Result = {
+    val futures = new ListBuffer[Future[_]]()
+    val combinations = createCombinations(variants, minAlleleCoverage)
+
+    val rdd = combinationDistance(method, outputDir, combinations, correctCells)
+    futures += rdd.foreachAsync(
+      _.writeFile(new File(outputDir, s"distance.$method.csv")))
+
+    additionalMethods
+      .filter(_ != method)
+      .distinct
+      .sorted
+      .foreach(m =>
+        futures += combinationDistance(m, outputDir, combinations, correctCells)
+          .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv"))))
+
+    if (writeScatters)
+      futures += writeScatters(outputDir, combinations, correctCells)
+
+    Result(Future(rdd.first()), futures.toList)
+  }
+
   def combinationDistance(
       methodString: String,
       outputDir: File,

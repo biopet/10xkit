@@ -28,6 +28,7 @@ package object variantcalls {
 
   case class Cutoffs(minAlternativeDepth: Int = 2,
                      minCellAlternativeDepth: Int = 2,
+                     minAlleleDepth: Int = 5,
                      minTotalDepth: Int = 5,
                      minBaseQual: Byte = '*'.toByte,
                      maxPvalue: Float = 0.05f)
