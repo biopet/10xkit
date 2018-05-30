@@ -41,11 +41,11 @@ class CellReadsTest extends ToolTest[Args] {
     outputFile.delete()
     outputFile.mkdirs()
     outputFile.deleteOnExit()
-    val sampleTag = "NM"
+    val sampleTag = "SM"
     CellReads.main(
       Array(
         "-i",
-        resourcePath("/paired01.bam"),
+        resourcePath("/read_bam.bam"),
         "-R",
         resourcePath("/reference.fasta"),
         "--sparkMaster",
