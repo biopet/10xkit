@@ -58,8 +58,18 @@ class SampleMatcherTest extends ToolTest[Args] {
         "RG"
       ))
 
-    ""
+    val variantcallingDir = new File(outputDir, "variantcalling")
+    val calulateDistanceDir = new File(outputDir, "calculatedistance")
+    val groupDistanceDir = new File(outputDir, "groupdistance")
+    variantcallingDir should exist
+    new File(variantcallingDir, "filter-vcf") should exist
 
-    //TODO: add testing
+    calulateDistanceDir should exist
+    new File(calulateDistanceDir, "count.positions.csv") should exist
+    new File(calulateDistanceDir, "distance.pow4.csv") should exist
+
+    groupDistanceDir should exist
+    new File(groupDistanceDir, "trash.txt") should exist
+    groupDistanceDir.list().count(_.endsWith(".txt")) shouldBe 3
   }
 }
