@@ -37,6 +37,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
 
 object SampleMatcher extends ToolCommand[Args] {
@@ -60,7 +61,7 @@ object SampleMatcher extends ToolCommand[Args] {
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val dict = sc.broadcast(getCachedDict(cmdArgs.reference))
 
-    val futures = new ListBuffer[Future[_]]()
+    val futures = new ListBuffer[Future[Any]]()
 
     val variantsResult =
       variantResults(cmdArgs, correctCells, correctCellsMap, dict)
@@ -104,10 +105,10 @@ object SampleMatcher extends ToolCommand[Args] {
     )
   }
 
-  def calculateDistanceResults(
-      cmdArgs: Args,
-      variants: RDD[VariantCall],
-      correctCells: Broadcast[IndexedSeq[String]]): CalulateDistance.Result = {
+  def calculateDistanceResults(cmdArgs: Args,
+                               variants: RDD[VariantCall],
+                               correctCells: Broadcast[IndexedSeq[String]])(
+      implicit sc: SparkContext): CalulateDistance.Result = {
     CalulateDistance.totalRun(
       variants,
       new File(cmdArgs.outputDir, "calculatedistance"),

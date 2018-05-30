@@ -97,7 +97,7 @@ object CalulateDistance extends ToolCommand[Args] {
   }
 
   case class Result(distanceMatrix: Future[DistanceMatrix],
-                    writeFileFutures: List[Future[_]])
+                    writeFileFutures: List[Future[Any]])
 
   def totalRun(variants: RDD[VariantCall],
                outputDir: File,
@@ -105,7 +105,7 @@ object CalulateDistance extends ToolCommand[Args] {
                minAlleleCoverage: Int,
                method: String,
                additionalMethods: List[String] = Nil,
-               writeScatters: Boolean = false): Result = {
+               scatters: Boolean = false)(implicit sc: SparkContext): Result = {
     val futures = new ListBuffer[Future[_]]()
     val combinations = createCombinations(variants, minAlleleCoverage)
 
@@ -121,7 +121,7 @@ object CalulateDistance extends ToolCommand[Args] {
         futures += combinationDistance(m, outputDir, combinations, correctCells)
           .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv"))))
 
-    if (writeScatters)
+    if (scatters)
       futures += writeScatters(outputDir, combinations, correctCells)
 
     Result(Future(rdd.first()), futures.toList)

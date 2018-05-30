@@ -81,14 +81,15 @@ object GroupDistance extends ToolCommand[Args] {
                     trash: RDD[Int],
                     writeFuture: Future[_])
 
-  def totalRun(
-      distanceMatrix: Broadcast[DistanceMatrix],
-      outputDir: File,
-      numClusters: Int,
-      numIterations: Int,
-      seed: Long,
-      correctCells: Broadcast[IndexedSeq[String]],
-      skipKmeans: Boolean = false)(implicit sc: SparkContext): Result = {
+  def totalRun(distanceMatrix: Broadcast[DistanceMatrix],
+               outputDir: File,
+               numClusters: Int,
+               numIterations: Int,
+               seed: Long,
+               correctCells: Broadcast[IndexedSeq[String]],
+               skipKmeans: Boolean = false)(
+      implicit sc: SparkContext,
+      sparkSession: SparkSession): Result = {
     val (initGroups, trashInit) =
       initGroup(distanceMatrix, numClusters, seed, correctCells)
     initGroups.cache()
