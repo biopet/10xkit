@@ -86,7 +86,8 @@ object CalulateDistance extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  case class Result(distanceMatrix: Future[DistanceMatrix],
+  case class Result(distanceMatrix: Future[File],
+                    countFile: Future[File],
                     writeFileFutures: List[Future[Any]])
 
   def totalRun(variants: RDD[VariantCall],
@@ -99,9 +100,17 @@ object CalulateDistance extends ToolCommand[Args] {
     val futures = new ListBuffer[Future[_]]()
     val combinations = createCombinations(variants, minAlleleCoverage)
 
-    val rdd = combinationDistance(method, outputDir, combinations, correctCells)
-    futures += rdd.foreachAsync(
-      _.writeFile(new File(outputDir, s"distance.$method.csv")))
+    val distanceFile =
+      combinationDistance(method, outputDir, combinations, correctCells)
+        .map { x =>
+          val outputFile = new File(outputDir, s"distance.$method.csv")
+          x.writeFile(outputFile)
+          outputFile
+        }
+        .collectAsync()
+        .map(_(0))
+
+    futures += distanceFile
 
     additionalMethods
       .filter(_ != method)
@@ -114,9 +123,10 @@ object CalulateDistance extends ToolCommand[Args] {
     if (scatters)
       futures += writeScatters(outputDir, combinations, correctCells)
 
-    futures += writeCountPositions(outputDir, combinations, correctCells)
+    val countFile = writeCountPositions(outputDir, combinations, correctCells)
+    futures += countFile
 
-    Result(Future(rdd.first()), futures.toList)
+    Result(distanceFile, countFile, futures.toList)
   }
 
   def combinationDistance(
@@ -176,7 +186,7 @@ object CalulateDistance extends ToolCommand[Args] {
   def writeCountPositions(
       outputDir: File,
       combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
-      correctCells: Broadcast[IndexedSeq[String]]): Future[Unit] = {
+      correctCells: Broadcast[IndexedSeq[String]]): Future[File] = {
     combinations
       .map { case (key, list) => key -> list.size }
       .groupBy { case (key, _) => key.sample1 }
@@ -191,10 +201,11 @@ object CalulateDistance extends ToolCommand[Args] {
           })
       }
       .repartition(1)
-      .foreachPartitionAsync { it =>
+      .mapPartitions { it =>
         val map = it.toMap
+        val outputFile = new File(outputDir, "count.positions.csv")
         val writer =
-          new PrintWriter(new File(outputDir, "count.positions.csv"))
+          new PrintWriter(outputFile)
         writer.println(correctCells.value.mkString("Sample\t", "\t", ""))
         for (s1 <- correctCells.value.indices) {
           writer.print(s"${correctCells.value(s1)}\t")
@@ -205,7 +216,10 @@ object CalulateDistance extends ToolCommand[Args] {
               .mkString("\t"))
         }
         writer.close()
+        Iterator(outputFile)
       }
+      .collectAsync()
+      .map(_(0))
   }
 
   def writeScatters(

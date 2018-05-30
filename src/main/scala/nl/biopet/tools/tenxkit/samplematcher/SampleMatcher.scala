@@ -73,8 +73,14 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += calculateDistanceResult.flatMap(r =>
       Future.sequence(r.writeFileFutures))
 
-    val distanceMatrix =
-      calculateDistanceResult.flatMap(_.distanceMatrix.map(sc.broadcast(_)))
+    //TODO: distance matrix now first writes to disk before continue
+    val distanceMatrix = calculateDistanceResult
+      .flatMap(_.distanceMatrix)
+      .zip(calculateDistanceResult.flatMap(_.countFile))
+      .map {
+        case (distance, counts) =>
+          sc.broadcast(DistanceMatrix.fromFileSpark(distance, Some(counts)))
+      }
     val groupDistanceResult =
       distanceMatrix.map(groupDistanceResults(cmdArgs, _, correctCells))
     futures += groupDistanceResult.flatMap(_.writeFuture)
