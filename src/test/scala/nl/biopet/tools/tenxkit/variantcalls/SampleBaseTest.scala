@@ -21,12 +21,14 @@
 
 package nl.biopet.tools.tenxkit.variantcalls
 
+import htsjdk.samtools.{SAMFileHeader, SAMRecord}
 import nl.biopet.test.BiopetTest
+import nl.biopet.utils.ngs.fasta.getCachedDict
 import org.testng.annotations.Test
 
 class SampleBaseTest extends BiopetTest {
   @Test
-  def test(): Unit = {
+  def testCreate(): Unit = {
     val seq = "AATTCCGGAA"
     val bases = SampleBase.createBases(1,
                                        true,
@@ -40,5 +42,36 @@ class SampleBaseTest extends BiopetTest {
     val (_, base6) = sortedBases(6)
     base2.delBases shouldBe 1
     base6.allele shouldBe "CG"
+  }
+
+  @Test
+  def testSamRecord(): Unit = {
+    val dict = getCachedDict(resourceFile("/reference.fasta"))
+    val samHeader = new SAMFileHeader()
+    val read = new SAMRecord(samHeader)
+    val seq = "AATTCCGGAA"
+    read.setAlignmentStart(1)
+    read.setReferenceName("chr1")
+    read.setCigarString("3M1D3M1I3M")
+    read.setReadBases(seq.getBytes)
+    read.setBaseQualities("AAAAAAAAAA".getBytes)
+    val bases = SampleBase.createBases(read)
+    val sortedBases = bases.sortBy { case (x, _) => x }
+    sortedBases.size shouldBe seq.length
+    sortedBases.map { case (_, x) => x.allele }.mkString shouldBe "AATTCCGGAA"
+    val (_, base2) = sortedBases(2)
+    val (_, base6) = sortedBases(6)
+    base2.delBases shouldBe 1
+    base6.allele shouldBe "CG"
+  }
+
+  @Test
+  def testUnMapped(): Unit = {
+    val dict = getCachedDict(resourceFile("/reference.fasta"))
+    val samHeader = new SAMFileHeader()
+    val read = new SAMRecord(samHeader)
+    val seq = "AATTCCGGAA"
+    read.setReadUnmappedFlag(true)
+    SampleBase.createBases(read) shouldBe Nil
   }
 }
