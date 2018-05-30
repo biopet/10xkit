@@ -129,7 +129,7 @@ class DistanceMatrixTest extends BiopetTest {
       matrix2(s1, s2) shouldBe matrix3.first()(s1, s2)
     }
 
-    matrix3 shouldBe matrix
+    matrix3.first() shouldBe matrix
 
     sc.stop()
   }
@@ -157,7 +157,7 @@ class DistanceMatrixTest extends BiopetTest {
       matrix2(s1, s2) shouldBe matrix3.first()(s1, s2)
     }
 
-    matrix3 shouldBe correct
+    matrix3.first() shouldBe correct
 
     sc.stop()
   }
