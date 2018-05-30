@@ -114,7 +114,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="DistanceMatrix.html"><span class="name">DistanceMatrix</span></a><span class="params">(<span name="values">values: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Double">Double</span>]]]</span>, <span name="samples">samples: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="nl.biopet.utils.Logging">Logging</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="DistanceMatrix.html"><span class="name">DistanceMatrix</span></a><span class="params">(<span name="values">values: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Double">Double</span>]]]</span>, <span name="samples">samples: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="nl.biopet.utils.Logging">Logging</span> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@DistanceMatrixextendsLoggingwithProductwithSerializable" title="Permalink" target="_top">
@@ -131,7 +131,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="GenotypeCall.html"><span class="name">GenotypeCall</span></a><span class="params">(<span name="genotype">genotype: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="ad">ad: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="aq">aq: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="pl">pl: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="GenotypeCall.html"><span class="name">GenotypeCall</span></a><span class="params">(<span name="genotype">genotype: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="ad">ad: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="aq">aq: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="pl">pl: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Int">Int</span>]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@GenotypeCallextendsProductwithSerializable" title="Permalink" target="_top">
@@ -148,7 +148,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="GroupCall.html"><span class="name">GroupCall</span></a><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alleleCount">alleleCount: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>, <span name="genotypes">genotypes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="GenotypeCall.html" class="extype" name="nl.biopet.tools.tenxkit.GenotypeCall">GenotypeCall</a>]</span>, <span name="cellCounts">cellCounts: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="GroupCall.html"><span class="name">GroupCall</span></a><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alleleCount">alleleCount: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>, <span name="genotypes">genotypes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="GenotypeCall.html" class="extype" name="nl.biopet.tools.tenxkit.GenotypeCall">GenotypeCall</a>]</span>, <span name="cellCounts">cellCounts: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@GroupCallextendsProductwithSerializable" title="Permalink" target="_top">
@@ -165,7 +165,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="VariantCall.html"><span class="name">VariantCall</span></a><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="samples">samples: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="VariantCall.html"><span class="name">VariantCall</span></a><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="samples">samples: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@VariantCallextendsProductwithSerializable" title="Permalink" target="_top">
@@ -274,7 +274,7 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="VariantCall$.html"><span class="name">VariantCall</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="VariantCall$.html"><span class="name">VariantCall</span></a><span class="result"> extends <span class="extype" name="nl.biopet.utils.Logging">Logging</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4><span class="permalink">
       <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@VariantCall" title="Permalink" target="_top">
@@ -317,18 +317,18 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit#correctCellsMap" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="correctCellsMap(samples:org.apache.spark.broadcast.Broadcast[Array[String]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[Map[String,Int]]"></a>
-      <a id="correctCellsMap(Broadcast[Array[String]])(SparkContext):Broadcast[Map[String,Int]]"></a>
+      <a id="correctCellsMap(samples:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[Map[String,Int]]"></a>
+      <a id="correctCellsMap(Broadcast[IndexedSeq[String]])(SparkContext):Broadcast[Map[String,Int]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">correctCellsMap</span><span class="params">(<span name="samples">samples: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>
+        <span class="name">correctCellsMap</span><span class="params">(<span name="samples">samples: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@correctCellsMap(samples:org.apache.spark.broadcast.Broadcast[Array[String]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[Map[String,Int]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@correctCellsMap(samples:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[Map[String,Int]]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -436,18 +436,35 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit#parseCorrectCells" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="parseCorrectCells(file:java.io.File)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[Array[String]]"></a>
-      <a id="parseCorrectCells(File)(SparkContext):Broadcast[Array[String]]"></a>
+      <a id="parseCorrectCells(file:java.io.File)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[IndexedSeq[String]]"></a>
+      <a id="parseCorrectCells(File)(SparkContext):Broadcast[IndexedSeq[String]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">parseCorrectCells</span><span class="params">(<span name="file">file: <span class="extype" name="java.io.File">File</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+        <span class="name">parseCorrectCells</span><span class="params">(<span name="file">file: <span class="extype" name="java.io.File">File</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@parseCorrectCells(file:java.io.File)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[Array[String]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@parseCorrectCells(file:java.io.File)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.broadcast.Broadcast[IndexedSeq[String]]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="samplematcher"></a>
+      <a id="samplematcher:samplematcher"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="samplematcher/package.html"><span class="name">samplematcher</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@samplematcher" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -470,18 +487,18 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit#vcfHeader" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="vcfHeader(samples:Array[String]):htsjdk.variant.vcf.VCFHeader"></a>
-      <a id="vcfHeader(Array[String]):VCFHeader"></a>
+      <a id="vcfHeader(samples:IndexedSeq[String]):htsjdk.variant.vcf.VCFHeader"></a>
+      <a id="vcfHeader(IndexedSeq[String]):VCFHeader"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">vcfHeader</span><span class="params">(<span name="samples">samples: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="htsjdk.variant.vcf.VCFHeader">VCFHeader</span></span>
+        <span class="name">vcfHeader</span><span class="params">(<span name="samples">samples: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="htsjdk.variant.vcf.VCFHeader">VCFHeader</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@vcfHeader(samples:Array[String]):htsjdk.variant.vcf.VCFHeader" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.package@vcfHeader(samples:IndexedSeq[String]):htsjdk.variant.vcf.VCFHeader" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

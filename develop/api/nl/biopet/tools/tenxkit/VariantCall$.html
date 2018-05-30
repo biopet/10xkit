@@ -47,13 +47,13 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">VariantCall</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">VariantCall</span><span class="result"> extends <span class="extype" name="nl.biopet.utils.Logging">Logging</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="nl.biopet.utils.Logging">Logging</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -71,7 +71,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="nl.biopet.tools.tenxkit.VariantCall"><span>VariantCall</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="nl.biopet.tools.tenxkit.VariantCall"><span>VariantCall</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="nl.biopet.utils.Logging"><span>Logging</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -262,18 +262,18 @@
               
         </dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#fromPartitionedVcf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromPartitionedVcf(directory:java.io.File,reference:java.io.File,sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]"></a>
-      <a id="fromPartitionedVcf(File,File,Broadcast[Map[String,Int]])(SparkContext):RDD[VariantCall]"></a>
+      <a id="fromPartitionedVcf(directory:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]"></a>
+      <a id="fromPartitionedVcf(File,Broadcast[SAMSequenceDictionary],Broadcast[Map[String,Int]])(SparkContext):RDD[VariantCall]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromPartitionedVcf</span><span class="params">(<span name="directory">directory: <span class="extype" name="java.io.File">File</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span></span>, <span name="sampleMap">sampleMap: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>
+        <span class="name">fromPartitionedVcf</span><span class="params">(<span name="directory">directory: <span class="extype" name="java.io.File">File</span></span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>, <span name="sampleMap">sampleMap: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall$@fromPartitionedVcf(directory:java.io.File,reference:java.io.File,sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall$@fromPartitionedVcf(directory:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -296,18 +296,18 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#fromVcfFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="fromVcfFile(inputFile:java.io.File,reference:java.io.File,sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],binsize:Int)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]"></a>
-      <a id="fromVcfFile(File,File,Broadcast[Map[String,Int]],Int)(SparkContext):RDD[VariantCall]"></a>
+      <a id="fromVcfFile(inputFile:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],binsize:Int)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]"></a>
+      <a id="fromVcfFile(File,Broadcast[SAMSequenceDictionary],Broadcast[Map[String,Int]],Int)(SparkContext):RDD[VariantCall]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">fromVcfFile</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span></span>, <span name="sampleMap">sampleMap: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>, <span name="binsize">binsize: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>
+        <span class="name">fromVcfFile</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span></span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>, <span name="sampleMap">sampleMap: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>, <span name="binsize">binsize: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall$@fromVcfFile(inputFile:java.io.File,reference:java.io.File,sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],binsize:Int)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall$@fromVcfFile(inputFile:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],sampleMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],binsize:Int)(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -363,6 +363,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="nl.biopet.utils.Logging#logger" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="logger:org.apache.log4j.Logger"></a>
+      <a id="logger:Logger"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">logger</span><span class="result">: <span class="extype" name="org.apache.log4j.Logger">Logger</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall$@logger:org.apache.log4j.Logger" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Logging</dd></dl></div>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -517,6 +534,23 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.VariantCall#writeToPartitionedVcf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="writeToPartitionedVcf(rdd:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],vcfHeader:org.apache.spark.broadcast.Broadcast[htsjdk.variant.vcf.VCFHeader],seqError:Float):Unit"></a>
+      <a id="writeToPartitionedVcf(RDD[VariantCall],File,Broadcast[IndexedSeq[String]],Broadcast[SAMSequenceDictionary],Broadcast[VCFHeader],Float):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">writeToPartitionedVcf</span><span class="params">(<span name="rdd">rdd: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>, <span name="vcfHeader">vcfHeader: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.variant.vcf.VCFHeader">VCFHeader</span>]</span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall$@writeToPartitionedVcf(rdd:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],vcfHeader:org.apache.spark.broadcast.Broadcast[htsjdk.variant.vcf.VCFHeader],seqError:Float):Unit" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Writes variants to a partitioned vcf file</p>
     </li></ol>
             </div>
 
@@ -530,6 +564,8 @@
               <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
             </div><div class="parent" name="java.io.Serializable">
               <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="nl.biopet.utils.Logging">
+              <h3>Inherited from <span class="extype" name="nl.biopet.utils.Logging">Logging</span></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">

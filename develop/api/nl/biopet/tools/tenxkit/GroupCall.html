@@ -47,7 +47,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">GroupCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alleleCount">alleleCount: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>, <span name="genotypes">genotypes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="GenotypeCall.html" class="extype" name="nl.biopet.tools.tenxkit.GenotypeCall">GenotypeCall</a>]</span>, <span name="cellCounts">cellCounts: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">GroupCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alleleCount">alleleCount: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>, <span name="genotypes">genotypes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="GenotypeCall.html" class="extype" name="nl.biopet.tools.tenxkit.GenotypeCall">GenotypeCall</a>]</span>, <span name="cellCounts">cellCounts: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -91,7 +91,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.tenxkit.GroupCall#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:Array[String],alleleCount:Map[String,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]],genotypes:Map[String,nl.biopet.tools.tenxkit.GenotypeCall],cellCounts:Map[String,Int]):nl.biopet.tools.tenxkit.GroupCall"></a>
+      <a id="&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:IndexedSeq[String],alleleCount:Map[String,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]],genotypes:Map[String,nl.biopet.tools.tenxkit.GenotypeCall],cellCounts:Map[String,Int]):nl.biopet.tools.tenxkit.GroupCall"></a>
       <a id="&lt;init&gt;:GroupCall"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -99,10 +99,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">GroupCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alleleCount">alleleCount: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>, <span name="genotypes">genotypes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="GenotypeCall.html" class="extype" name="nl.biopet.tools.tenxkit.GenotypeCall">GenotypeCall</a>]</span>, <span name="cellCounts">cellCounts: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]</span>)</span>
+        <span class="name">GroupCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alleleCount">alleleCount: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>, <span name="genotypes">genotypes: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <a href="GenotypeCall.html" class="extype" name="nl.biopet.tools.tenxkit.GenotypeCall">GenotypeCall</a>]</span>, <span name="cellCounts">cellCounts: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]</span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall@&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:Array[String],alleleCount:Map[String,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]],genotypes:Map[String,nl.biopet.tools.tenxkit.GenotypeCall],cellCounts:Map[String,Int]):nl.biopet.tools.tenxkit.GroupCall" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall@&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:IndexedSeq[String],alleleCount:Map[String,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]],genotypes:Map[String,nl.biopet.tools.tenxkit.GenotypeCall],cellCounts:Map[String,Int]):nl.biopet.tools.tenxkit.GroupCall" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -185,18 +185,18 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit.GroupCall#alleleCount" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="alleleCount:Map[String,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]"></a>
-      <a id="alleleCount:Map[String,Array[AlleleCount]]"></a>
+      <a id="alleleCount:Map[String,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]"></a>
+      <a id="alleleCount:Map[String,IndexedSeq[AlleleCount]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">alleleCount</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>
+        <span class="name">alleleCount</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall@alleleCount:Map[String,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall@alleleCount:Map[String,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -236,18 +236,18 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit.GroupCall#altAlleles" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="altAlleles:Array[String]"></a>
-      <a id="altAlleles:Array[String]"></a>
+      <a id="altAlleles:IndexedSeq[String]"></a>
+      <a id="altAlleles:IndexedSeq[String]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">altAlleles</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+        <span class="name">altAlleles</span><span class="result">: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall@altAlleles:Array[String]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall@altAlleles:IndexedSeq[String]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

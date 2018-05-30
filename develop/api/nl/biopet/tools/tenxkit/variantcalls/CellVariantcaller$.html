@@ -534,6 +534,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller#getPartitions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getPartitions(inputFile:java.io.File,partitions:Option[Int],fileSizePerPartition:Int):Int"></a>
+      <a id="getPartitions(File,Option[Int],Int):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getPartitions</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span></span>, <span name="partitions">partitions: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">None</span></span>, <span name="fileSizePerPartition">fileSizePerPartition: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">10000000</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller$@getPartitions(inputFile:java.io.File,partitions:Option[Int],fileSizePerPartition:Int):Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -807,18 +824,18 @@
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>ToolCommand</dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller#totalRun" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="totalRun(inputFile:java.io.File,outputDir:java.io.File,reference:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],partitions:Int,intervals:Option[java.io.File],sampleTag:String,umiTag:Option[String],correctCells:org.apache.spark.broadcast.Broadcast[Array[String]],correctCellsMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],cutoffs:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.variantcalls.Cutoffs],seqError:Float,writeRawVcf:Boolean,writeFilteredVcf:Boolean)(implicitsc:org.apache.spark.SparkContext):nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.Result"></a>
-      <a id="totalRun(File,File,File,Broadcast[SAMSequenceDictionary],Int,Option[File],String,Option[String],Broadcast[Array[String]],Broadcast[Map[String,Int]],Broadcast[Cutoffs],Float,Boolean,Boolean)(SparkContext):Result"></a>
+      <a id="totalRun(inputFile:java.io.File,outputDir:java.io.File,reference:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],partitions:Int,intervals:Option[java.io.File],sampleTag:String,umiTag:Option[String],correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],correctCellsMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],cutoffs:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.variantcalls.Cutoffs],seqError:Float,writeRawVcf:Boolean,writeFilteredVcf:Boolean)(implicitsc:org.apache.spark.SparkContext):nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.Result"></a>
+      <a id="totalRun(File,File,File,Broadcast[SAMSequenceDictionary],Int,Option[File],String,Option[String],Broadcast[IndexedSeq[String]],Broadcast[Map[String,Int]],Broadcast[Cutoffs],Float,Boolean,Boolean)(SparkContext):Result"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">totalRun</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span></span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>, <span name="partitions">partitions: <span class="extype" name="scala.Int">Int</span></span>, <span name="intervals">intervals: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="correctCellsMap">correctCellsMap: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>, <span name="cutoffs">cutoffs: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<a href="package$$Cutoffs.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs">Cutoffs</a>]</span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>, <span name="writeRawVcf">writeRawVcf: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="writeFilteredVcf">writeFilteredVcf: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <a href="CellVariantcaller$$Result.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.Result">Result</a></span>
+        <span class="name">totalRun</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span></span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>, <span name="partitions">partitions: <span class="extype" name="scala.Int">Int</span></span>, <span name="intervals">intervals: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="correctCellsMap">correctCellsMap: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Int">Int</span>]]</span>, <span name="cutoffs">cutoffs: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<a href="package$$Cutoffs.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs">Cutoffs</a>]</span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>, <span name="writeRawVcf">writeRawVcf: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="writeFilteredVcf">writeFilteredVcf: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">true</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <a href="CellVariantcaller$$Result.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.Result">Result</a></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller$@totalRun(inputFile:java.io.File,outputDir:java.io.File,reference:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],partitions:Int,intervals:Option[java.io.File],sampleTag:String,umiTag:Option[String],correctCells:org.apache.spark.broadcast.Broadcast[Array[String]],correctCellsMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],cutoffs:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.variantcalls.Cutoffs],seqError:Float,writeRawVcf:Boolean,writeFilteredVcf:Boolean)(implicitsc:org.apache.spark.SparkContext):nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.Result" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller$@totalRun(inputFile:java.io.File,outputDir:java.io.File,reference:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],partitions:Int,intervals:Option[java.io.File],sampleTag:String,umiTag:Option[String],correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],correctCellsMap:org.apache.spark.broadcast.Broadcast[Map[String,Int]],cutoffs:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.variantcalls.Cutoffs],seqError:Float,writeRawVcf:Boolean,writeFilteredVcf:Boolean)(implicitsc:org.apache.spark.SparkContext):nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.Result" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -1011,23 +1028,6 @@
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller#writeVcf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="writeVcf(rdd:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[Array[String]],dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],vcfHeader:org.apache.spark.broadcast.Broadcast[htsjdk.variant.vcf.VCFHeader],seqError:Float):Unit"></a>
-      <a id="writeVcf(RDD[VariantCall],File,Broadcast[Array[String]],Broadcast[SAMSequenceDictionary],Broadcast[VCFHeader],Float):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">writeVcf</span><span class="params">(<span name="rdd">rdd: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="../VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>, <span name="vcfHeader">vcfHeader: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.variant.vcf.VCFHeader">VCFHeader</span>]</span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller$@writeVcf(rdd:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[Array[String]],dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary],vcfHeader:org.apache.spark.broadcast.Broadcast[htsjdk.variant.vcf.VCFHeader],seqError:Float):Unit" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
     </li></ol>
             </div>
 

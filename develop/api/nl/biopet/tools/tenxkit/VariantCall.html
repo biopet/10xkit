@@ -47,7 +47,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">VariantCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="samples">samples: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">VariantCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="samples">samples: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -91,7 +91,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.tenxkit.VariantCall#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:Array[String],samples:Map[Int,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]):nl.biopet.tools.tenxkit.VariantCall"></a>
+      <a id="&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:IndexedSeq[String],samples:Map[Int,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]):nl.biopet.tools.tenxkit.VariantCall"></a>
       <a id="&lt;init&gt;:VariantCall"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -99,10 +99,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">VariantCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="samples">samples: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>)</span>
+        <span class="name">VariantCall</span><span class="params">(<span name="contig">contig: <span class="extype" name="scala.Int">Int</span></span>, <span name="pos">pos: <span class="extype" name="scala.Long">Long</span></span>, <span name="refAllele">refAllele: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="altAlleles">altAlleles: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="samples">samples: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:Array[String],samples:Map[Int,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]):nl.biopet.tools.tenxkit.VariantCall" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@&lt;init&gt;(contig:Int,pos:Long,refAllele:String,altAlleles:IndexedSeq[String],samples:Map[Int,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]):nl.biopet.tools.tenxkit.VariantCall" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -168,22 +168,22 @@
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#allAlleles" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="allAlleles:Array[String]"></a>
-      <a id="allAlleles:Array[String]"></a>
+      <a id="allAlleles:IndexedSeq[String]"></a>
+      <a id="allAlleles:IndexedSeq[String]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">allAlleles</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+        <span class="name">allAlleles</span><span class="result">: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@allAlleles:Array[String]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@allAlleles:IndexedSeq[String]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">Allele alles in 1 IndexedSeq</p>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#alleleDepth" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="alleleDepth:Seq[Int]"></a>
       <a id="alleleDepth:Seq[Int]"></a>
@@ -200,7 +200,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">Umi depth for each allele acrosss samples</p>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#alleleReadDepth" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="alleleReadDepth:Seq[Int]"></a>
       <a id="alleleReadDepth:Seq[Int]"></a>
@@ -217,20 +217,20 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">Read depth for each allele acrosss samples</p>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#altAlleles" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="altAlleles:Array[String]"></a>
-      <a id="altAlleles:Array[String]"></a>
+      <a id="altAlleles:IndexedSeq[String]"></a>
+      <a id="altAlleles:IndexedSeq[String]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">altAlleles</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+        <span class="name">altAlleles</span><span class="result">: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@altAlleles:Array[String]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@altAlleles:IndexedSeq[String]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -251,7 +251,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">Total umi coverage on the alt alleles</p>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -285,7 +285,8 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">This will remove all alleles that does not have any coverage anymore
+When no alleles are left a None is returned</p>
     </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a>
       <a id="clone():AnyRef"></a>
@@ -327,22 +328,22 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#createBinomialPvalues" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="createBinomialPvalues(seqError:Float):Map[Int,Array[Double]]"></a>
-      <a id="createBinomialPvalues(Float):Map[Int,Array[Double]]"></a>
+      <a id="createBinomialPvalues(seqError:Float,minAlleleDepth:Int):Map[Int,IndexedSeq[Double]]"></a>
+      <a id="createBinomialPvalues(Float,Int):Map[Int,IndexedSeq[Double]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">createBinomialPvalues</span><span class="params">(<span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Double">Double</span>]]</span>
+        <span class="name">createBinomialPvalues</span><span class="params">(<span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>, <span name="minAlleleDepth">minAlleleDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Double">Double</span>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@createBinomialPvalues(seqError:Float):Map[Int,Array[Double]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@createBinomialPvalues(seqError:Float,minAlleleDepth:Int):Map[Int,IndexedSeq[Double]]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">This will calculate a pvalue with a binominal test for each allele and each sample</p>
     </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a>
       <a id="eq(AnyRef):Boolean"></a>
@@ -401,18 +402,18 @@
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#getUniqueAlleles" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getUniqueAlleles(groupsMap:Map[Int,String],balance:Double):Array[(String,String)]"></a>
-      <a id="getUniqueAlleles(Map[Int,String],Double):Array[(String,String)]"></a>
+      <a id="getUniqueAlleles(groupsMap:Map[Int,String],balance:Double):IndexedSeq[(String,String)]"></a>
+      <a id="getUniqueAlleles(Map[Int,String],Double):IndexedSeq[(String,String)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getUniqueAlleles</span><span class="params">(<span name="groupsMap">groupsMap: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="balance">balance: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">0.9</span></span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>
+        <span class="name">getUniqueAlleles</span><span class="params">(<span name="groupsMap">groupsMap: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="balance">balance: <span class="extype" name="scala.Double">Double</span> = <span class="symbol">0.9</span></span>)</span><span class="result">: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[(<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="scala.Predef.String">String</span>)]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@getUniqueAlleles(groupsMap:Map[Int,String],balance:Double):Array[(String,String)]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@getUniqueAlleles(groupsMap:Map[Int,String],balance:Double):IndexedSeq[(String,String)]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -433,7 +434,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">true if there is coverage on a alt allele</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -467,7 +468,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">true if there is a sample alt allele with atleast the goiven number of umis</p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -569,20 +570,20 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">total umi coverage on the reference allele</p>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#samples" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="samples:Map[Int,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]"></a>
-      <a id="samples:Map[Int,Array[AlleleCount]]"></a>
+      <a id="samples:Map[Int,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]"></a>
+      <a id="samples:Map[Int,IndexedSeq[AlleleCount]]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">samples</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.Array">Array</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>
+        <span class="name">samples</span><span class="result">: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<a href="variantcalls/AlleleCount.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.AlleleCount">AlleleCount</a>]]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@samples:Map[Int,Array[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@samples:Map[Int,IndexedSeq[nl.biopet.tools.tenxkit.variantcalls.AlleleCount]]" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -603,8 +604,8 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.VariantCall#setAllelesToZeroPvalue" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <p class="shortcomment cmt">This sets the depth of alleles back to 0 if they are below the cutoff</p>
+    </li><li name="nl.biopet.tools.tenxkit.VariantCall#setAllelesToZeroPvalue" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="setAllelesToZeroPvalue(seqError:Float,cutoffPvalue:Float):nl.biopet.tools.tenxkit.VariantCall"></a>
       <a id="setAllelesToZeroPvalue(Float,Float):VariantCall"></a>
       <h4 class="signature">
@@ -620,7 +621,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">This will calculate a pvalue with a binominal test.</p><div class="fullcomment"><div class="comment cmt"><p>This will calculate a pvalue with a binominal test. All above the cutoff will be set to 0 depth</p></div></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -656,35 +657,18 @@
     </span>
       
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#toVariantContext" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="toVariantContext(sampleList:Array[String],dict:htsjdk.samtools.SAMSequenceDictionary,seqError:Float):htsjdk.variant.variantcontext.VariantContext"></a>
-      <a id="toVariantContext(Array[String],SAMSequenceDictionary,Float):VariantContext"></a>
+      <a id="toVariantContext(sampleList:IndexedSeq[String],dict:htsjdk.samtools.SAMSequenceDictionary,seqError:Float):htsjdk.variant.variantcontext.VariantContext"></a>
+      <a id="toVariantContext(IndexedSeq[String],SAMSequenceDictionary,Float):VariantContext"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toVariantContext</span><span class="params">(<span name="sampleList">sampleList: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="dict">dict: <span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span></span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="htsjdk.variant.variantcontext.VariantContext">VariantContext</span></span>
+        <span class="name">toVariantContext</span><span class="params">(<span name="sampleList">sampleList: <span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="dict">dict: <span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span></span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="htsjdk.variant.variantcontext.VariantContext">VariantContext</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@toVariantContext(sampleList:Array[String],dict:htsjdk.samtools.SAMSequenceDictionary,seqError:Float):htsjdk.variant.variantcontext.VariantContext" title="Permalink" target="_top">
-        <img src="../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.VariantCall#toVcfLine" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="toVcfLine(samplesIdxs:Range,dict:htsjdk.samtools.SAMSequenceDictionary):String"></a>
-      <a id="toVcfLine(Range,SAMSequenceDictionary):String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">toVcfLine</span><span class="params">(<span name="samplesIdxs">samplesIdxs: <span class="extype" name="scala.Range">Range</span></span>, <span name="dict">dict: <span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@toVcfLine(samplesIdxs:Range,dict:htsjdk.samtools.SAMSequenceDictionary):String" title="Permalink" target="_top">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.VariantCall@toVariantContext(sampleList:IndexedSeq[String],dict:htsjdk.samtools.SAMSequenceDictionary,seqError:Float):htsjdk.variant.variantcontext.VariantContext" title="Permalink" target="_top">
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -705,7 +689,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">Ratio of  the alt depth to the reference allele</p>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#totalDepth" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="totalDepth:Int"></a>
       <a id="totalDepth:Int"></a>
@@ -722,7 +706,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">total umi coverage on this position</p>
     </li><li name="nl.biopet.tools.tenxkit.VariantCall#totalReadDepth" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="totalReadDepth:Int"></a>
       <a id="totalReadDepth:Int"></a>
@@ -739,7 +723,7 @@
         <img src="../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
-      
+      <p class="shortcomment cmt">total read coverage on this position</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

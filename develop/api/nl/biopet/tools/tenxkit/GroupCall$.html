@@ -244,6 +244,23 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.GroupCall#fromPartitionedVcf" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="fromPartitionedVcf(directory:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.GroupCall]"></a>
+      <a id="fromPartitionedVcf(File,Broadcast[SAMSequenceDictionary])(SparkContext):RDD[GroupCall]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromPartitionedVcf</span><span class="params">(<span name="directory">directory: <span class="extype" name="java.io.File">File</span></span>, <span name="dict">dict: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupCall.html" class="extype" name="nl.biopet.tools.tenxkit.GroupCall">GroupCall</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall$@fromPartitionedVcf(directory:java.io.File,dict:org.apache.spark.broadcast.Broadcast[htsjdk.samtools.SAMSequenceDictionary])(implicitsc:org.apache.spark.SparkContext):org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.GroupCall]" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">This will read a partitioned vcf file as a rdd <a href="GroupCall.html" class="extype" name="nl.biopet.tools.tenxkit.GroupCall">GroupCall</a></p>
     </li><li name="nl.biopet.tools.tenxkit.GroupCall#fromVariantCall" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="fromVariantCall(variant:nl.biopet.tools.tenxkit.VariantCall,groupsMap:Map[Int,String]):nl.biopet.tools.tenxkit.GroupCall"></a>
       <a id="fromVariantCall(VariantCall,Map[Int,String]):GroupCall"></a>
@@ -261,6 +278,23 @@
       </a>
     </span>
       <p class="shortcomment cmt">This method will convert a variant call to a groupcall with a list of groups</p><div class="fullcomment"><div class="comment cmt"><p>This method will convert a variant call to a groupcall with a list of groups</p></div><dl class="paramcmts block"><dt class="param">variant</dt><dd class="cmt"><p>Input variantcall</p></dd><dt class="param">groupsMap</dt><dd class="cmt"><p>Map to see to which group a cell belongs</p></dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.GroupCall#fromVariantContext" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="fromVariantContext(variant:htsjdk.variant.variantcontext.VariantContext,dict:htsjdk.samtools.SAMSequenceDictionary):nl.biopet.tools.tenxkit.GroupCall"></a>
+      <a id="fromVariantContext(VariantContext,SAMSequenceDictionary):GroupCall"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">fromVariantContext</span><span class="params">(<span name="variant">variant: <span class="extype" name="htsjdk.variant.variantcontext.VariantContext">VariantContext</span></span>, <span name="dict">dict: <span class="extype" name="htsjdk.samtools.SAMSequenceDictionary">SAMSequenceDictionary</span></span>)</span><span class="result">: <a href="GroupCall.html" class="extype" name="nl.biopet.tools.tenxkit.GroupCall">GroupCall</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../index.html#nl.biopet.tools.tenxkit.GroupCall$@fromVariantContext(variant:htsjdk.variant.variantcontext.VariantContext,dict:htsjdk.samtools.SAMSequenceDictionary):nl.biopet.tools.tenxkit.GroupCall" title="Permalink" target="_top">
+        <img src="../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Thi will convert a VariantContext to a <a href="GroupCall.html" class="extype" name="nl.biopet.tools.tenxkit.GroupCall">GroupCall</a></p>
     </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <a id="getClass():Class[_]"></a>

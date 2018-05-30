@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Cutoffs</span><span class="params">(<span name="minAlternativeDepth">minAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minCellAlternativeDepth">minCellAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minTotalDepth">minTotalDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">5</span></span>, <span name="minBaseQual">minBaseQual: <span class="extype" name="scala.Byte">Byte</span> = <span class="symbol">'*'.toByte</span></span>, <span name="maxPvalue">maxPvalue: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.05f</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Cutoffs</span><span class="params">(<span name="minAlternativeDepth">minAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minCellAlternativeDepth">minCellAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minAlleleDepth">minAlleleDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">5</span></span>, <span name="minTotalDepth">minTotalDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">5</span></span>, <span name="minBaseQual">minBaseQual: <span class="extype" name="scala.Byte">Byte</span> = <span class="symbol">'*'.toByte</span></span>, <span name="maxPvalue">maxPvalue: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.05f</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -89,7 +89,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(minAlternativeDepth:Int,minCellAlternativeDepth:Int,minTotalDepth:Int,minBaseQual:Byte,maxPvalue:Float):nl.biopet.tools.tenxkit.variantcalls.package.Cutoffs"></a>
+      <a id="&lt;init&gt;(minAlternativeDepth:Int,minCellAlternativeDepth:Int,minAlleleDepth:Int,minTotalDepth:Int,minBaseQual:Byte,maxPvalue:Float):nl.biopet.tools.tenxkit.variantcalls.package.Cutoffs"></a>
       <a id="&lt;init&gt;:Cutoffs"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,10 +97,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Cutoffs</span><span class="params">(<span name="minAlternativeDepth">minAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minCellAlternativeDepth">minCellAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minTotalDepth">minTotalDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">5</span></span>, <span name="minBaseQual">minBaseQual: <span class="extype" name="scala.Byte">Byte</span> = <span class="symbol">'*'.toByte</span></span>, <span name="maxPvalue">maxPvalue: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.05f</span></span>)</span>
+        <span class="name">Cutoffs</span><span class="params">(<span name="minAlternativeDepth">minAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minCellAlternativeDepth">minCellAlternativeDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">2</span></span>, <span name="minAlleleDepth">minAlleleDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">5</span></span>, <span name="minTotalDepth">minTotalDepth: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">5</span></span>, <span name="minBaseQual">minBaseQual: <span class="extype" name="scala.Byte">Byte</span> = <span class="symbol">'*'.toByte</span></span>, <span name="maxPvalue">maxPvalue: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.05f</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.package$$Cutoffs@&lt;init&gt;(minAlternativeDepth:Int,minCellAlternativeDepth:Int,minTotalDepth:Int,minBaseQual:Byte,maxPvalue:Float):nl.biopet.tools.tenxkit.variantcalls.package.Cutoffs" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.package$$Cutoffs@&lt;init&gt;(minAlternativeDepth:Int,minCellAlternativeDepth:Int,minAlleleDepth:Int,minTotalDepth:Int,minBaseQual:Byte,maxPvalue:Float):nl.biopet.tools.tenxkit.variantcalls.package.Cutoffs" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -292,6 +292,23 @@
       </span>
       </h4><span class="permalink">
       <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.package$$Cutoffs@maxPvalue:Float" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs#minAlleleDepth" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="minAlleleDepth:Int"></a>
+      <a id="minAlleleDepth:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">minAlleleDepth</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.variantcalls.package$$Cutoffs@minAlleleDepth:Int" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>

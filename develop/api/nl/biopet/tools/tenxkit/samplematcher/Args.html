@@ -1,9 +1,9 @@
 <!DOCTYPE html >
 <html>
         <head>
-          <title>Args - nl.biopet.tools.tenxkit.groupdistance.Args</title>
-          <meta name="description" content="Args - nl.biopet.tools.tenxkit.groupdistance.Args" />
-          <meta name="keywords" content="Args nl.biopet.tools.tenxkit.groupdistance.Args" />
+          <title>Args - nl.biopet.tools.tenxkit.samplematcher.Args</title>
+          <meta name="description" content="Args - nl.biopet.tools.tenxkit.samplematcher.Args" />
+          <meta name="keywords" content="Args nl.biopet.tools.tenxkit.samplematcher.Args" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -16,7 +16,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../../../index.html';
-            var hash = 'nl.biopet.tools.tenxkit.groupdistance.Args';
+            var hash = 'nl.biopet.tools.tenxkit.samplematcher.Args';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -29,11 +29,11 @@
         <body class="type">
       <div id="definition">
         <img alt="Class" src="../../../../../lib/class_big.png" />
-        <p id="owner"><a href="../../../../package.html" class="extype" name="nl">nl</a>.<a href="../../../package.html" class="extype" name="nl.biopet">biopet</a>.<a href="../../package.html" class="extype" name="nl.biopet.tools">tools</a>.<a href="../package.html" class="extype" name="nl.biopet.tools.tenxkit">tenxkit</a>.<a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance">groupdistance</a></p>
+        <p id="owner"><a href="../../../../package.html" class="extype" name="nl">nl</a>.<a href="../../../package.html" class="extype" name="nl.biopet">biopet</a>.<a href="../../package.html" class="extype" name="nl.biopet.tools">tools</a>.<a href="../package.html" class="extype" name="nl.biopet.tools.tenxkit">tenxkit</a>.<a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.samplematcher">samplematcher</a></p>
         <h1>Args</h1><h3><span class="morelinks"><div>Related Doc:
-            <a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance">package groupdistance</a>
+            <a href="package.html" class="extype" name="nl.biopet.tools.tenxkit.samplematcher">package samplematcher</a>
           </div></span></h3><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -45,7 +45,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="distanceMatrix">distanceMatrix: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="countMatrix">countMatrix: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCells">correctCells: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCellsFile">correctCellsFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;UB&quot;</span></span>, <span name="partitions">partitions: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">None</span></span>, <span name="expectedSamples">expectedSamples: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">1</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="intervals">intervals: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="cutoffs">cutoffs: <a href="../variantcalls/package$$Cutoffs.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs">Cutoffs</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">Cutoffs()</a></span></span></span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.005f</span></span>, <span name="method">method: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;pow4&quot;</span></span>, <span name="additionalMethods">additionalMethods: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>, <span name="writeScatters">writeScatters: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -69,7 +69,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="nl.biopet.tools.tenxkit.groupdistance.Args"><span>Args</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="nl.biopet.tools.tenxkit.samplematcher.Args"><span>Args</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -88,8 +88,8 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="nl.biopet.tools.tenxkit.groupdistance.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(distanceMatrix:java.io.File,countMatrix:Option[java.io.File],outputDir:java.io.File,correctCells:java.io.File,skipKmeans:Boolean,numClusters:Int,numIterations:Int,seed:Long,sparkMaster:String):nl.biopet.tools.tenxkit.groupdistance.Args"></a>
+              <ol><li name="nl.biopet.tools.tenxkit.samplematcher.Args#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(inputFile:java.io.File,correctCellsFile:java.io.File,outputDir:java.io.File,sampleTag:String,umiTag:String,partitions:Option[Int],expectedSamples:Int,reference:java.io.File,intervals:Option[java.io.File],cutoffs:nl.biopet.tools.tenxkit.variantcalls.Cutoffs,seqError:Float,method:String,additionalMethods:List[String],writeScatters:Boolean,numIterations:Int,seed:Long,skipKmeans:Boolean,sparkMaster:String):nl.biopet.tools.tenxkit.samplematcher.Args"></a>
       <a id="&lt;init&gt;:Args"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -97,10 +97,10 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Args</span><span class="params">(<span name="distanceMatrix">distanceMatrix: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="countMatrix">countMatrix: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCells">correctCells: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">0</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span>
+        <span class="name">Args</span><span class="params">(<span name="inputFile">inputFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="correctCellsFile">correctCellsFile: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="sampleTag">sampleTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;CB&quot;</span></span>, <span name="umiTag">umiTag: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;UB&quot;</span></span>, <span name="partitions">partitions: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>] = <span class="symbol">None</span></span>, <span name="expectedSamples">expectedSamples: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">1</span></span>, <span name="reference">reference: <span class="extype" name="java.io.File">File</span> = <span class="symbol">null</span></span>, <span name="intervals">intervals: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>] = <span class="symbol">None</span></span>, <span name="cutoffs">cutoffs: <a href="../variantcalls/package$$Cutoffs.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs">Cutoffs</a> = <span class="symbol"><span class="name"><a href="../../../../package.html">Cutoffs()</a></span></span></span>, <span name="seqError">seqError: <span class="extype" name="scala.Float">Float</span> = <span class="symbol">0.005f</span></span>, <span name="method">method: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;pow4&quot;</span></span>, <span name="additionalMethods">additionalMethods: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">Nil</span></span>, <span name="writeScatters">writeScatters: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">20</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span> = <span class="symbol">0</span></span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>, <span name="sparkMaster">sparkMaster: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">null</span></span>)</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@&lt;init&gt;(distanceMatrix:java.io.File,countMatrix:Option[java.io.File],outputDir:java.io.File,correctCells:java.io.File,skipKmeans:Boolean,numClusters:Int,numIterations:Int,seed:Long,sparkMaster:String):nl.biopet.tools.tenxkit.groupdistance.Args" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@&lt;init&gt;(inputFile:java.io.File,correctCellsFile:java.io.File,outputDir:java.io.File,sampleTag:String,umiTag:String,partitions:Option[Int],expectedSamples:Int,reference:java.io.File,intervals:Option[java.io.File],cutoffs:nl.biopet.tools.tenxkit.variantcalls.Cutoffs,seqError:Float,method:String,additionalMethods:List[String],writeScatters:Boolean,numIterations:Int,seed:Long,skipKmeans:Boolean,sparkMaster:String):nl.biopet.tools.tenxkit.samplematcher.Args" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -126,7 +126,7 @@
         <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@!=(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -143,7 +143,7 @@
         <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@##():Int" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@##():Int" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -160,11 +160,28 @@
         <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@==(x$1:Any):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@==(x$1:Any):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#additionalMethods" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="additionalMethods:List[String]"></a>
+      <a id="additionalMethods:List[String]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">additionalMethods</span><span class="result">: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@additionalMethods:List[String]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -177,7 +194,7 @@
         <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@asInstanceOf[T0]:T0" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -194,7 +211,7 @@
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@clone():Object" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@clone():Object" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -205,53 +222,36 @@
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#correctCells" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="correctCells:java.io.File"></a>
-      <a id="correctCells:File"></a>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#correctCellsFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="correctCellsFile:java.io.File"></a>
+      <a id="correctCellsFile:File"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">correctCells</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
+        <span class="name">correctCellsFile</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@correctCells:java.io.File" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@correctCellsFile:java.io.File" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#countMatrix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="countMatrix:Option[java.io.File]"></a>
-      <a id="countMatrix:Option[File]"></a>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#cutoffs" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cutoffs:nl.biopet.tools.tenxkit.variantcalls.Cutoffs"></a>
+      <a id="cutoffs:Cutoffs"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">val</span>
       </span>
       <span class="symbol">
-        <span class="name">countMatrix</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>
+        <span class="name">cutoffs</span><span class="result">: <a href="../variantcalls/package$$Cutoffs.html" class="extype" name="nl.biopet.tools.tenxkit.variantcalls.Cutoffs">Cutoffs</a></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@countMatrix:Option[java.io.File]" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#distanceMatrix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="distanceMatrix:java.io.File"></a>
-      <a id="distanceMatrix:File"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">distanceMatrix</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@distanceMatrix:java.io.File" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@cutoffs:nl.biopet.tools.tenxkit.variantcalls.Cutoffs" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -268,11 +268,28 @@
         <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#expectedSamples" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="expectedSamples:Int"></a>
+      <a id="expectedSamples:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">expectedSamples</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@expectedSamples:Int" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -285,7 +302,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@finalize():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@finalize():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -308,11 +325,45 @@
         <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@getClass():Class[_]" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@getClass():Class[_]" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#inputFile" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="inputFile:java.io.File"></a>
+      <a id="inputFile:File"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inputFile</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@inputFile:java.io.File" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#intervals" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="intervals:Option[java.io.File]"></a>
+      <a id="intervals:Option[File]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">intervals</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="java.io.File">File</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@intervals:Option[java.io.File]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -325,11 +376,28 @@
         <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#method" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="method:String"></a>
+      <a id="method:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">method</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@method:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -342,7 +410,7 @@
         <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -359,7 +427,7 @@
         <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@notify():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@notify():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -376,29 +444,12 @@
         <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@notifyAll():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@notifyAll():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#numClusters" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="numClusters:Int"></a>
-      <a id="numClusters:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">numClusters</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@numClusters:Int" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#numIterations" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#numIterations" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="numIterations:Int"></a>
       <a id="numIterations:Int"></a>
       <h4 class="signature">
@@ -410,12 +461,12 @@
         <span class="name">numIterations</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@numIterations:Int" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@numIterations:Int" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#outputDir" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#outputDir" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="outputDir:java.io.File"></a>
       <a id="outputDir:File"></a>
       <h4 class="signature">
@@ -427,12 +478,63 @@
         <span class="name">outputDir</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@outputDir:java.io.File" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@outputDir:java.io.File" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#seed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#partitions" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="partitions:Option[Int]"></a>
+      <a id="partitions:Option[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">partitions</span><span class="result">: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@partitions:Option[Int]" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#reference" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="reference:java.io.File"></a>
+      <a id="reference:File"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">reference</span><span class="result">: <span class="extype" name="java.io.File">File</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@reference:java.io.File" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#sampleTag" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="sampleTag:String"></a>
+      <a id="sampleTag:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sampleTag</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@sampleTag:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#seed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="seed:Long"></a>
       <a id="seed:Long"></a>
       <h4 class="signature">
@@ -444,12 +546,29 @@
         <span class="name">seed</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@seed:Long" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@seed:Long" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#skipKmeans" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#seqError" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="seqError:Float"></a>
+      <a id="seqError:Float"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">seqError</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@seqError:Float" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#skipKmeans" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="skipKmeans:Boolean"></a>
       <a id="skipKmeans:Boolean"></a>
       <h4 class="signature">
@@ -461,12 +580,12 @@
         <span class="name">skipKmeans</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@skipKmeans:Boolean" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@skipKmeans:Boolean" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.Args#sparkMaster" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#sparkMaster" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="sparkMaster:String"></a>
       <a id="sparkMaster:String"></a>
       <h4 class="signature">
@@ -478,7 +597,7 @@
         <span class="name">sparkMaster</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@sparkMaster:String" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@sparkMaster:String" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -495,11 +614,28 @@
         <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#umiTag" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="umiTag:String"></a>
+      <a id="umiTag:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">umiTag</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@umiTag:String" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -512,7 +648,7 @@
         <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@wait():Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@wait():Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -535,7 +671,7 @@
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -558,7 +694,7 @@
         <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.Args@wait(x$1:Long):Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@wait(x$1:Long):Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -569,6 +705,23 @@
     </span>)</span>
               
         </dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.samplematcher.Args#writeScatters" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="writeScatters:Boolean"></a>
+      <a id="writeScatters:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">writeScatters</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.samplematcher.Args@writeScatters:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li></ol>
             </div>
 

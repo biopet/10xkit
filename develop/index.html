@@ -104,6 +104,10 @@
         
         <h1 id="description" class="section">Description</h1>
         
+        <h4 id="tools---samplematcher" class="section">Tools - SampleMatcher</h4>
+        <p>This tool will try to find a given number of clusters based on variant data per cell.</p>
+        <p>In this tools multiple module from the biopet 10x kit is executed in memory.</p>
+        
         <h4 id="tools---cellreads" class="section">Tools - CellReads</h4>
         <p>This tool will generate a histogram of reads per cell barcode.
         This can be used to validate output from cellranger or to set a alternative cutoff.</p>
@@ -143,6 +147,11 @@
         
         <h1 id="manual" class="section">Manual</h1>
         
+        <h4 id="tools---samplematcher-1" class="section">Tools - SampleMatcher</h4>
+        <p>The input to this tool is the bamfile that is create by Cellranger.</p>
+        <p>This tool require to run on spark.
+        The reference file should have a dict and a fai file next to it.</p>
+        
         <h4 id="tools---cellreads-1" class="section">Tools - CellReads</h4>
         <p>By default this the sample tag is CB, this is the default tag used by Cellrenger.
         If required the user can set this is a other tag with the &#39;--sampleTag&#39; option.</p>
@@ -176,6 +185,16 @@
         From here the sample for each group given with the --group argument will compress this group in 1 single vcf genotype.</p>
         
         <h2 id="example" class="section">Example</h2>
+        
+        <h4 id="tools---samplematcher-2" class="section">Tools - SampleMatcher</h4>
+        <p>Default run with 5 expected samples:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; SampleMatcher \
+--sparkMaster &lt;spark master&gt; \
+-i &lt;cellranger bam file&gt; \
+-R &lt;reference fasta file&gt; \
+-o &lt;output directory&gt; \
+-c 5 \
+--correctCells &lt;correct cells file&gt;</code></pre>
         
         <h4 id="tools---cellreads-2" class="section">Tools - CellReads</h4>
         <p>Default run:</p>
@@ -222,8 +241,6 @@
         <p>Default run with 5 expected samples:</p>
         <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; GroupDistance \
 --sparkMaster &lt;spark master&gt; \
--R &lt;reference fasta&gt; \
--i &lt;distance matrix&gt; \
 -d &lt;distance matrix&gt; \
 -o &lt;output directory&gt; \
 --numClusters 5 \

@@ -158,6 +158,23 @@
       </a>
     </span>
       
+    </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.Result" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ResultextendsProductwithSerializable"></a>
+      <a id="Result:Result"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="GroupDistance$$Result.html"><span class="name">Result</span></a><span class="params">(<span name="groups">groups: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>]</span>, <span name="trash">trash: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="writeFuture">writeFuture: <span class="extype" name="scala.concurrent.Future">Future</span>[_]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@ResultextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li></ol>
             </div>
 
@@ -393,18 +410,18 @@
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance">GroupDistance</a> → ToolCommand</dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance#distanceMatrixToVectors" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="distanceMatrixToVectors(matrix:nl.biopet.tools.tenxkit.DistanceMatrix,correctSamples:org.apache.spark.broadcast.Broadcast[Array[String]])(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[(Int,org.apache.spark.ml.linalg.Vector)],org.apache.spark.rdd.RDD[Int])"></a>
-      <a id="distanceMatrixToVectors(DistanceMatrix,Broadcast[Array[String]])(SparkContext):(RDD[(Int,Vector)],RDD[Int])"></a>
+      <a id="distanceMatrixToVectors(matrix:nl.biopet.tools.tenxkit.DistanceMatrix,correctSamples:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]])(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[(Int,org.apache.spark.ml.linalg.Vector)],org.apache.spark.rdd.RDD[Int])"></a>
+      <a id="distanceMatrixToVectors(DistanceMatrix,Broadcast[IndexedSeq[String]])(SparkContext):(RDD[(Int,Vector)],RDD[Int])"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">distanceMatrixToVectors</span><span class="params">(<span name="matrix">matrix: <a href="../DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a></span>, <span name="correctSamples">correctSamples: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: (<span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="org.apache.spark.ml.linalg.Vector">Vector</span>)], <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>])</span>
+        <span class="name">distanceMatrixToVectors</span><span class="params">(<span name="matrix">matrix: <a href="../DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a></span>, <span name="correctSamples">correctSamples: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: (<span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="org.apache.spark.ml.linalg.Vector">Vector</span>)], <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>])</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@distanceMatrixToVectors(matrix:nl.biopet.tools.tenxkit.DistanceMatrix,correctSamples:org.apache.spark.broadcast.Broadcast[Array[String]])(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[(Int,org.apache.spark.ml.linalg.Vector)],org.apache.spark.rdd.RDD[Int])" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@distanceMatrixToVectors(matrix:nl.biopet.tools.tenxkit.DistanceMatrix,correctSamples:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]])(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[(Int,org.apache.spark.ml.linalg.Vector)],org.apache.spark.rdd.RDD[Int])" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -619,6 +636,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance#initGroup" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="initGroup(distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],numClusters:Int,seed:Long,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],skipKmeans:Boolean)(implicitsc:org.apache.spark.SparkContext,implicitsparkSession:org.apache.spark.sql.SparkSession):(org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],org.apache.spark.rdd.RDD[Int])"></a>
+      <a id="initGroup(Broadcast[DistanceMatrix],Int,Long,Broadcast[IndexedSeq[String]],Boolean)(SparkContext,SparkSession):(RDD[GroupSample],RDD[Int])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">initGroup</span><span class="params">(<span name="distanceMatrix">distanceMatrix: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<a href="../DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a>]</span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>, <span name="sparkSession">sparkSession: <span class="extype" name="org.apache.spark.sql.SparkSession">SparkSession</span></span>)</span><span class="result">: (<span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>], <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>])</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@initGroup(distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],numClusters:Int,seed:Long,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],skipKmeans:Boolean)(implicitsc:org.apache.spark.SparkContext,implicitsparkSession:org.apache.spark.sql.SparkSession):(org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],org.apache.spark.rdd.RDD[Int])" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="nl.biopet.utils.tool.ToolCommand#installationText" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="installationText:String"></a>
       <a id="installationText:String"></a>
@@ -773,18 +807,18 @@
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance#reCluster" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="reCluster(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],expectedGroups:Int,maxIterations:Int,trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[Array[String]],iteration:Int)(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],org.apache.spark.rdd.RDD[Int])"></a>
-      <a id="reCluster(RDD[GroupSample],Broadcast[DistanceMatrix],Int,Int,RDD[Int],File,Broadcast[Array[String]],Int)(SparkContext):(RDD[GroupSample],RDD[Int])"></a>
+      <a id="reCluster(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],expectedGroups:Int,maxIterations:Int,trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],iteration:Int)(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],org.apache.spark.rdd.RDD[Int])"></a>
+      <a id="reCluster(RDD[GroupSample],Broadcast[DistanceMatrix],Int,Int,RDD[Int],File,Broadcast[IndexedSeq[String]],Int)(SparkContext):(RDD[GroupSample],RDD[Int])"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">reCluster</span><span class="params">(<span name="groups">groups: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>]</span>, <span name="distanceMatrix">distanceMatrix: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<a href="../DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a>]</span>, <span name="expectedGroups">expectedGroups: <span class="extype" name="scala.Int">Int</span></span>, <span name="maxIterations">maxIterations: <span class="extype" name="scala.Int">Int</span></span>, <span name="trash">trash: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="iteration">iteration: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">1</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: (<span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>], <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>])</span>
+        <span class="name">reCluster</span><span class="params">(<span name="groups">groups: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>]</span>, <span name="distanceMatrix">distanceMatrix: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<a href="../DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a>]</span>, <span name="expectedGroups">expectedGroups: <span class="extype" name="scala.Int">Int</span></span>, <span name="maxIterations">maxIterations: <span class="extype" name="scala.Int">Int</span></span>, <span name="trash">trash: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="iteration">iteration: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">1</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: (<span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>], <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>])</span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@reCluster(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],expectedGroups:Int,maxIterations:Int,trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[Array[String]],iteration:Int)(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],org.apache.spark.rdd.RDD[Int])" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@reCluster(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],expectedGroups:Int,maxIterations:Int,trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],iteration:Int)(implicitsc:org.apache.spark.SparkContext):(org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],org.apache.spark.rdd.RDD[Int])" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
@@ -942,6 +976,23 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>ToolCommand</dd></dl></div>
+    </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance#totalRun" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalRun(distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],outputDir:java.io.File,numClusters:Int,numIterations:Int,seed:Long,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],skipKmeans:Boolean)(implicitsc:org.apache.spark.SparkContext,implicitsparkSession:org.apache.spark.sql.SparkSession):nl.biopet.tools.tenxkit.groupdistance.GroupDistance.Result"></a>
+      <a id="totalRun(Broadcast[DistanceMatrix],File,Int,Int,Long,Broadcast[IndexedSeq[String]],Boolean)(SparkContext,SparkSession):Result"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalRun</span><span class="params">(<span name="distanceMatrix">distanceMatrix: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<a href="../DistanceMatrix.html" class="extype" name="nl.biopet.tools.tenxkit.DistanceMatrix">DistanceMatrix</a>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="numClusters">numClusters: <span class="extype" name="scala.Int">Int</span></span>, <span name="numIterations">numIterations: <span class="extype" name="scala.Int">Int</span></span>, <span name="seed">seed: <span class="extype" name="scala.Long">Long</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>, <span name="skipKmeans">skipKmeans: <span class="extype" name="scala.Boolean">Boolean</span> = <span class="symbol">false</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>, <span name="sparkSession">sparkSession: <span class="extype" name="org.apache.spark.sql.SparkSession">SparkSession</span></span>)</span><span class="result">: <a href="GroupDistance$$Result.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.Result">Result</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@totalRun(distanceMatrix:org.apache.spark.broadcast.Broadcast[nl.biopet.tools.tenxkit.DistanceMatrix],outputDir:java.io.File,numClusters:Int,numIterations:Int,seed:Long,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]],skipKmeans:Boolean)(implicitsc:org.apache.spark.SparkContext,implicitsparkSession:org.apache.spark.sql.SparkSession):nl.biopet.tools.tenxkit.groupdistance.GroupDistance.Result" title="Permalink" target="_top">
+        <img src="../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
     </li><li name="nl.biopet.utils.tool.ToolCommand#unsafeExample" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="unsafeExample(args:String*):String"></a>
       <a id="unsafeExample(String*):String"></a>
@@ -1061,23 +1112,6 @@
       </a>
     </span>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>ToolCommand</dd></dl></div>
-    </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance#variantsToVectors" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="variantsToVectors(variants:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall],correctCells:org.apache.spark.broadcast.Broadcast[Array[String]]):org.apache.spark.rdd.RDD[(Int,org.apache.spark.ml.linalg.Vector)]"></a>
-      <a id="variantsToVectors(RDD[VariantCall],Broadcast[Array[String]]):RDD[(Int,Vector)]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">variantsToVectors</span><span class="params">(<span name="variants">variants: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="../VariantCall.html" class="extype" name="nl.biopet.tools.tenxkit.VariantCall">VariantCall</a>]</span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[(<span class="extype" name="scala.Int">Int</span>, <span class="extype" name="org.apache.spark.ml.linalg.Vector">Vector</span>)]</span>
-      </span>
-      </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@variantsToVectors(variants:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.VariantCall],correctCells:org.apache.spark.broadcast.Broadcast[Array[String]]):org.apache.spark.rdd.RDD[(Int,org.apache.spark.ml.linalg.Vector)]" title="Permalink" target="_top">
-        <img src="../../../../../lib/permalink.png" alt="Permalink" />
-      </a>
-    </span>
-      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -1148,18 +1182,18 @@
               
         </dd></dl></div>
     </li><li name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance#writeGroups" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="writeGroups(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[Array[String]]):Unit"></a>
-      <a id="writeGroups(RDD[GroupSample],RDD[Int],File,Broadcast[Array[String]]):Unit"></a>
+      <a id="writeGroups(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]]):Unit"></a>
+      <a id="writeGroups(RDD[GroupSample],RDD[Int],File,Broadcast[IndexedSeq[String]]):Unit"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">writeGroups</span><span class="params">(<span name="groups">groups: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>]</span>, <span name="trash">trash: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+        <span class="name">writeGroups</span><span class="params">(<span name="groups">groups: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="GroupDistance$$GroupSample.html" class="extype" name="nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample">GroupSample</a>]</span>, <span name="trash">trash: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="outputDir">outputDir: <span class="extype" name="java.io.File">File</span></span>, <span name="correctCells">correctCells: <span class="extype" name="org.apache.spark.broadcast.Broadcast">Broadcast</span>[<span class="extype" name="scala.IndexedSeq">IndexedSeq</span>[<span class="extype" name="scala.Predef.String">String</span>]]</span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4><span class="permalink">
-      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@writeGroups(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[Array[String]]):Unit" title="Permalink" target="_top">
+      <a href="../../../../../index.html#nl.biopet.tools.tenxkit.groupdistance.GroupDistance$@writeGroups(groups:org.apache.spark.rdd.RDD[nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample],trash:org.apache.spark.rdd.RDD[Int],outputDir:java.io.File,correctCells:org.apache.spark.broadcast.Broadcast[IndexedSeq[String]]):Unit" title="Permalink" target="_top">
         <img src="../../../../../lib/permalink.png" alt="Permalink" />
       </a>
     </span>
