@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.tenxkit.samplematcher
 
+import java.io.File
+
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
 
@@ -33,4 +35,31 @@ class SampleMatcherTest extends ToolTest[Args] {
     }
   }
 
+  @Test
+  def testDefault(): Unit = {
+    val outputDir = File.createTempFile("samplematcher.", ".out")
+    outputDir.delete()
+    outputDir.mkdir()
+    SampleMatcher.main(
+      Array(
+        "--sparkMaster",
+        "local[1]",
+        "-i",
+        resourcePath("/wgs2.realign.bam"),
+        "-R",
+        resourcePath("/reference.fasta"),
+        "-o",
+        outputDir.getAbsolutePath,
+        "-c",
+        "2",
+        "--correctCells",
+        resourcePath("/wgs2.readgroups.txt"),
+        "--sampleTag",
+        "RG"
+      ))
+
+    ""
+
+    //TODO: add testing
+  }
 }
