@@ -21,7 +21,7 @@
 
 package nl.biopet.tools.tenxkit.cellreads
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import htsjdk.samtools.{QueryInterval, SAMRecord, SamReaderFactory}
 import nl.biopet.tools.tenxkit
@@ -34,6 +34,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.JavaConversions._
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object CellReads extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -69,7 +71,9 @@ object CellReads extends ToolCommand[Args] {
       reader.query(intervals, false)
     }
 
-    generateHistograms(reads, cmdArgs.sampleTag, cmdArgs.outputDir)
+    Await.result(
+      generateHistograms(reads, cmdArgs.sampleTag, cmdArgs.outputDir),
+      Duration.Inf)
 
     sparkSession.stop()
     logger.info("Done")
@@ -77,25 +81,37 @@ object CellReads extends ToolCommand[Args] {
 
   def generateHistograms(reads: RDD[SAMRecord],
                          sampleTag: String,
-                         outputDir: File): Unit = {
-    val groups = reads
-      .flatMap { read =>
-        Option(read.getAttribute(sampleTag)).map(read.getDuplicateReadFlag -> _)
+                         outputDir: File): Future[Unit] = {
+    reads
+      .map { read =>
+        (Option(read.getAttribute(sampleTag)).map(_.toString),
+         read.getDuplicateReadFlag) -> 1L
       }
-      .countByValue()
+      .reduceByKey(_ + _)
+      .repartition(1)
+      .foreachPartitionAsync { it =>
+        val tsvFile = new File(outputDir, s"$sampleTag.tsv")
+        val tsvWriter = new PrintWriter(tsvFile)
+        tsvWriter.println("Sample\tumi\tread")
+        val histogramDuplicates = new Histogram[Long]()
+        val histogram = new Histogram[Long]()
+        it.toList.groupBy(_._1._1).foreach {
+          case (barcode, l) =>
+            val m = l.map { case ((_, dup), count) => dup -> count }.toMap
+            val d = m.getOrElse(true, 0L)
+            val n = m.getOrElse(false, 0L)
+            histogramDuplicates.add(d + n)
+            histogram.add(n)
+            tsvWriter.println(
+              barcode.getOrElse("No-Barcode") + s"\t$n\t${n + d}")
+        }
+        tsvWriter.close()
 
-    val histogramDuplicates = new Histogram[Long]()
-    val histogram = new Histogram[Long]()
-    groups.groupBy { case ((_, x), _) => x }.foreach {
-      case (key, map) =>
-        val dup = map.getOrElse((true, key), 0L)
-        val nonDup = map.getOrElse((false, key), 0L)
-        histogramDuplicates.add(dup + nonDup)
-        histogram.add(nonDup)
-    }
-    histogram.writeHistogramToTsv(new File(outputDir, s"$sampleTag.csv"))
-    histogramDuplicates.writeHistogramToTsv(
-      new File(outputDir, s"$sampleTag.duplicates.csv"))
+        histogram.writeHistogramToTsv(
+          new File(outputDir, s"$sampleTag.histogram.tsv"))
+        histogramDuplicates.writeHistogramToTsv(
+          new File(outputDir, s"$sampleTag.histogram.duplicates.tsv"))
+      }
   }
 
   def descriptionText: String =

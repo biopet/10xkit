@@ -55,7 +55,8 @@ class CellReadsTest extends ToolTest[Args] {
         "-o",
         outputFile.getAbsolutePath
       ))
-    new File(outputFile, s"$sampleTag.csv") should exist
-    new File(outputFile, s"$sampleTag.duplicates.csv") should exist
+    new File(outputFile, s"$sampleTag.tsv") should exist
+    new File(outputFile, s"$sampleTag.histogram.tsv") should exist
+    new File(outputFile, s"$sampleTag.histogram.duplicates.tsv") should exist
   }
 }
