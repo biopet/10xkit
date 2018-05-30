@@ -30,6 +30,9 @@ import org.testng.annotations.Test
 
 class TenxKitTest extends ToolTest[multi.Args] {
   def toolCommand: TenxKit.type = TenxKit
+
+  override def maxDescriptionWords = 500
+
   @Test
   def testNoArgs(): Unit = {
     intercept[IllegalArgumentException] {
