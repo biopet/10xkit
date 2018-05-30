@@ -71,24 +71,13 @@ object CalulateDistance extends ToolCommand[Args] {
       getVariants(cmdArgs, correctCells, correctCellsMap, dict)
     futures ++= variantFutures
 
-    val combinations = createCombinations(variants, cmdArgs.minAlleleCoverage)
-
-    (cmdArgs.method :: cmdArgs.additionalMethods).distinct.sorted
-      .foreach(
-        m =>
-          futures += combinationDistance(m,
-                                         cmdArgs.outputDir,
-                                         combinations,
-                                         correctCells)
-            .foreachAsync(
-              _.writeFile(new File(cmdArgs.outputDir, s"distance.$m.csv"))))
-
-    if (cmdArgs.writeScatters)
-      futures += writeScatters(cmdArgs.outputDir, combinations, correctCells)
-
-    futures += writeCountPositions(cmdArgs.outputDir,
-                                   combinations,
-                                   correctCells)
+    val result = totalRun(variants,
+                          cmdArgs.outputDir,
+                          correctCells,
+                          cmdArgs.minAlleleCoverage,
+                          cmdArgs.method,
+                          cmdArgs.additionalMethods,
+                          cmdArgs.writeScatters)
 
     Await.result(Future.sequence(futures), Duration.Inf)
 
@@ -123,6 +112,8 @@ object CalulateDistance extends ToolCommand[Args] {
 
     if (scatters)
       futures += writeScatters(outputDir, combinations, correctCells)
+
+    futures += writeCountPositions(outputDir, combinations, correctCells)
 
     Result(Future(rdd.first()), futures.toList)
   }
