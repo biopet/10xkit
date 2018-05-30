@@ -74,4 +74,31 @@ class SampleBaseTest extends BiopetTest {
     read.setReadUnmappedFlag(true)
     SampleBase.createBases(read) shouldBe Nil
   }
+
+  @Test
+  def testWrongCigars(): Unit = {
+    val seq = "AATTCCGGAA"
+    def bases(cigar: String) =
+      SampleBase.createBases(1,
+                             true,
+                             seq.getBytes,
+                             "AAAAAAAAAA".getBytes,
+                             cigar)
+
+    intercept[IllegalStateException] {
+      bases("3I1D3M1I3M")
+    }.getMessage shouldBe "Insertion without a base found, cigar start with I (or after the S/H)"
+
+    intercept[IllegalStateException] {
+      bases("3D3M1D3M1I3M")
+    }.getMessage shouldBe "Deletion without a base found, cigar start with D (or after the S/H)"
+
+    intercept[IllegalStateException] {
+      bases("3M1D3M1I2M")
+    }.getMessage shouldBe "Sequence is to long for cigar string"
+
+    intercept[IllegalStateException] {
+      bases("3M1D3M1I4M")
+    }.getMessage shouldBe "Sequence is to short for cigar string"
+  }
 }

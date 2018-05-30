@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.tenxkit.variantcalls
 
+import java.lang
+
 import htsjdk.samtools.{Cigar, CigarOperator, SAMRecord, TextCigarCodec}
 
 import scala.collection.mutable
@@ -65,6 +67,10 @@ object SampleBase {
 
     val referenceBuffer = mutable.Map[Int, SampleBase]()
     var refPos = start
+    if (cigar.getReadLength > sequence.length)
+      throw new IllegalStateException("Sequence is to short for cigar string")
+    if (cigar.getReadLength < sequence.length)
+      throw new IllegalStateException("Sequence is to long for cigar string")
     for (element <- cigar) {
       element.getOperator match {
         case CigarOperator.SOFT_CLIP | CigarOperator.S =>
@@ -107,7 +113,9 @@ object SampleBase {
             CigarOperator.P =>
       }
     }
-    require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
+    if (seqIt.hasNext)
+      throw new IllegalStateException(
+        "After cigar parsing sequence is not depleted")
     referenceBuffer.toList
   }
 }
