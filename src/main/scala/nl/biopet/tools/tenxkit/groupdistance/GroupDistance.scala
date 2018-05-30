@@ -115,7 +115,7 @@ object GroupDistance extends ToolCommand[Args] {
 
     val reNumberGroups = reNumberMap.map { m =>
       val map = sc.broadcast(m)
-      groups.map(x => x.copy(group = map(x.group)))
+      groups.map(x => x.copy(group = map.value(x.group)))
     }
 
     val writeFuture = reNumberGroups.map(g =>
