@@ -113,9 +113,6 @@ object SampleBase {
             CigarOperator.P =>
       }
     }
-    if (seqIt.hasNext)
-      throw new IllegalStateException(
-        "After cigar parsing sequence is not depleted")
     referenceBuffer.toList
   }
 }
