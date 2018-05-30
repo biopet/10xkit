@@ -34,21 +34,25 @@ import nl.biopet.utils.tool.multi.MultiToolCommand
 
 object TenxKit extends MultiToolCommand {
 
+  override def urlToolName = "10xkit"
+
   def subTools: Map[String, List[ToolCommand[_]]] =
     Map(
-      "Tools" -> List(SampleMatcher,
-                      CellReads,
-                      CellVariantcaller,
-                      CalulateDistance,
-                      GroupDistance,
-                      MergeBams,
-                      EvalSubGroups,
-                      ExtractGroupVariants))
+      "Tool" -> List(SampleMatcher,
+                     CellReads,
+                     CellVariantcaller,
+                     CalulateDistance,
+                     GroupDistance,
+                     MergeBams,
+                     EvalSubGroups,
+                     ExtractGroupVariants))
 
   def descriptionText: String = extendedDescriptionText
 
   def manualText: String = extendedManualText
 
   def exampleText: String = extendedExampleText
+
+  override def extendedUsage = true
 
 }
