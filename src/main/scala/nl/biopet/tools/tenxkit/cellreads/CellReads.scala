@@ -95,7 +95,7 @@ object CellReads extends ToolCommand[Args] {
         tsvWriter.println("Sample\tumi\tread")
         val histogramDuplicates = new Histogram[Long]()
         val histogram = new Histogram[Long]()
-        it.toList.groupBy(_._1._1).foreach {
+        it.toList.groupBy { case ((b, _), _) => b }.foreach {
           case (barcode, l) =>
             val m = l.map { case ((_, dup), count) => dup -> count }.toMap
             val d = m.getOrElse(true, 0L)
