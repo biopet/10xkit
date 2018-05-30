@@ -38,7 +38,7 @@ import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{FutureAction, SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -78,6 +78,7 @@ object CalulateDistance extends ToolCommand[Args] {
                           cmdArgs.method,
                           cmdArgs.additionalMethods,
                           cmdArgs.writeScatters)
+    result.writeFileFutures.foreach(futures += _)
 
     Await.result(Future.sequence(futures), Duration.Inf)
 
