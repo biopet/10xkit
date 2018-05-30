@@ -39,4 +39,7 @@ case class Args(inputFile: File = null,
                 method: String = "pow4",
                 additionalMethods: List[String] = Nil,
                 writeScatters: Boolean = false,
+                numIterations: Int = 20,
+                seed: Long = 0,
+                skipKmeans: Boolean = false,
                 sparkMaster: String = null)

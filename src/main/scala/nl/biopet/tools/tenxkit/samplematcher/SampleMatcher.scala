@@ -25,8 +25,9 @@ import java.io.File
 
 import htsjdk.samtools.SAMSequenceDictionary
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
+import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
 import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
+import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.fasta.getCachedDict
@@ -72,7 +73,11 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += calculateDistanceResult.flatMap(r =>
       Future.sequence(r.writeFileFutures))
 
-    //TODO: Add group distance
+    val distanceMatrix =
+      calculateDistanceResult.flatMap(_.distanceMatrix.map(sc.broadcast(_)))
+    val groupDistanceResult =
+      distanceMatrix.map(groupDistanceResults(cmdArgs, _, correctCells))
+    futures += groupDistanceResult.flatMap(_.writeFuture)
 
     //TODO: Add eval
 
@@ -118,6 +123,20 @@ object SampleMatcher extends ToolCommand[Args] {
       cmdArgs.additionalMethods,
       cmdArgs.writeScatters
     )
+  }
+
+  def groupDistanceResults(cmdArgs: Args,
+                           distanceMatrix: Broadcast[DistanceMatrix],
+                           correctCells: Broadcast[IndexedSeq[String]])(
+      implicit sc: SparkContext,
+      sparkSsession: SparkSession): GroupDistance.Result = {
+    GroupDistance.totalRun(distanceMatrix,
+                           new File(cmdArgs.outputDir, "groupdistance"),
+                           cmdArgs.expectedSamples,
+                           cmdArgs.numIterations,
+                           cmdArgs.seed,
+                           correctCells,
+                           cmdArgs.skipKmeans)
   }
 
   def descriptionText: String =

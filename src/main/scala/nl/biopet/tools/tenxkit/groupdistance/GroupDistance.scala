@@ -69,7 +69,8 @@ object GroupDistance extends ToolCommand[Args] {
                           cmdArgs.numClusters,
                           cmdArgs.numIterations,
                           cmdArgs.seed,
-                          correctCells)
+                          correctCells,
+                          cmdArgs.skipKmeans)
 
     Await.result(result.writeFuture, Duration.Inf)
 
@@ -91,7 +92,7 @@ object GroupDistance extends ToolCommand[Args] {
       implicit sc: SparkContext,
       sparkSession: SparkSession): Result = {
     val (initGroups, trashInit) =
-      initGroup(distanceMatrix, numClusters, seed, correctCells)
+      initGroup(distanceMatrix, numClusters, seed, correctCells, skipKmeans)
     initGroups.cache()
 
     val (groups, trash) = reCluster(
