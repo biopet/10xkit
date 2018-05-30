@@ -53,7 +53,6 @@ object GroupDistance extends ToolCommand[Args] {
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
-    import sparkSession.implicits._
     implicit val sc: SparkContext = sparkSession.sparkContext
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
@@ -65,52 +64,88 @@ object GroupDistance extends ToolCommand[Args] {
                                      cmdArgs.countMatrix))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
 
-    val (initGroups, trashInit): (RDD[GroupSample], RDD[Int]) =
-      if (cmdArgs.skipKmeans) {
-        (sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
-                        correctCells.value.length),
-         sc.emptyRDD)
-      } else {
-        val (vectorsRdd, trash) =
-          distanceMatrixToVectors(distanceMatrix.value, correctCells)
-        val vectors = vectorsRdd.toDF("sample", "features").cache()
+    val result = totalRun(distanceMatrix,
+                          cmdArgs.outputDir,
+                          cmdArgs.numClusters,
+                          cmdArgs.numIterations,
+                          cmdArgs.seed,
+                          correctCells)
 
-        val bkm = new BisectingKMeans()
-          .setK(cmdArgs.numClusters)
-          //.setMaxIter(cmdArgs.numIterations)
-          .setSeed(cmdArgs.seed)
+    Await.result(result.writeFuture, Duration.Inf)
 
-        val model = bkm.fit(vectors)
+    sparkSession.stop()
+    logger.info("Done")
+  }
 
-        // Predict cluster for each cell
-        (model
-           .transform(vectors)
-           .select("sample", "prediction")
-           .as[Prediction]
-           .rdd
-           .groupBy(_.prediction)
-           .repartition(cmdArgs.numClusters)
-           .map { case (group, list) => group -> list.map(_.sample) }
-           .flatMap { case (g, l) => l.map(GroupSample(g, _)) },
-         trash)
-      }
+  case class Result(groups: RDD[GroupSample],
+                    trash: RDD[Int],
+                    writeFuture: Future[_])
+
+  def totalRun(
+      distanceMatrix: Broadcast[DistanceMatrix],
+      outputDir: File,
+      numClusters: Int,
+      numIterations: Int,
+      seed: Long,
+      correctCells: Broadcast[IndexedSeq[String]],
+      skipKmeans: Boolean = false)(implicit sc: SparkContext): Result = {
+    val (initGroups, trashInit) =
+      initGroup(distanceMatrix, numClusters, seed, correctCells)
     initGroups.cache()
 
     val (groups, trash) = reCluster(
       initGroups,
       distanceMatrix,
-      cmdArgs.numClusters,
-      cmdArgs.numIterations,
+      numClusters,
+      numIterations,
       trashInit,
-      cmdArgs.outputDir,
+      outputDir,
       correctCells
     )
     sc.clearJobGroup()
 
-    writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
+    val writeFuture = Future(
+      writeGroups(groups.cache(), trash.cache(), outputDir, correctCells))
 
-    sparkSession.stop()
-    logger.info("Done")
+    Result(groups, trash, writeFuture)
+  }
+
+  def initGroup(distanceMatrix: Broadcast[DistanceMatrix],
+                numClusters: Int,
+                seed: Long,
+                correctCells: Broadcast[IndexedSeq[String]],
+                skipKmeans: Boolean = false)(
+      implicit sc: SparkContext,
+      sparkSession: SparkSession): (RDD[GroupSample], RDD[Int]) = {
+    import sparkSession.implicits._
+    if (skipKmeans) {
+      (sc.parallelize(correctCells.value.indices.map(i => GroupSample(1, i)),
+                      correctCells.value.length),
+       sc.emptyRDD)
+    } else {
+      val (vectorsRdd, trash) =
+        distanceMatrixToVectors(distanceMatrix.value, correctCells)
+      val vectors = vectorsRdd.toDF("sample", "features").cache()
+
+      val bkm = new BisectingKMeans()
+        .setK(numClusters)
+        //.setMaxIter(cmdArgs.numIterations)
+        .setSeed(seed)
+
+      val model = bkm.fit(vectors)
+
+      // Predict cluster for each cell
+      (model
+         .transform(vectors)
+         .select("sample", "prediction")
+         .as[Prediction]
+         .rdd
+         .groupBy(_.prediction)
+         .repartition(numClusters)
+         .map { case (group, list) => group -> list.map(_.sample) }
+         .flatMap { case (g, l) => l.map(GroupSample(g, _)) },
+       trash)
+    }
   }
 
   def writeGroups(groups: RDD[GroupSample],
