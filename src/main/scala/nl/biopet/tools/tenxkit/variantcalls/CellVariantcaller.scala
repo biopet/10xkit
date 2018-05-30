@@ -61,18 +61,13 @@ object CellVariantcaller extends ToolCommand[Args] {
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val cutoffs = sc.broadcast(cmdArgs.cutoffs)
-    val partitions = {
-      val x = cmdArgs.partitions.getOrElse(
-        (cmdArgs.inputFile.length() / 10000000).toInt)
-      if (x > 0) x else 1
-    }
 
     val result = totalRun(
       cmdArgs.inputFile,
       cmdArgs.outputDir,
       cmdArgs.reference,
       dict,
-      partitions,
+      getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
       cmdArgs.intervals,
       cmdArgs.sampleTag,
       cmdArgs.umiTag,
@@ -87,6 +82,14 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     sparkSession.stop()
     logger.info("Done")
+  }
+
+  def getPartitions(inputFile: File,
+                    partitions: Option[Int] = None,
+                    fileSizePerPartition: Int = 10000000): Int = {
+    val x =
+      partitions.getOrElse((inputFile.length() / fileSizePerPartition).toInt)
+    if (x > 0) x else 1
   }
 
   case class Result(filteredVariants: Future[RDD[VariantCall]],

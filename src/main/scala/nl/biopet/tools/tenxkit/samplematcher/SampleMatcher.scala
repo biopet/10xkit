@@ -21,10 +21,19 @@
 
 package nl.biopet.tools.tenxkit.samplematcher
 
+import htsjdk.samtools.SAMSequenceDictionary
+import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.TenxKit
+import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.tool.ToolCommand
+import nl.biopet.utils.ngs.fasta.getCachedDict
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
+
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object SampleMatcher extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -43,9 +52,15 @@ object SampleMatcher extends ToolCommand[Args] {
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    //TODO: Add CellReads
+    val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCellsFile)
+    val correctCellsMap = tenxkit.correctCellsMap(correctCells)
+    val dict = sc.broadcast(getCachedDict(cmdArgs.reference))
 
-    //TODO: Add variantcalling
+    val futures = new ListBuffer[Future[_]]()
+
+    val variantsResult =
+      variantResults(cmdArgs, correctCells, correctCellsMap, dict)
+    futures += variantsResult.totalFuture
 
     //TODO: Add calculate distance
 
@@ -53,8 +68,33 @@ object SampleMatcher extends ToolCommand[Args] {
 
     //TODO: Add eval
 
+    //TODO: Add CellReads
+
+    Await.result(Future.sequence(futures.toList), Duration.Inf)
+
     sparkSession.stop()
     logger.info("Done")
+  }
+
+  def variantResults(cmdArgs: Args,
+                     correctCells: Broadcast[IndexedSeq[String]],
+                     correctCellsMap: Broadcast[Map[String, Int]],
+                     dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): CellVariantcaller.Result = {
+    CellVariantcaller.totalRun(
+      cmdArgs.inputFile,
+      cmdArgs.outputDir,
+      cmdArgs.reference,
+      dict,
+      CellVariantcaller.getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
+      cmdArgs.intervals,
+      cmdArgs.sampleTag,
+      Some(cmdArgs.umiTag),
+      correctCells,
+      correctCellsMap,
+      sc.broadcast(cmdArgs.cutoffs),
+      cmdArgs.seqError
+    )
   }
 
   def descriptionText: String =

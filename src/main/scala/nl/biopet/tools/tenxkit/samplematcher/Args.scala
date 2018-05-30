@@ -23,9 +23,17 @@ package nl.biopet.tools.tenxkit.samplematcher
 
 import java.io.File
 
+import nl.biopet.tools.tenxkit.variantcalls.Cutoffs
+
 case class Args(inputFile: File = null,
                 correctCellsFile: File = null,
                 outputDir: File = null,
+                sampleTag: String = "CB",
+                umiTag: String = "UB",
+                partitions: Option[Int] = None,
                 expectedSamples: Int = -1,
                 reference: File = null,
+                intervals: Option[File] = None,
+                cutoffs: Cutoffs = Cutoffs(),
+                seqError: Float = 0.005f,
                 sparkMaster: String = null)
