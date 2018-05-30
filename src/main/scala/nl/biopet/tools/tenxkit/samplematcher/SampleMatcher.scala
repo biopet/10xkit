@@ -43,7 +43,15 @@ object SampleMatcher extends ToolCommand[Args] {
     logger.info(
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
-    //TODO: Make pipeline
+    //TODO: Add CellReads
+
+    //TODO: Add variantcalling
+
+    //TODO: Add calculate distance
+
+    //TODO: Add group distance
+
+    //TODO: Add eval
 
     sparkSession.stop()
     logger.info("Done")
