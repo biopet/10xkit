@@ -194,10 +194,9 @@ class VariantCallTest extends BiopetTest {
       .toList shouldBe Map(0 -> IndexedSeq(AlleleCount(1000),
                                            AlleleCount(1000),
                                            AlleleCount()),
-                           1 -> IndexedSeq(
-                             AlleleCount(1000),
-                             AlleleCount(1000),
-                             AlleleCount())).values.flatten.toList
+                           1 -> IndexedSeq(AlleleCount(1000),
+                                           AlleleCount(1000),
+                                           AlleleCount())).values.flatten.toList
   }
 
   @Test
