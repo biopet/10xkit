@@ -79,6 +79,8 @@ object SampleMatcher extends ToolCommand[Args] {
       distanceMatrix.map(groupDistanceResults(cmdArgs, _, correctCells))
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
+    //TODO: Extract group variants
+
     //TODO: Add eval
 
     //TODO: Add CellReads
@@ -94,9 +96,11 @@ object SampleMatcher extends ToolCommand[Args] {
                      correctCellsMap: Broadcast[Map[String, Int]],
                      dict: Broadcast[SAMSequenceDictionary])(
       implicit sc: SparkContext): CellVariantcaller.Result = {
+    val dir = new File(cmdArgs.outputDir, "variantcalling")
+    dir.mkdir()
     CellVariantcaller.totalRun(
       cmdArgs.inputFile,
-      new File(cmdArgs.outputDir, "variantcalling"),
+      dir,
       cmdArgs.reference,
       dict,
       CellVariantcaller.getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
@@ -114,9 +118,11 @@ object SampleMatcher extends ToolCommand[Args] {
                                variants: RDD[VariantCall],
                                correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext): CalulateDistance.Result = {
+    val dir = new File(cmdArgs.outputDir, "calculatedistance")
+    dir.mkdir()
     CalulateDistance.totalRun(
       variants,
-      new File(cmdArgs.outputDir, "calculatedistance"),
+      dir,
       correctCells,
       cmdArgs.cutoffs.minAlleleDepth,
       cmdArgs.method,
@@ -130,8 +136,10 @@ object SampleMatcher extends ToolCommand[Args] {
                            correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext,
       sparkSsession: SparkSession): GroupDistance.Result = {
+    val dir = new File(cmdArgs.outputDir, "groupdistance")
+    dir.mkdir()
     GroupDistance.totalRun(distanceMatrix,
-                           new File(cmdArgs.outputDir, "groupdistance"),
+                           dir,
                            cmdArgs.expectedSamples,
                            cmdArgs.numIterations,
                            cmdArgs.seed,
