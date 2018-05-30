@@ -60,8 +60,9 @@ object GroupDistance extends ToolCommand[Args] {
     logger.info("Reading input data")
     val distanceMatrix =
       sc.broadcast(
-        DistanceMatrix.fromFileSpark(cmdArgs.distanceMatrix,
-                                     cmdArgs.countMatrix))
+        DistanceMatrix
+          .fromFileSpark(cmdArgs.distanceMatrix, cmdArgs.countMatrix)
+          .collect()(0))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
 
     val result = totalRun(distanceMatrix,

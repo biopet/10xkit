@@ -23,8 +23,10 @@ package nl.biopet.tools.tenxkit
 
 import java.io.{File, PrintWriter}
 
+import nl.biopet.tools.tenxkit.calculatedistance.SampleCombinationKey
 import nl.biopet.utils.Logging
 import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
 import scala.io.Source
@@ -154,11 +156,12 @@ object DistanceMatrix extends Logging {
   }
 
   def fromFileSpark(file: File, countFile: Option[File] = None)(
-      implicit sc: SparkContext): DistanceMatrix = {
+      implicit sc: SparkContext): RDD[DistanceMatrix] = {
 
     val distanceLines =
       sc.textFile(file.getAbsolutePath, 200).map(_.split("\t"))
-    val samples = distanceLines.first().tail
+    val samples: Broadcast[IndexedSeq[String]] =
+      sc.broadcast(distanceLines.first().tail.toIndexedSeq)
     val distances = distanceLines
       .zipWithIndex()
       .filter { case (_, idx) => idx != 0L }
@@ -168,56 +171,65 @@ object DistanceMatrix extends Logging {
             .flatMap {
               case (v, s2) =>
                 if (v == ".") None
-                else Some((s1.toInt - 1, s2) -> v.toDouble)
+                else Some(SampleCombinationKey(s1.toInt - 1, s2) -> v.toDouble)
             }
       }
     val dist = countFile match {
       case Some(cFile) =>
-        val countLines = sc
-          .textFile(cFile.getAbsolutePath, 200)
-          .map(_.split("\t"))
-        require(countLines.first().tail sameElements samples,
-                "Samples in count file are not the same as the distance matrix")
-        val counts = countLines
-          .zipWithIndex()
-          .filter { case (_, idx) => idx != 0L }
-          .flatMap {
-            case (values, s1) =>
-              values.tail.zipWithIndex
-                .flatMap {
-                  case (v, s2) =>
-                    if (v == ".") None
-                    else Some((s1.toInt - 1, s2) -> v.toInt)
-                }
-          }
-        distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
+        correctDistances(distances, countMatrixToRDD(cFile, samples))
       case _ => distances
     }
     rddToMatrix(dist, samples)
   }
 
-  def rddToMatrix(rdd: RDD[((Int, Int), Double)],
-                  samples: IndexedSeq[String]): DistanceMatrix = {
+  def countMatrixToRDD(file: File, samples: Broadcast[IndexedSeq[String]])(
+      implicit sc: SparkContext): RDD[(SampleCombinationKey, Int)] = {
+    val countLines = sc
+      .textFile(file.getAbsolutePath, 200)
+      .map(_.split("\t"))
+    require(countLines.first().tail sameElements samples.value,
+            "Samples in count file are not the same as the distance matrix")
+    countLines
+      .zipWithIndex()
+      .filter { case (_, idx) => idx != 0L }
+      .flatMap {
+        case (values, s1) =>
+          values.tail.zipWithIndex
+            .flatMap {
+              case (v, s2) =>
+                if (v == ".") None
+                else Some(SampleCombinationKey(s1.toInt - 1, s2) -> v.toInt)
+            }
+      }
+  }
+
+  def correctDistances(distances: RDD[(SampleCombinationKey, Double)],
+                       counts: RDD[(SampleCombinationKey, Int)])
+    : RDD[(SampleCombinationKey, Double)] = {
+    distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
+  }
+
+  def rddToMatrix(
+      rdd: RDD[(SampleCombinationKey, Double)],
+      samples: Broadcast[IndexedSeq[String]]): RDD[DistanceMatrix] = {
     rdd
-      .groupBy { case ((x, _), _) => x }
+      .groupBy { case (x, _) => x.sample1 }
       .map {
         case (rowId, row) =>
-          val map = row.map { case ((_, columnId), value) => columnId -> value }.toMap
-          rowId -> samples.indices.map(map.get)
+          val map = row.map { case (x, value) => x.sample2 -> value }.toMap
+          rowId -> samples.value.indices.map(map.get)
       }
       .repartition(1)
       .mapPartitions { it =>
         val map = it.toMap
         Iterator(
-          DistanceMatrix(samples.indices
+          DistanceMatrix(samples.value.indices
                            .map(
                              map
                                .getOrElse(_,
                                           IndexedSeq.fill[Option[Double]](
-                                            samples.length)(None))),
-                         samples))
+                                            samples.value.length)(None))),
+                         samples.value))
       }
-      .first()
-
   }
 }

@@ -125,8 +125,8 @@ class DistanceMatrixTest extends BiopetTest {
     val matrix3 = DistanceMatrix.fromFileSpark(outputFile)
 
     for (s1 <- 0 to 3; s2 <- 0 to 3) {
-      matrix(s1, s2) shouldBe matrix3(s1, s2)
-      matrix2(s1, s2) shouldBe matrix3(s1, s2)
+      matrix(s1, s2) shouldBe matrix3.first()(s1, s2)
+      matrix2(s1, s2) shouldBe matrix3.first()(s1, s2)
     }
 
     matrix3 shouldBe matrix
@@ -153,8 +153,8 @@ class DistanceMatrixTest extends BiopetTest {
     val matrix3 = DistanceMatrix.fromFileSpark(outputFile, Some(countFile))
 
     for (s1 <- 0 to 3; s2 <- 0 to 3) {
-      correct(s1, s2) shouldBe matrix3(s1, s2)
-      matrix2(s1, s2) shouldBe matrix3(s1, s2)
+      correct(s1, s2) shouldBe matrix3.first()(s1, s2)
+      matrix2(s1, s2) shouldBe matrix3.first()(s1, s2)
     }
 
     matrix3 shouldBe correct

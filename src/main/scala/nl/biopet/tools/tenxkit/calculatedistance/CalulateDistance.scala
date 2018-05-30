@@ -86,7 +86,8 @@ object CalulateDistance extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  case class Result(distanceMatrix: Future[File],
+  case class Result(distanceMatrix: Future[DistanceMatrix],
+                    distanceMatrixFile: Future[File],
                     countFile: Future[File],
                     writeFileFutures: List[Future[Any]])
 
@@ -100,33 +101,51 @@ object CalulateDistance extends ToolCommand[Args] {
     val futures = new ListBuffer[Future[_]]()
     val combinations = createCombinations(variants, minAlleleCoverage)
 
-    val distanceFile =
+    val distances =
       combinationDistance(method, outputDir, combinations, correctCells)
-        .map { x =>
-          val outputFile = new File(outputDir, s"distance.$method.csv")
-          x.writeFile(outputFile)
-          outputFile
-        }
-        .collectAsync()
-        .map(_(0))
-
-    futures += distanceFile
+    val counts = countPositionsRdd(combinations)
+    val correctedDistances = DistanceMatrix.correctDistances(distances, counts)
+    val correctedDistancesMatrix =
+      DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
+    val correctedDistancesMatrixFile = correctedDistancesMatrix
+      .map { x =>
+        val outputFile = new File(outputDir, s"distance.corrected.$method.csv")
+        x.writeFile(outputFile)
+        outputFile
+      }
+      .collectAsync()
+      .map(_(0))
+    futures += DistanceMatrix
+      .rddToMatrix(distances, correctCells)
+      .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.csv")))
 
     additionalMethods
       .filter(_ != method)
       .distinct
       .sorted
-      .foreach(m =>
-        futures += combinationDistance(m, outputDir, combinations, correctCells)
-          .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv"))))
+      .foreach { m =>
+        val distances =
+          combinationDistance(m, outputDir, combinations, correctCells)
+        futures += DistanceMatrix
+          .rddToMatrix(distances, correctCells)
+          .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv")))
+        futures += DistanceMatrix
+          .rddToMatrix(DistanceMatrix.correctDistances(distances, counts),
+                       correctCells)
+          .foreachAsync(
+            _.writeFile(new File(outputDir, s"distance.corrected.$m.csv")))
+      }
 
     if (scatters)
       futures += writeScatters(outputDir, combinations, correctCells)
 
-    val countFile = writeCountPositions(outputDir, combinations, correctCells)
+    val countFile = writeCountPositions(outputDir, counts, correctCells)
     futures += countFile
 
-    Result(distanceFile, countFile, futures.toList)
+    Result(correctedDistancesMatrix.collectAsync().map(_(0)),
+           correctedDistancesMatrixFile,
+           countFile,
+           futures.toList)
   }
 
   def combinationDistance(
@@ -134,7 +153,7 @@ object CalulateDistance extends ToolCommand[Args] {
       outputDir: File,
       combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
       correctCells: Broadcast[IndexedSeq[String]])(
-      implicit sc: SparkContext): RDD[DistanceMatrix] = {
+      implicit sc: SparkContext): RDD[(SampleCombinationKey, Double)] = {
     val method = sc.broadcast(Method.fromString(methodString))
     combinations
       .map {
@@ -142,27 +161,6 @@ object CalulateDistance extends ToolCommand[Args] {
           key -> alleleDepts
             .map(x => method.value.calculate(x.ad1, x.ad2))
             .sum
-      }
-      .groupBy { case (key, _) => key.sample1 }
-      .map {
-        case (s1, list) =>
-          val map = list.groupBy { case (key, _) => key.sample2 }.map {
-            case (key, l) =>
-              key -> l.headOption.map { case (_, d) => d }.getOrElse(0.0)
-          }
-          s1 -> (for (s2 <- correctCells.value.indices.toArray) yield {
-            map.get(s2)
-          })
-      }
-      .repartition(1)
-      .mapPartitions { it =>
-        val map = it.toMap
-        val values = for (s1 <- correctCells.value.indices) yield {
-          for (s2 <- correctCells.value.indices) yield {
-            map.get(s1).flatMap(_.lift(s2)).flatten
-          }
-        }
-        Iterator(DistanceMatrix(values, correctCells.value))
       }
   }
 
@@ -183,12 +181,18 @@ object CalulateDistance extends ToolCommand[Args] {
       .groupByKey()
   }
 
-  def writeCountPositions(
-      outputDir: File,
-      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
-      correctCells: Broadcast[IndexedSeq[String]]): Future[File] = {
+  def countPositionsRdd(
+      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])])
+    : RDD[(SampleCombinationKey, Int)] = {
     combinations
       .map { case (key, list) => key -> list.size }
+  }
+
+  def writeCountPositions(
+      outputDir: File,
+      counts: RDD[(SampleCombinationKey, Int)],
+      correctCells: Broadcast[IndexedSeq[String]]): Future[File] = {
+    counts
       .groupBy { case (key, _) => key.sample1 }
       .map {
         case (s1, list) =>
