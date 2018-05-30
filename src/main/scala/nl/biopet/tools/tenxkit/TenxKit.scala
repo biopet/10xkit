@@ -27,6 +27,7 @@ import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
 import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
 import nl.biopet.tools.tenxkit.mergebams.MergeBams
+import nl.biopet.tools.tenxkit.samplematcher.SampleMatcher
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.tool.multi.MultiToolCommand
@@ -35,7 +36,8 @@ object TenxKit extends MultiToolCommand {
 
   def subTools: Map[String, List[ToolCommand[_]]] =
     Map(
-      "Tools" -> List(CellReads,
+      "Tools" -> List(SampleMatcher,
+                      CellReads,
                       CellVariantcaller,
                       CalulateDistance,
                       GroupDistance,

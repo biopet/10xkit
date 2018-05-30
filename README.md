@@ -1,6 +1,14 @@
 # TenxKit
 
 
+#### Tools - SampleMatcher
+
+This tool will try to find a given number of clusters based on variant data per cell.
+
+In this tools multiple module from the biopet 10x kit is executed in memory.
+    
+        
+
 #### Tools - CellReads
 
 This tool will generate a histogram of reads per cell barcode.
