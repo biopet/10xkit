@@ -66,7 +66,9 @@ class ArgsParserTest extends BiopetTest {
         "100",
         "--skipKmeans",
         "--seed",
-        "1234"
+        "1234",
+        "--minSampleDepth",
+        "20"
       ))
     cmdArgs.inputFile shouldBe new File("file.bam")
     cmdArgs.reference shouldBe new File("reference.fasta")
@@ -87,5 +89,6 @@ class ArgsParserTest extends BiopetTest {
     cmdArgs.numIterations shouldBe 100
     cmdArgs.skipKmeans shouldBe true
     cmdArgs.seed shouldBe 1234L
+    cmdArgs.cutoffs.minSampleDepth shouldBe 20
   }
 }

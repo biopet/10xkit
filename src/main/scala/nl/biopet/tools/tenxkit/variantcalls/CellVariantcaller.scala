@@ -128,24 +128,32 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
 
+    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
     val filteredVariants =
-      filterVariants(allVariants, seqError, cutoffs).map(_.cache())
+      filterVariants(allVariants, seqError, cutoffs).map(
+        _.sortBy(x => (x.contig, x.pos)).cache())
 
     val writeFilterVcfFuture =
-      if (writeFilteredVcf) Some(filteredVariants.map { rdd =>
-        VariantCall.writeToPartitionedVcf(
-          rdd.cache().sortBy(x => (x.contig, x.pos), numPartitions = 200),
-          new File(outputDir, "filter-vcf"),
-          correctCells,
-          dict,
-          vcfHeader,
-          seqError)
-      })
-      else None
+      if (writeFilteredVcf) {
+        val x = Some(filteredVariants.map { rdd =>
+          Thread.sleep(1000)
+          sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+          VariantCall.writeToPartitionedVcf(
+            rdd.sortBy(x => (x.contig, x.pos), numPartitions = 200),
+            new File(outputDir, "filter-vcf"),
+            correctCells,
+            dict,
+            vcfHeader,
+            seqError)
+        })
+        x
+      } else None
 
     val writeAllVcfFuture = {
-      if (writeRawVcf) Some(Future {
-        VariantCall.writeToPartitionedVcf(allVariants.cache(),
+      if (writeRawVcf) Some(Future[Unit] {
+        Thread.sleep(1000)
+        sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+        VariantCall.writeToPartitionedVcf(allVariants,
                                           new File(outputDir, "raw-vcf"),
                                           correctCells,
                                           dict,

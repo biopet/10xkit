@@ -107,6 +107,10 @@ object CalulateDistance extends ToolCommand[Args] {
     val correctedDistances = DistanceMatrix.correctDistances(distances, counts)
     val correctedDistancesMatrix =
       DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
+    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+    val matrix = correctedDistancesMatrix.collectAsync().map(_(0))
+
+    sc.setLocalProperty("spark.scheduler.pool", "low-prio")
     val correctedDistancesMatrixFile = correctedDistancesMatrix
       .map { x =>
         val outputFile = new File(outputDir, s"distance.corrected.$method.csv")
@@ -142,10 +146,7 @@ object CalulateDistance extends ToolCommand[Args] {
     val countFile = writeCountPositions(outputDir, counts, correctCells)
     futures += countFile
 
-    Result(correctedDistancesMatrix.collectAsync().map(_(0)),
-           correctedDistancesMatrixFile,
-           countFile,
-           futures.toList)
+    Result(matrix, correctedDistancesMatrixFile, countFile, futures.toList)
   }
 
   def combinationDistance(

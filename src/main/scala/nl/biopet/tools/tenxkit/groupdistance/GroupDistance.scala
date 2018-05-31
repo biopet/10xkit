@@ -92,6 +92,8 @@ object GroupDistance extends ToolCommand[Args] {
                skipKmeans: Boolean = false)(
       implicit sc: SparkContext,
       sparkSession: SparkSession): Result = {
+    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+
     val (initGroups, trashInit) =
       initGroup(distanceMatrix, numClusters, seed, correctCells, skipKmeans)
     initGroups.cache()

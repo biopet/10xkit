@@ -40,6 +40,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
@@ -89,10 +90,23 @@ object CellReads extends ToolCommand[Args] {
       val regions = it.toList.flatten
       val reader = SamReaderFactory.makeDefault().open(bamFile)
       val intervals = regions
-        .map(r =>
-          new QueryInterval(dict.value.getSequenceIndex(r.chr), r.start, r.end))
-        .toArray
+        .map(
+          r =>
+            new QueryInterval(dict.value.getSequenceIndex(r.chr),
+                              r.start + 1,
+                              r.end))
         .sortBy(x => (x.referenceIndex, x.start))
+        .foldLeft(ListBuffer[QueryInterval]()) {
+          case (a, b) =>
+            a.lastOption match {
+              case Some(l)
+                  if l.referenceIndex == b.referenceIndex && l.end + 1 == b.start =>
+                a -= l
+                a += new QueryInterval(l.referenceIndex, l.start, b.end)
+              case _ => a += b
+            }
+        }
+        .toArray
       reader.query(intervals, false)
     }
 

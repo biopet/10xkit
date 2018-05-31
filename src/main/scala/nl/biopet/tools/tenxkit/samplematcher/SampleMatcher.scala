@@ -35,6 +35,7 @@ import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.fasta.getCachedDict
+import nl.biopet.utils.io.resourceToFile
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -54,8 +55,15 @@ object SampleMatcher extends ToolCommand[Args] {
 
     logger.info("Start")
 
+    val resourceFile = File.createTempFile("samplematcher.", ".xml")
+    resourceToFile("/nl/biopet/tools/tenxkit/spark-scheduling.xml",
+                   resourceFile)
     val sparkConf: SparkConf =
-      new SparkConf(true).setMaster(cmdArgs.sparkMaster)
+      new SparkConf(true)
+        .setMaster(cmdArgs.sparkMaster)
+        .set("spark.scheduler.mode", "FAIR")
+        .set("spark.scheduler.allocation.file", resourceFile.getAbsolutePath)
+
     implicit val sparkSession: SparkSession =
       SparkSession.builder().config(sparkConf).getOrCreate()
     implicit val sc: SparkContext = sparkSession.sparkContext
@@ -68,12 +76,15 @@ object SampleMatcher extends ToolCommand[Args] {
 
     val futures = new ListBuffer[Future[Any]]()
 
+    sc.setJobGroup("Variant calling", "Variant calling")
     val variantsResult =
       runVariant(cmdArgs, correctCells, correctCellsMap, dict)
     futures += variantsResult.totalFuture
 
-    val calculateDistanceResult = variantsResult.filteredVariants.map(v =>
-      runCalculateDistance(cmdArgs, v, correctCells))
+    val calculateDistanceResult = variantsResult.filteredVariants.map { v =>
+      sc.setJobGroup("Calculate distance", "Calculate distance")
+      runCalculateDistance(cmdArgs, v, correctCells)
+    }
     futures += calculateDistanceResult.flatMap(r =>
       Future.sequence(r.writeFileFutures))
 
@@ -81,12 +92,16 @@ object SampleMatcher extends ToolCommand[Args] {
       calculateDistanceResult.flatMap(_.distanceMatrix).map(sc.broadcast(_))
 
     val groupDistanceResult =
-      distanceMatrix.map(runGroupDistance(cmdArgs, _, correctCells))
+      distanceMatrix.map { x =>
+        sc.setJobGroup("Group distance", "Group distance")
+        runGroupDistance(cmdArgs, x, correctCells)
+      }
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
     val extractGroupVariantsResult =
       variantsResult.filteredVariants.zip(groupDistanceResult).flatMap {
         case (v, g) =>
+          sc.setJobGroup("Extract group variants", "Extract group variants")
           runExtractGroupVariants(cmdArgs, v, g.groups, g.trash, dict)
       }
     futures += extractGroupVariantsResult.flatMap(x =>
@@ -94,11 +109,17 @@ object SampleMatcher extends ToolCommand[Args] {
 
     futures += groupDistanceResult.zip(distanceMatrix).flatMap {
       case (g, d) =>
+        sc.setJobGroup("Eval sub groups", "Eval sub groups")
+
         Future.sequence(
           runEvalSubGroups(cmdArgs, g.groups, g.trash, correctCells, d))
     }
 
+    sc.clearJobGroup()
+
+    sc.setLocalProperty("spark.scheduler.pool", "low-prio")
     futures += runCellReads(cmdArgs, dict)
+    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
 
     //TODO: Extract bam files
 
@@ -120,7 +141,10 @@ object SampleMatcher extends ToolCommand[Args] {
       dir,
       cmdArgs.reference,
       dict,
-      CellVariantcaller.getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
+      CellVariantcaller.getPartitions(
+        cmdArgs.inputFile,
+        cmdArgs.partitions,
+        fileSizePerPartition = cmdArgs.fileBinSize),
       cmdArgs.intervals,
       cmdArgs.sampleTag,
       Some(cmdArgs.umiTag),
@@ -193,6 +217,8 @@ object SampleMatcher extends ToolCommand[Args] {
       implicit sc: SparkContext): List[Future[Unit]] = {
     val evalGroupDir = new File(cmdArgs.outputDir, "evalsubgroups")
     evalGroupDir.mkdir()
+    sc.setLocalProperty("spark.scheduler.pool", null)
+
     val nameGroups = groups
       .groupBy(_.group)
       .map {
@@ -220,6 +246,8 @@ object SampleMatcher extends ToolCommand[Args] {
       implicit sc: SparkContext): Future[Unit] = {
     val dir = new File(cmdArgs.outputDir, "cellreads")
     dir.mkdir()
+    sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+
     CellReads.runTotal(cmdArgs.inputFile,
                        cmdArgs.reference,
                        dir,

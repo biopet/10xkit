@@ -87,6 +87,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
                minSampleDepth: Int,
                dict: Broadcast[SAMSequenceDictionary])(
       implicit sc: SparkContext): Results = {
+    sc.setLocalProperty("spark.scheduler.pool", null)
     val groupCalls = variants
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
