@@ -67,11 +67,11 @@ object SampleMatcher extends ToolCommand[Args] {
     val futures = new ListBuffer[Future[Any]]()
 
     val variantsResult =
-      variantResults(cmdArgs, correctCells, correctCellsMap, dict)
+      runVariant(cmdArgs, correctCells, correctCellsMap, dict)
     futures += variantsResult.totalFuture
 
     val calculateDistanceResult = variantsResult.filteredVariants.map(v =>
-      calculateDistanceResults(cmdArgs, v, correctCells))
+      runCalculateDistance(cmdArgs, v, correctCells))
     futures += calculateDistanceResult.flatMap(r =>
       Future.sequence(r.writeFileFutures))
 
@@ -79,13 +79,13 @@ object SampleMatcher extends ToolCommand[Args] {
       calculateDistanceResult
         .flatMap(_.distanceMatrix)
         .map(sc.broadcast(_))
-        .map(groupDistanceResults(cmdArgs, _, correctCells))
+        .map(runGroupDistance(cmdArgs, _, correctCells))
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
     val extractGroupVariantsResult =
       variantsResult.filteredVariants.zip(groupDistanceResult).flatMap {
         case (v, g) =>
-          extractGroupVariantsResults(cmdArgs, v, g.groups, g.trash, dict)
+          runExtractGroupVariants(cmdArgs, v, g.groups, g.trash, dict)
       }
     futures += extractGroupVariantsResult.flatMap(x =>
       Future.sequence(x.futures))
@@ -102,10 +102,10 @@ object SampleMatcher extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  def variantResults(cmdArgs: Args,
-                     correctCells: Broadcast[IndexedSeq[String]],
-                     correctCellsMap: Broadcast[Map[String, Int]],
-                     dict: Broadcast[SAMSequenceDictionary])(
+  def runVariant(cmdArgs: Args,
+                 correctCells: Broadcast[IndexedSeq[String]],
+                 correctCellsMap: Broadcast[Map[String, Int]],
+                 dict: Broadcast[SAMSequenceDictionary])(
       implicit sc: SparkContext): CellVariantcaller.Result = {
     val dir = new File(cmdArgs.outputDir, "variantcalling")
     dir.mkdir()
@@ -125,9 +125,9 @@ object SampleMatcher extends ToolCommand[Args] {
     )
   }
 
-  def calculateDistanceResults(cmdArgs: Args,
-                               variants: RDD[VariantCall],
-                               correctCells: Broadcast[IndexedSeq[String]])(
+  def runCalculateDistance(cmdArgs: Args,
+                           variants: RDD[VariantCall],
+                           correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext): CalulateDistance.Result = {
     val dir = new File(cmdArgs.outputDir, "calculatedistance")
     dir.mkdir()
@@ -142,9 +142,9 @@ object SampleMatcher extends ToolCommand[Args] {
     )
   }
 
-  def groupDistanceResults(cmdArgs: Args,
-                           distanceMatrix: Broadcast[DistanceMatrix],
-                           correctCells: Broadcast[IndexedSeq[String]])(
+  def runGroupDistance(cmdArgs: Args,
+                       distanceMatrix: Broadcast[DistanceMatrix],
+                       correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext,
       sparkSsession: SparkSession): GroupDistance.Result = {
     val dir = new File(cmdArgs.outputDir, "groupdistance")
@@ -158,11 +158,11 @@ object SampleMatcher extends ToolCommand[Args] {
                            cmdArgs.skipKmeans)
   }
 
-  def extractGroupVariantsResults(cmdArgs: Args,
-                                  variants: RDD[VariantCall],
-                                  groups: RDD[GroupSample],
-                                  trash: RDD[Int],
-                                  dict: Broadcast[SAMSequenceDictionary])(
+  def runExtractGroupVariants(cmdArgs: Args,
+                              variants: RDD[VariantCall],
+                              groups: RDD[GroupSample],
+                              trash: RDD[Int],
+                              dict: Broadcast[SAMSequenceDictionary])(
       implicit sc: SparkContext): Future[ExtractGroupVariants.Results] = {
 
     val groupMap =
