@@ -42,4 +42,5 @@ case class Args(inputFile: File = null,
                 numIterations: Int = 20,
                 seed: Long = 0,
                 skipKmeans: Boolean = false,
+                knownTrue: Map[String, File] = Map(),
                 sparkMaster: String = null)

@@ -81,7 +81,7 @@ object EvalSubGroups extends ToolCommand[Args] {
     }
   }
 
-  private def calculateRecallPrecision(
+  protected[tenxkit] def calculateRecallPrecision(
       knownTrueFile: Map[String, File],
       outputDir: File,
       groups: Map[String, List[String]]): Unit = {
@@ -128,7 +128,14 @@ object EvalSubGroups extends ToolCommand[Args] {
                          outputDir: File,
                          groups: Map[String, List[String]]): Unit = {
     logger.info("Start reading distance matrix")
-    val distanceMatrix = DistanceMatrix.fromFile(distanceMatrixFile)
+    evalDistanceMatrix(DistanceMatrix.fromFile(distanceMatrixFile),
+                       outputDir,
+                       groups)
+  }
+
+  def evalDistanceMatrix(distanceMatrix: DistanceMatrix,
+                         outputDir: File,
+                         groups: Map[String, List[String]]): Unit = {
 
     val sampleMap = distanceMatrix.samples.zipWithIndex.toMap
     val idxGroups = groups.map {

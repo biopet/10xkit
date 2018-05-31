@@ -110,6 +110,12 @@ class ArgsParser(toolCommand: ToolCommand[Args])
   opt[Long]("seed")
     .action((x, c) => c.copy(seed = x))
     .text(s"Random seed, default ${Args().seed}")
+  opt[(String, File)]('k', "knownTrue")
+    .action {
+      case ((id, file), c) => c.copy(knownTrue = c.knownTrue + (id -> file))
+    }
+    .unbounded()
+    .text("Known true samples")
   opt[String]("sparkMaster")
     .required()
     .action((x, c) => c.copy(sparkMaster = x))

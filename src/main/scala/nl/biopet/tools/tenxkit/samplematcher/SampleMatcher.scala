@@ -27,6 +27,7 @@ import htsjdk.samtools.SAMSequenceDictionary
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
 import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
+import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
 import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
@@ -36,7 +37,7 @@ import nl.biopet.utils.ngs.fasta.getCachedDict
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{FutureAction, SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
@@ -75,11 +76,11 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += calculateDistanceResult.flatMap(r =>
       Future.sequence(r.writeFileFutures))
 
+    val distanceMatrix =
+      calculateDistanceResult.flatMap(_.distanceMatrix).map(sc.broadcast(_))
+
     val groupDistanceResult =
-      calculateDistanceResult
-        .flatMap(_.distanceMatrix)
-        .map(sc.broadcast(_))
-        .map(runGroupDistance(cmdArgs, _, correctCells))
+      distanceMatrix.map(runGroupDistance(cmdArgs, _, correctCells))
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
     val extractGroupVariantsResult =
@@ -90,10 +91,13 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += extractGroupVariantsResult.flatMap(x =>
       Future.sequence(x.futures))
 
+    futures += groupDistanceResult.zip(distanceMatrix).flatMap {
+      case (g, d) =>
+        Future.sequence(
+          runEvalSubGroups(cmdArgs, g.groups, g.trash, correctCells, d))
+    }
+
     //TODO: Extract bam files
-
-    //TODO: Add eval
-
     //TODO: Add CellReads
 
     Await.result(Future.sequence(futures.toList), Duration.Inf)
@@ -177,6 +181,37 @@ object SampleMatcher extends ToolCommand[Args] {
     groupMap.map(
       ExtractGroupVariants
         .totalRun(variants, _, dir, cmdArgs.cutoffs.minSampleDepth, dict))
+  }
+
+  def runEvalSubGroups(cmdArgs: Args,
+                       groups: RDD[GroupSample],
+                       trash: RDD[Int],
+                       correctCells: Broadcast[IndexedSeq[String]],
+                       distanceMatrix: Broadcast[DistanceMatrix])(
+      implicit sc: SparkContext): List[Future[Unit]] = {
+    val evalGroupDir = new File(cmdArgs.outputDir, "evalsubgroups")
+    evalGroupDir.mkdir()
+    val nameGroups = groups
+      .groupBy(_.group)
+      .map {
+        case (group, samples) =>
+          s"cluster.$group" -> samples
+            .map(g => correctCells.value(g.sample))
+            .toList
+      }
+      .repartition(1)
+      .mapPartitions(x => Iterator(x.toMap))
+    val distanceEval = nameGroups.foreachAsync(
+      EvalSubGroups.evalDistanceMatrix(distanceMatrix.value, evalGroupDir, _))
+
+    val knownTrue =
+      if (cmdArgs.knownTrue.nonEmpty)
+        Some(
+          nameGroups.foreachAsync(EvalSubGroups
+            .calculateRecallPrecision(cmdArgs.knownTrue, evalGroupDir, _)))
+      else None
+
+    distanceEval :: knownTrue.toList
   }
 
   def descriptionText: String =
