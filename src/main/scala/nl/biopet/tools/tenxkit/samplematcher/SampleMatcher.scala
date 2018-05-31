@@ -27,7 +27,9 @@ import htsjdk.samtools.SAMSequenceDictionary
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
 import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
+import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
+import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.fasta.getCachedDict
@@ -80,7 +82,13 @@ object SampleMatcher extends ToolCommand[Args] {
         .map(groupDistanceResults(cmdArgs, _, correctCells))
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
-    //TODO: Extract group variants
+    val extractGroupVariantsResult =
+      variantsResult.filteredVariants.zip(groupDistanceResult).flatMap {
+        case (v, g) =>
+          extractGroupVariantsResults(cmdArgs, v, g.groups, g.trash, dict)
+      }
+    futures += extractGroupVariantsResult.flatMap(x =>
+      Future.sequence(x.futures))
 
     //TODO: Extract bam files
 
@@ -148,6 +156,27 @@ object SampleMatcher extends ToolCommand[Args] {
                            cmdArgs.seed,
                            correctCells,
                            cmdArgs.skipKmeans)
+  }
+
+  def extractGroupVariantsResults(cmdArgs: Args,
+                                  variants: RDD[VariantCall],
+                                  groups: RDD[GroupSample],
+                                  trash: RDD[Int],
+                                  dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): Future[ExtractGroupVariants.Results] = {
+
+    val groupMap =
+      (groups.map(g => g.sample -> s"cluster.${g.group}") ++ trash.map(
+        _ -> "trash"))
+        .collectAsync()
+        .map(_.toMap)
+        .map(sc.broadcast(_))
+
+    val dir = new File(cmdArgs.outputDir, "extractgroupvariants")
+    dir.mkdir()
+    groupMap.map(
+      ExtractGroupVariants
+        .totalRun(variants, _, dir, cmdArgs.cutoffs.minSampleDepth, dict))
   }
 
   def descriptionText: String =

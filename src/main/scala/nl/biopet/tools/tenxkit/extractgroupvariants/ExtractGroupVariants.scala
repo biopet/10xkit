@@ -64,8 +64,6 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     val groupsMap = sc.broadcast(groups.value.flatMap {
       case (k, l) => l.map(_ -> k)
     })
-    val vcfHeader =
-      sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toIndexedSeq))
 
     val variants = VariantCall
       .fromVcfFile(cmdArgs.inputVcfFile, dict, correctCellsMap, 1000000)
@@ -74,8 +72,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
                            groupsMap,
                            cmdArgs.outputDir,
                            cmdArgs.minSampleDepth,
-                           dict,
-                           vcfHeader)
+                           dict)
 
     Await.result(Future.sequence(results.futures), Duration.Inf)
     sparkSession.stop()
@@ -84,16 +81,19 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
   case class Results(groupsCalls: RDD[GroupCall], futures: List[Future[Any]])
 
-  def totalRun(
-      variants: RDD[VariantCall],
-      groupsMap: Broadcast[Map[Int, String]],
-      outputDir: File,
-      minSampleDepth: Int,
-      dict: Broadcast[SAMSequenceDictionary],
-      vcfHeader: Broadcast[VCFHeader])(implicit sc: SparkContext): Results = {
+  def totalRun(variants: RDD[VariantCall],
+               groupsMap: Broadcast[Map[Int, String]],
+               outputDir: File,
+               minSampleDepth: Int,
+               dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): Results = {
     val groupCalls = variants
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
+
+    val vcfHeader =
+      sc.broadcast(
+        tenxkit.vcfHeader(groupsMap.value.values.toList.distinct.toIndexedSeq))
 
     val filterGroupCalls = filterGroupCall(groupCalls, minSampleDepth)
 

@@ -31,7 +31,8 @@ package object variantcalls {
                      minAlleleDepth: Int = 5,
                      minTotalDepth: Int = 5,
                      minBaseQual: Byte = '*'.toByte,
-                     maxPvalue: Float = 0.05f)
+                     maxPvalue: Float = 0.05f,
+                     minSampleDepth: Int = 50)
 
   case class PositionBases(
       samples: mutable.Map[Int, mutable.Map[SampleAllele, AlleleCount]] =
