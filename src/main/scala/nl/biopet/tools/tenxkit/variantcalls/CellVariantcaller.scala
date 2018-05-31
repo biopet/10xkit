@@ -131,7 +131,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     sc.setLocalProperty("spark.scheduler.pool", "high-prio")
     val filteredVariants =
       filterVariants(allVariants, seqError, cutoffs).map(
-        _.sortBy(x => (x.contig, x.pos)).cache())
+        _.sortBy(x => (x.contig, x.pos), numPartitions = 1000).cache())
 
     val writeFilterVcfFuture =
       if (writeFilteredVcf) {
@@ -139,7 +139,7 @@ object CellVariantcaller extends ToolCommand[Args] {
           Thread.sleep(1000)
           sc.setLocalProperty("spark.scheduler.pool", "low-prio")
           VariantCall.writeToPartitionedVcf(
-            rdd.sortBy(x => (x.contig, x.pos), numPartitions = 200),
+            rdd,
             new File(outputDir, "filter-vcf"),
             correctCells,
             dict,
