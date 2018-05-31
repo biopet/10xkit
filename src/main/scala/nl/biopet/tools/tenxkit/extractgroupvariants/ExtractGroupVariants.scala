@@ -23,17 +23,21 @@ package nl.biopet.tools.tenxkit.extractgroupvariants
 
 import java.io.File
 
+import htsjdk.samtools.SAMSequenceDictionary
+import htsjdk.variant.vcf.VCFHeader
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{GroupCall, TenxKit, VariantCall}
 import nl.biopet.utils.io
 import nl.biopet.utils.ngs.fasta
 import nl.biopet.utils.tool.ToolCommand
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ExtractGroupVariants extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -65,30 +69,48 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     val variants = VariantCall
       .fromVcfFile(cmdArgs.inputVcfFile, dict, correctCellsMap, 1000000)
+
+    val results = totalRun(variants,
+                           groupsMap,
+                           cmdArgs.outputDir,
+                           cmdArgs.minSampleDepth,
+                           dict,
+                           vcfHeader)
+
+    Await.result(Future.sequence(results.futures), Duration.Inf)
+    sparkSession.stop()
+    logger.info("Done")
+  }
+
+  case class Results(groupsCalls: RDD[GroupCall], futures: List[Future[Any]])
+
+  def totalRun(
+      variants: RDD[VariantCall],
+      groupsMap: Broadcast[Map[Int, String]],
+      outputDir: File,
+      minSampleDepth: Int,
+      dict: Broadcast[SAMSequenceDictionary],
+      vcfHeader: Broadcast[VCFHeader])(implicit sc: SparkContext): Results = {
     val groupCalls = variants
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
 
-    val filterGroupCalls = filterGroupCall(groupCalls, cmdArgs.minSampleDepth)
+    val filterGroupCalls = filterGroupCall(groupCalls, minSampleDepth)
 
     val outputFilterFiles = GroupCall
-      .writeAsPartitionedVcfFile(
-        filterGroupCalls,
-        new File(cmdArgs.outputDir, "output-filter-vcf"),
-        vcfHeader,
-        dict)
+      .writeAsPartitionedVcfFile(filterGroupCalls,
+                                 new File(outputDir, "output-filter-vcf"),
+                                 vcfHeader,
+                                 dict)
       .collectAsync()
     val outputFiles = GroupCall
       .writeAsPartitionedVcfFile(groupCalls,
-                                 new File(cmdArgs.outputDir, "output-vcf"),
+                                 new File(outputDir, "output-vcf"),
                                  vcfHeader,
                                  dict)
       .collectAsync()
 
-    Await.result(outputFilterFiles, Duration.Inf)
-    Await.result(outputFiles, Duration.Inf)
-    sparkSession.stop()
-    logger.info("Done")
+    Results(groupCalls, List(outputFilterFiles, outputFiles))
   }
 
   /**
