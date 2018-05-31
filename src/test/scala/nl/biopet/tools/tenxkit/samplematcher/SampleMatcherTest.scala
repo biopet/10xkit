@@ -62,6 +62,7 @@ class SampleMatcherTest extends ToolTest[Args] {
     val calulateDistanceDir = new File(outputDir, "calculatedistance")
     val groupDistanceDir = new File(outputDir, "groupdistance")
     val extractGroupVariantsDir = new File(outputDir, "extractgroupvariants")
+    val evalSubGroupDir = new File(outputDir, "evalsubgroups")
 
     variantcallingDir should exist
     new File(variantcallingDir, "filter-vcf") should exist
@@ -78,5 +79,7 @@ class SampleMatcherTest extends ToolTest[Args] {
     extractGroupVariantsDir should exist
     new File(extractGroupVariantsDir, "output-vcf") should exist
     new File(extractGroupVariantsDir, "output-filter-vcf") should exist
+
+    evalSubGroupDir should exist
   }
 }
