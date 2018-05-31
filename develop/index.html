@@ -104,36 +104,32 @@
         
         <h1 id="description" class="section">Description</h1>
         
-        <h4 id="tool---samplematcher" class="section">Tool - SampleMatcher</h4>
-        <p>This tool will try to find a given number of clusters based on variant data per cell.</p>
-        <p>In this tools multiple module from the biopet 10x kit is executed in memory.</p>
-        
-        <h4 id="tool---cellreads" class="section">Tool - CellReads</h4>
+        <h4 id="tools---cellreads" class="section">Tools - CellReads</h4>
         <p>This tool will generate a histogram of reads per cell barcode.
         This can be used to validate output from cellranger or to set a alternative cutoff.</p>
         
-        <h4 id="tool---cellvariantcaller" class="section">Tool - CellVariantcaller</h4>
+        <h4 id="tools---cellvariantcaller" class="section">Tools - CellVariantcaller</h4>
         <p>This tool will call variants based on 10x data. Usually the output of cellranger is used.
         Each cell will be treated a separated sample.</p>
         
-        <h4 id="tool---calulatedistance" class="section">Tool - CalulateDistance</h4>
+        <h4 id="tools---calulatedistance" class="section">Tools - CalulateDistance</h4>
         <p>This tool will calculate for each cell combination a sum of distances.
         The distances are the relative distance to the middle line for each allele divided by the total coverage on that position.</p>
         
-        <h4 id="tool---groupdistance" class="section">Tool - GroupDistance</h4>
+        <h4 id="tools---groupdistance" class="section">Tools - GroupDistance</h4>
         <p>This tool we try to group distances together. The result should be a clusters of 1 single sample.</p>
         <p>This tool will execute multiple iterations to find the groups.</p>
         
-        <h4 id="tool---mergebams" class="section">Tool - MergeBams</h4>
+        <h4 id="tools---mergebams" class="section">Tools - MergeBams</h4>
         <p>This tool can merge separated 10x experiments into a single bam file. This is used to simulate a mixed run.
         This is used as a control for the GroupDistance tool.</p>
         
-        <h4 id="tool---evalsubgroups" class="section">Tool - EvalSubGroups</h4>
+        <h4 id="tools---evalsubgroups" class="section">Tools - EvalSubGroups</h4>
         <p>This tool will compare all given groups.
         The histogram for a Correct match should be a steep histogram starting at 0.
         When multiple peaks are seen this might be a mixture of samples.</p>
         
-        <h4 id="tool---extractgroupvariants" class="section">Tool - ExtractGroupVariants</h4>
+        <h4 id="tools---extractgroupvariants" class="section">Tools - ExtractGroupVariants</h4>
         <p>This tool will merge variants from the same group. This will be a representation of the real samples.
         This can also be used to validate if there is a true set known.</p>
         
@@ -147,56 +143,41 @@
         
         <h1 id="manual" class="section">Manual</h1>
         
-        <h4 id="tool---samplematcher-1" class="section">Tool - SampleMatcher</h4>
-        <p>The input to this tool is the bamfile that is create by Cellranger.</p>
-        <p>This tool require to run on spark.
-        The reference file should have a dict and a fai file next to it.</p>
-        
-        <h4 id="tool---cellreads-1" class="section">Tool - CellReads</h4>
+        <h4 id="tools---cellreads-1" class="section">Tools - CellReads</h4>
         <p>By default this the sample tag is CB, this is the default tag used by Cellrenger.
         If required the user can set this is a other tag with the &#39;--sampleTag&#39; option.</p>
         
-        <h4 id="tool---cellvariantcaller-1" class="section">Tool - CellVariantcaller</h4>
+        <h4 id="tools---cellvariantcaller-1" class="section">Tools - CellVariantcaller</h4>
         <p>The input data should have a tag to identify the sample. In cellranger output this is the &#39;CB&#39; tag.
         The variantcalling can take umi information into account. For this the option &#39;--umiTag&#39; must be given. When given the duplicates are still used.
         If not given the reads marked as duplicate are ignored.</p>
         <p>The tool require a list of correct cells to use in the variantcalling. This file is a text file where each line is 1 sample/cell ID.</p>
         
-        <h4 id="tool---calulatedistance-1" class="section">Tool - CalulateDistance</h4>
+        <h4 id="tools---calulatedistance-1" class="section">Tools - CalulateDistance</h4>
         <p>The input file can be a bam file or a vcf file.
         When a bam file is given the variantcall step is execute before and execute everything in memory.
         This is faster then running it separately but does not give control to all option of the variantcalling step.</p>
         
-        <h4 id="tool---groupdistance-1" class="section">Tool - GroupDistance</h4>
+        <h4 id="tools---groupdistance-1" class="section">Tools - GroupDistance</h4>
         <p>This tool will require the distance matrix and the expected number of samples and a list of correct cells.
         The tool will require a spark cluster up and running.</p>
         
-        <h4 id="tool---mergebams-1" class="section">Tool - MergeBams</h4>
+        <h4 id="tools---mergebams-1" class="section">Tools - MergeBams</h4>
         <p>This tool need at least two bam files and each bam file should also come with a barcode file.
         The cell barcodes will be prefixed by the sample name.</p>
         
-        <h4 id="tool---evalsubgroups-1" class="section">Tool - EvalSubGroups</h4>
+        <h4 id="tools---evalsubgroups-1" class="section">Tools - EvalSubGroups</h4>
         <p>This tool will require the complete distance matrix and a list of all cells per group.
         It will generate a histogram for each combination of groups.</p>
         <p>When a known set is given the precision and recall of each combination of group and know set writen to a file.</p>
         
-        <h4 id="tool---extractgroupvariants-1" class="section">Tool - ExtractGroupVariants</h4>
+        <h4 id="tools---extractgroupvariants-1" class="section">Tools - ExtractGroupVariants</h4>
         <p>This tool will require a vcf file that contains a AD for each cell that has coverage on a position.
         From here the sample for each group given with the --group argument will compress this group in 1 single vcf genotype.</p>
         
         <h2 id="example" class="section">Example</h2>
         
-        <h4 id="tool---samplematcher-2" class="section">Tool - SampleMatcher</h4>
-        <p>Default run with 5 expected samples:</p>
-        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; SampleMatcher \
---sparkMaster &lt;spark master&gt; \
--i &lt;cellranger bam file&gt; \
--R &lt;reference fasta file&gt; \
--o &lt;output directory&gt; \
--c 5 \
---correctCells &lt;correct cells file&gt;</code></pre>
-        
-        <h4 id="tool---cellreads-2" class="section">Tool - CellReads</h4>
+        <h4 id="tools---cellreads-2" class="section">Tools - CellReads</h4>
         <p>Default run:</p>
         <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CellReads \
 -i &lt;input file&gt; \
@@ -211,7 +192,7 @@
 --sparkMaster &lt;spark master&gt; \
 --sampleTag &lt;tag&gt;</code></pre>
         
-        <h4 id="tool---cellvariantcaller-2" class="section">Tool - CellVariantcaller</h4>
+        <h4 id="tools---cellvariantcaller-2" class="section">Tools - CellVariantcaller</h4>
         <p>Default run without umi:</p>
         <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CellVariantcaller \
 -i &lt;input bam file&gt; \
@@ -228,7 +209,7 @@
 --sparkMaster &lt;spark master&gt; \
 -u UB</code></pre>
         
-        <h4 id="tool---calulatedistance-2" class="section">Tool - CalulateDistance</h4>
+        <h4 id="tools---calulatedistance-2" class="section">Tools - CalulateDistance</h4>
         <p>Default run with bam file:</p>
         <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; CalulateDistance \
 -i &lt;bam file&gt; \
@@ -237,7 +218,7 @@
 --correctCells &lt;correctCells.txt&gt; \
 --sparkMaster &lt;spark master&gt;</code></pre>
         
-        <h4 id="tool---groupdistance-2" class="section">Tool - GroupDistance</h4>
+        <h4 id="tools---groupdistance-2" class="section">Tools - GroupDistance</h4>
         <p>Default run with 5 expected samples:</p>
         <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; GroupDistance \
 --sparkMaster &lt;spark master&gt; \
@@ -246,7 +227,7 @@
 --numClusters 5 \
 --correctCells &lt;correct cells file&gt;</code></pre>
         
-        <h4 id="tool---mergebams-2" class="section">Tool - MergeBams</h4>
+        <h4 id="tools---mergebams-2" class="section">Tools - MergeBams</h4>
         <p>A default run:</p>
         <pre><code>java -jar &lt;TenxKit_jar&gt; MergeBams \
 -i &lt;sample1&gt;=&lt;input bamfile 1&gt; \
@@ -256,7 +237,7 @@
 -o &lt;output bam file&gt; \
 -b &lt;output barcodes&gt;</code></pre>
         
-        <h4 id="tool---evalsubgroups-2" class="section">Tool - EvalSubGroups</h4>
+        <h4 id="tools---evalsubgroups-2" class="section">Tools - EvalSubGroups</h4>
         <p>Run with distance matrix example:</p>
         <pre><code>java -jar &lt;TenxKit_jar&gt; EvalSubGroups \
 -o &lt;output directory&gt; \
@@ -272,7 +253,7 @@
 -g &lt;group 1&gt;=&lt;group 2 file&gt; \
 -g &lt;group 2&gt;=&lt;group 2 file&gt;</code></pre>
         
-        <h4 id="tool---extractgroupvariants-2" class="section">Tool - ExtractGroupVariants</h4>
+        <h4 id="tools---extractgroupvariants-2" class="section">Tools - ExtractGroupVariants</h4>
         <p>Default run:</p>
         <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; ExtractGroupVariants \
 --sparkMaster &lt;spark master&gt; \
@@ -324,784 +305,6 @@
               <td>no</td>
               <td>yes (unlimited)</td>
               <td>Arguments for the tool</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---samplematcher" class="section">Usage for Tool - SampleMatcher:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--inputFile, -i</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Input bam file</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output directory</td>
-            </tr>
-            <tr>
-              <td>--reference, -R</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Reference fasta file</td>
-            </tr>
-            <tr>
-              <td>--correctCells</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>List of correct cells</td>
-            </tr>
-            <tr>
-              <td>--expectedSamples, -c</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Number of expected samples</td>
-            </tr>
-            <tr>
-              <td>--partitions</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Number of init partitions, default: size of the bam divided by 10M</td>
-            </tr>
-            <tr>
-              <td>--sampleTag</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the cell barcode in the bamfile, default: CB</td>
-            </tr>
-            <tr>
-              <td>--umiTag</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the umi barcode in the bamfile, default: UB</td>
-            </tr>
-            <tr>
-              <td>--intervals</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Bed file of regions to analyse</td>
-            </tr>
-            <tr>
-              <td>--seqError</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Sequence error rate. Default: 0.005</td>
-            </tr>
-            <tr>
-              <td>--maxPvalue</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Maximum allowed pvalue on seq error. Default: 0.05</td>
-            </tr>
-            <tr>
-              <td>--minAlternativeDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Min alternative depth. Default: 2</td>
-            </tr>
-            <tr>
-              <td>--minCellAlternativeDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Min alternative depth for at least 1 cell. Default: 2</td>
-            </tr>
-            <tr>
-              <td>--minTotalDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal total depth, default: 5</td>
-            </tr>
-            <tr>
-              <td>--minAlleleDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal allele depth, default: 5</td>
-            </tr>
-            <tr>
-              <td>--minBaseQual</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal base quality</td>
-            </tr>
-            <tr>
-              <td>--method</td>
-              <td>no</td>
-              <td>no</td>
-              <td>The power variable for the distance calculation, default: pow4</td>
-            </tr>
-            <tr>
-              <td>--additionalMethod</td>
-              <td>no</td>
-              <td>yes (unlimited)</td>
-              <td>Additional distance matrix to output. This will increase the runtime</td>
-            </tr>
-            <tr>
-              <td>--writeScatters</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Write fractions for all sample pairs</td>
-            </tr>
-            <tr>
-              <td>--numIterations</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Number of maximum iterations, default 20</td>
-            </tr>
-            <tr>
-              <td>--skipKmeans</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Skip kmeans machine learning step</td>
-            </tr>
-            <tr>
-              <td>--seed</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Random seed, default 0</td>
-            </tr>
-            <tr>
-              <td>--sparkMaster</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Spark master</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---cellreads" class="section">Usage for Tool - CellReads:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--inputFile, -i</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Input bam file</td>
-            </tr>
-            <tr>
-              <td>--reference, -R</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Reference fasta file</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Input bam file</td>
-            </tr>
-            <tr>
-              <td>--sampleTag, -s</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the sample barcode, default &#39;CB&#39;</td>
-            </tr>
-            <tr>
-              <td>--intervals</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Bed file of regions to analyse</td>
-            </tr>
-            <tr>
-              <td>--sparkMaster</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Spark master</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---cellvariantcaller" class="section">Usage for Tool - CellVariantcaller:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--inputFile, -i</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Input bam file</td>
-            </tr>
-            <tr>
-              <td>--referenceFasta, -R</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Reference fasta</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output directory</td>
-            </tr>
-            <tr>
-              <td>--intervals</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Regions to analyse, if not given whole genome is done</td>
-            </tr>
-            <tr>
-              <td>--partitions</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Number of partitions</td>
-            </tr>
-            <tr>
-              <td>--seqError</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Seq error, default &#39;0.005&#39;</td>
-            </tr>
-            <tr>
-              <td>--maxPvalue</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Maximum allowed pvalue on seq error</td>
-            </tr>
-            <tr>
-              <td>--correctCells</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>List of correct cells</td>
-            </tr>
-            <tr>
-              <td>--minAlternativeDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Min alternative depth</td>
-            </tr>
-            <tr>
-              <td>--minCellAlternativeDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Min alternative depth for atleast 1 cell</td>
-            </tr>
-            <tr>
-              <td>--minTotalDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal total depth</td>
-            </tr>
-            <tr>
-              <td>--minBaseQual</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal base quality</td>
-            </tr>
-            <tr>
-              <td>--sampleTag, -s</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the sample barcode, default &#39;CB&#39;</td>
-            </tr>
-            <tr>
-              <td>--umiTag, -u</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the umi barcode, if not given read with the duplicate flag will be ignored&#39;</td>
-            </tr>
-            <tr>
-              <td>--sparkMaster</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Spark master</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---calulatedistance" class="section">Usage for Tool - CalulateDistance:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--inputFile, -i</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Input bam file</td>
-            </tr>
-            <tr>
-              <td>--referenceFasta, -R</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Reference fasta</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output directory</td>
-            </tr>
-            <tr>
-              <td>--correctCells</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>List of correct cells</td>
-            </tr>
-            <tr>
-              <td>--minAlleleCoverage</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal coverage for each allele</td>
-            </tr>
-            <tr>
-              <td>--minTotalAltRatio</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Filter out variants with a total alt ratio below this value, default: 0.01</td>
-            </tr>
-            <tr>
-              <td>--intervals</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Regions to analyse, if not given whole genome is done</td>
-            </tr>
-            <tr>
-              <td>--sampleTag, -s</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the sample barcode, default &#39;CB&#39;</td>
-            </tr>
-            <tr>
-              <td>--umiTag, -u</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the umi barcode, if not given read with the duplicate flag will be ignored&#39;</td>
-            </tr>
-            <tr>
-              <td>--binSize</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Size of each bin: default 500000 base pairs</td>
-            </tr>
-            <tr>
-              <td>--writeScatters</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Write fractions for all sample pairs</td>
-            </tr>
-            <tr>
-              <td>--method</td>
-              <td>no</td>
-              <td>no</td>
-              <td>The power variable for the distance calculation, default: pow4</td>
-            </tr>
-            <tr>
-              <td>--additionalMethod</td>
-              <td>no</td>
-              <td>yes (unlimited)</td>
-              <td>Additional distance matrix to output. This will increase the runtime</td>
-            </tr>
-            <tr>
-              <td>--sparkMaster</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Spark master</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---groupdistance" class="section">Usage for Tool - GroupDistance:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--distanceMatrix, -d</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Distance matrix</td>
-            </tr>
-            <tr>
-              <td>--countMatrix</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Position count matrix</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output directory</td>
-            </tr>
-            <tr>
-              <td>--correctCells</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>List of correct cells</td>
-            </tr>
-            <tr>
-              <td>--numClusters</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Number of expected clusters</td>
-            </tr>
-            <tr>
-              <td>--numIterations</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Number of maximum iterations, default 20</td>
-            </tr>
-            <tr>
-              <td>--skipKmeans</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Skip kmeans machine learning step</td>
-            </tr>
-            <tr>
-              <td>--seed</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Random seed, default 0</td>
-            </tr>
-            <tr>
-              <td>--sparkMaster</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Spark master</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---mergebams" class="section">Usage for Tool - MergeBams:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--inputBam, -i</td>
-              <td>yes</td>
-              <td>yes (unlimited)</td>
-              <td>Input bam file</td>
-            </tr>
-            <tr>
-              <td>--inputBarcode</td>
-              <td>yes</td>
-              <td>yes (unlimited)</td>
-              <td>Input barcodes file</td>
-            </tr>
-            <tr>
-              <td>--outputBam, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output bam file</td>
-            </tr>
-            <tr>
-              <td>--outputBarcodes, -b</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>output barcodes file</td>
-            </tr>
-            <tr>
-              <td>--sampleTag, -s</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the sample barcode, default &#39;CB&#39;</td>
-            </tr>
-            <tr>
-              <td>--umiTag, -u</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Tag where to find the umi barcode, default &#39;UB&#39;</td>
-            </tr>
-            <tr>
-              <td>--downsampleFraction</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Downsample fraction</td>
-            </tr>
-            <tr>
-              <td>--duplets</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Number of duplets to generate, default 0</td>
-            </tr>
-            <tr>
-              <td>--seed</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Random seed</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---evalsubgroups" class="section">Usage for Tool - EvalSubGroups:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--distanceMatrix, -d</td>
-              <td>no</td>
-              <td>no</td>
-              <td>DistanceMatrix file</td>
-            </tr>
-            <tr>
-              <td>--knownTrue, -k</td>
-              <td>no</td>
-              <td>yes (unlimited)</td>
-              <td>Known true samples</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output directory</td>
-            </tr>
-            <tr>
-              <td>--group, -g</td>
-              <td>yes</td>
-              <td>yes (unlimited)</td>
-              <td>Group to evaluate</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <h3 id="usage-for-tool---extractgroupvariants" class="section">Usage for Tool - ExtractGroupVariants:</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Option</th>
-              <th>Required</th>
-              <th>Can occur multiple times</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>--log_level, -l</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Level of log information printed. Possible levels: &#39;debug&#39;, &#39;info&#39;, &#39;warn&#39;, &#39;error&#39;</td>
-            </tr>
-            <tr>
-              <td>--help, -h</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print usage</td>
-            </tr>
-            <tr>
-              <td>--version, -v</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Print version</td>
-            </tr>
-            <tr>
-              <td>--inputVcfFile, -i</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Input vcf file, can be partitioned</td>
-            </tr>
-            <tr>
-              <td>--reference, -R</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Reference fasta file</td>
-            </tr>
-            <tr>
-              <td>--correctCells</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>List of correct cells</td>
-            </tr>
-            <tr>
-              <td>--outputDir, -o</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Output directory</td>
-            </tr>
-            <tr>
-              <td>--group, -g</td>
-              <td>yes</td>
-              <td>yes (unlimited)</td>
-              <td>Group to extract</td>
-            </tr>
-            <tr>
-              <td>--minSampleDepth</td>
-              <td>no</td>
-              <td>no</td>
-              <td>Minimal sample depth</td>
-            </tr>
-            <tr>
-              <td>--sparkMaster</td>
-              <td>yes</td>
-              <td>no</td>
-              <td>Spark master</td>
             </tr>
           </tbody>
         </table>
