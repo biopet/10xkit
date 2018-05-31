@@ -28,10 +28,10 @@ package nl.biopet.tools.tenxkit
   * @param aq Quality of each allele in phred
   * @param pl Pgred value for each allele and each possible expected alleles, for ploidy 2 that should be 3 values, 0,1,2
   */
-case class GenotypeCall(genotype: Array[Option[Int]],
-                        ad: Array[Int],
-                        aq: Array[Int],
-                        pl: Array[Array[Int]])
+case class GenotypeCall(genotype: IndexedSeq[Option[Int]],
+                        ad: IndexedSeq[Int],
+                        aq: IndexedSeq[Int],
+                        pl: IndexedSeq[IndexedSeq[Int]])
 
 object GenotypeCall {
 
@@ -55,23 +55,24 @@ object GenotypeCall {
     * @param ploidy ploidy to use
     * @return
     */
-  def fromAd(ad: Array[Int], ploidy: Int = 2): GenotypeCall = {
+  def fromAd(ad: IndexedSeq[Int], ploidy: Int = 2,
+             minAlleleDepth: Int = 1): GenotypeCall = {
     val totalDepth = ad.sum
 
-    val probabilities = ad
-      .map(_.toDouble / totalDepth)
-      .map(
-        f =>
-          (0 to ploidy)
-            .map(adToProbability(f, _, ploidy))
-            .toArray)
-    val pl = probabilities.map(_.map(probabilityToPhred))
+    val probabilities = ad.zipWithIndex
+      .map { case (d,i) => i -> d.toDouble / totalDepth}
+      .map{case (i, f) =>
+          i -> (0 to ploidy)
+            .map(adToProbability(f, _, ploidy))}
+    val pl = probabilities.map{ case (i,p) => p.map(probabilityToPhred) -> i}
+    val plFilter = probabilities.map{ case (i,p) => p.map(probabilityToPhred) -> i}
+      .filter { case (_, i) => ad(i) >= minAlleleDepth}
 
     def getGenotype(genotype: List[Option[Int]] = Nil): List[Option[Int]] = {
       val alleleLeft = ploidy - genotype.size
       if (alleleLeft == 0) genotype
       else {
-        val filterPl = pl.zipWithIndex
+        val filterPl = plFilter
           .filter{ case (_, alleleIdx) => !genotype.contains(Some(alleleIdx))}
           .map {
             case (aPl, aIdx) =>
@@ -82,20 +83,21 @@ object GenotypeCall {
           val min = flatten.min
           val newAlleles = filterPl
             .find{case (_, pls) => pls.map{case (p, _) => p}.contains(min)}
-            .map{case (alleleIdx, pls) => alleleIdx -> pls.find{ case (p, _) => p == min}.getOrElse(throw new IllegalStateException("Not possible"))}
+            .map{case (alleleIdx, pls) => alleleIdx -> pls.find{ case (p, _) => p == min}}
             .toList
             .flatMap {
-              case (a, (_, n)) =>
+              case (a, Some((_, n))) =>
                 List.fill(n)(Some(a))
+              case _ => Nil // Should never happen
             }
-          getGenotype(genotype ::: newAlleles)
+          getGenotype(newAlleles ::: genotype)
         } else genotype ::: List.fill(alleleLeft)(None)
       }
     }
 
-    GenotypeCall(getGenotype().sorted.toArray,
+    GenotypeCall(getGenotype().sorted.toIndexedSeq,
                  ad,
-                 Array(),
-                 pl)
+                 IndexedSeq(),
+                 pl.map{ case (p, _) => p})
   }
 }

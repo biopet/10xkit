@@ -29,12 +29,14 @@ trait Method extends Serializable {
     * @param cell2 alleles from cell 2
     * @return
     */
-  final def calculate(cell1: Array[Int], cell2: Array[Int]): Double = {
+  final def calculate(cell1: IndexedSeq[Int],
+                      cell2: IndexedSeq[Int]): Double = {
     require(cell1.length == cell2.length, "not the same count of alleles")
     calulateInternal(cell1, cell2)
   }
 
-  protected def calulateInternal(cell1: Array[Int], cell2: Array[Int]): Double
+  protected def calulateInternal(cell1: IndexedSeq[Int],
+                                 cell2: IndexedSeq[Int]): Double
 }
 
 object Method {

@@ -24,7 +24,7 @@ package nl.biopet.tools.tenxkit.groupdistance
 import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit
-import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
+import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit}
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.clustering._
@@ -32,12 +32,13 @@ import org.apache.spark.ml.linalg
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
-import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object GroupDistance extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -63,21 +64,6 @@ object GroupDistance extends ToolCommand[Args] {
         DistanceMatrix.fromFileSpark(cmdArgs.distanceMatrix,
                                      cmdArgs.countMatrix))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
-    val correctCellsMap = tenxkit.correctCellsMap(correctCells)
-
-    //TODO: add variants to clustering
-//    val variants = if (cmdArgs.inputFile.isDirectory) {
-//      VariantCall
-//        .fromPartitionedVcf(cmdArgs.inputFile,
-//          cmdArgs.reference,
-//          correctCellsMap)
-//    } else {
-//      VariantCall
-//        .fromVcfFile(cmdArgs.inputFile,
-//          cmdArgs.reference,
-//          correctCellsMap,
-//          50000000)
-//    }
 
     val (initGroups, trashInit): (RDD[GroupSample], RDD[Int]) =
       if (cmdArgs.skipKmeans) {
@@ -123,14 +109,14 @@ object GroupDistance extends ToolCommand[Args] {
 
     writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
 
-    sc.stop()
+    sparkSession.stop()
     logger.info("Done")
   }
 
   def writeGroups(groups: RDD[GroupSample],
                   trash: RDD[Int],
                   outputDir: File,
-                  correctCells: Broadcast[Array[String]]): Unit = {
+                  correctCells: Broadcast[IndexedSeq[String]]): Unit = {
     val trashData = trash.collect()
 
     val writer =
@@ -197,12 +183,21 @@ object GroupDistance extends ToolCommand[Args] {
                 maxIterations: Int,
                 trash: RDD[Int],
                 outputDir: File,
-                correctCells: Broadcast[Array[String]],
+                correctCells: Broadcast[IndexedSeq[String]],
                 iteration: Int = 1)(
       implicit sc: SparkContext): (RDD[GroupSample], RDD[Int]) = {
     cache.keys
       .filter(_ < iteration - 1)
-      .foreach(cache(_).foreach(_.unpersist()))
+      .foreach(cache(_)
+        .foreach { x =>
+          try {
+            if (x.getStorageLevel != StorageLevel.NONE)
+              x.unpersist()
+          } catch {
+            case _: NullPointerException =>
+          }
+
+        })
     cache += (iteration - 1) -> (groups
       .cache() :: cache.getOrElse(iteration - 1, Nil))
     cache += (iteration - 1) -> (trash.cache() :: cache.getOrElse(iteration - 1,
@@ -237,7 +232,16 @@ object GroupDistance extends ToolCommand[Args] {
 
     if (maxIterations - iteration <= 0 && numberOfGroups == expectedGroups)
       (groups, trash)
-    else {
+    else if (numberOfGroups == 0) {
+      reCluster(trash.map(GroupSample(0, _)),
+                distanceMatrix,
+                expectedGroups,
+                maxIterations,
+                sc.emptyRDD,
+                outputDir,
+                correctCells,
+                iteration)
+    } else {
       val avgDistance = groupDistances.value.values.sum / groupDistances.value.size
       if (numberOfGroups > expectedGroups) {
         val removecosts = calculateSampleMoveCosts(groupBy.map {
@@ -487,38 +491,18 @@ object GroupDistance extends ToolCommand[Args] {
     }
   }
 
-  def variantsToVectors(
-      variants: RDD[VariantCall],
-      correctCells: Broadcast[Array[String]]): RDD[(Int, linalg.Vector)] = {
-    variants
-      .flatMap { v =>
-        val alleles = 0 :: v.altAlleles.indices.map(_ + 1).toList
-        correctCells.value.indices.map { sample =>
-          val sa = v.samples.get(sample) match {
-            case Some(a) =>
-              val total = a.map(_.total).sum
-              alleles.map(a(_).total.toDouble / total)
-            case _ => alleles.map(_ => 0.0)
-          }
-          sample -> (v.contig, v.pos, sa)
-        }
-      }
-      .groupByKey(correctCells.value.length)
-      .map {
-        case (sample, list) =>
-          val sorted = list.toList.sortBy { case (y1, y2, _) => (y1, y2) }
-          (sample,
-           Vectors.dense(sorted.flatMap { case (_, _, x) => x }.toArray))
-      }
-  }
-
   def distanceMatrixToVectors(matrix: DistanceMatrix,
-                              correctSamples: Broadcast[Array[String]])(
+                              correctSamples: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext): (RDD[(Int, linalg.Vector)], RDD[Int]) = {
-    require(matrix.samples sameElements correctSamples.value)
+    require(matrix.samples == correctSamples.value)
     val samples = matrix.samples.indices.toList
-    val samplesFiltered = samples.filter(s1 =>
-      samples.map(s2 => matrix(s1, s2)).count(_.isDefined) >= 1000)
+    val totalSamples = samples.length
+    val samplesFiltered = samples.filter(
+      s1 =>
+        samples
+          .map(s2 => matrix(s1, s2))
+          .count(_.isDefined)
+          .toDouble / totalSamples >= 0.25)
     val trash = samples.diff(samplesFiltered)
     logger.info(s"Removed ${samples.size - samplesFiltered.size} samples")
     val vectors = samplesFiltered.map(
@@ -548,10 +532,6 @@ object GroupDistance extends ToolCommand[Args] {
          "GroupDistance",
          "--sparkMaster",
          "<spark master>",
-         "-R",
-         "<reference fasta>",
-         "-i",
-         "<distance matrix>",
          "-d",
          "<distance matrix>",
          "-o",

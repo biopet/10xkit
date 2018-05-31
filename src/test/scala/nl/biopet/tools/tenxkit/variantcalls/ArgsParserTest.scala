@@ -19,35 +19,36 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance.methods
+package nl.biopet.tools.tenxkit.variantcalls
 
-/**
-  * This method will clculate the distance to the middle line of the fractions for each allele
-  * @param pow Power value
-  */
-class Pow(val pow: Double) extends Method {
-  protected def calulateInternal(cell1: IndexedSeq[Int],
-                                 cell2: IndexedSeq[Int]): Double = {
-    // Calculate total depth
-    val cell1Total = cell1.sum
-    val cell2Total = cell2.sum
-    cell1
-      .zip(cell2)
-      .map {
-        case (c1, c2) => // calculate distance for each allele
-          val distanceToMidle =
-            Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
-                                          c2.toDouble / cell2Total)
-          math.pow(distanceToMidle, pow)
-      }
-      .sum
-  }
-}
+import java.io.File
 
-object Pow {
-  def calculateDistanceToMiddle(fraction1: Double,
-                                fraction2: Double): Double = {
-    val middlePoint = ((fraction1 - fraction2) / 2) + fraction1
-    math.sqrt(math.pow(middlePoint - fraction1, 2) * 2)
+import nl.biopet.test.BiopetTest
+import org.testng.annotations.Test
+
+class ArgsParserTest extends BiopetTest {
+  @Test
+  def test(): Unit = {
+    val cmdArgs = CellVariantcaller.cmdArrayToArgs(
+      Array(
+        "-i",
+        "file.bam",
+        "-R",
+        "reference.fasta",
+        "-o",
+        "out",
+        "--correctCells",
+        "correct.txt",
+        "--sparkMaster",
+        "local[1]",
+        "--seqError",
+        "0.5"
+      ))
+    cmdArgs.inputFile shouldBe new File("file.bam")
+    cmdArgs.reference shouldBe new File("reference.fasta")
+    cmdArgs.outputDir shouldBe new File("out")
+    cmdArgs.correctCells shouldBe new File("correct.txt")
+    cmdArgs.sparkMaster shouldBe "local[1]"
+    cmdArgs.seqError shouldBe 0.5f
   }
 }

@@ -55,6 +55,13 @@ class GenotypeCallTest extends BiopetTest {
   }
 
   @Test
+  def testMinDepth(): Unit = {
+    GenotypeCall
+      .fromAd(Array(5, 1, 1, 1, 1, 1, 1, 1), 2, 2)
+      .genotype shouldBe Array(None, Some(0))
+  }
+
+  @Test
   def testProbability(): Unit = {
     GenotypeCall.adToProbability(0.5, 0, 2) shouldBe 0.0
     GenotypeCall.adToProbability(0.5, 1, 2) shouldBe 1.0
@@ -117,6 +124,5 @@ class GenotypeCallTest extends BiopetTest {
     GenotypeCall.adToProbability(1.0 / 4 * 3, 2, 4) shouldBe 0.0
     GenotypeCall.adToProbability(1.0 / 4 * 3, 3, 4) shouldBe 1.0
     GenotypeCall.adToProbability(1.0 / 4 * 3, 4, 4) shouldBe 0.0
-
   }
 }

@@ -103,19 +103,19 @@ class MergeBamsTest extends ToolTest[Args] {
     MergeBams.main(
       Array(
         "--inputBam",
-        s"bam1=${resourcePath("/wgs2.realign.bam")}",
+        s"bam1=${resourcePath("/read_bam.bam")}",
         "--inputBarcode",
-        s"bam1=${resourcePath("/wgs2.readgroups.txt")}",
+        s"bam1=${resourcePath("/read_bam.txt")}",
         "--inputBam",
-        s"bam2=${resourcePath("/wgs2.realign.bam")}",
+        s"bam2=${resourcePath("/read_bam.bam")}",
         "--inputBarcode",
-        s"bam2=${resourcePath("/wgs2.readgroups.txt")}",
+        s"bam2=${resourcePath("/read_bam.txt")}",
         "--outputBam",
         s"$outputBam",
         "--outputBarcodes",
         s"$outputBarcodes",
         "--sampleTag",
-        "RG"
+        "SM"
       ))
 
     val reader = SamReaderFactory
@@ -124,22 +124,25 @@ class MergeBamsTest extends ToolTest[Args] {
       .open(outputBam)
     reader.hasIndex shouldBe true
     val it1 = reader.iterator()
-    it1.size shouldBe 40000
+    it1.size shouldBe 30
     it1.close()
 
     val it2 = reader.iterator()
     val cells =
-      it2.flatMap(x => Option(x.getAttribute("RG")).map(_.toString)).toSet
-    cells shouldBe Set("bam1-wgs2-lib2",
-                       "bam1-wgs2-lib1",
-                       "bam2-wgs2-lib2",
-                       "bam2-wgs2-lib1")
+      it2.flatMap(x => Option(x.getAttribute("SM")).map(_.toString)).toSet
+    cells shouldBe Set("bam1-sample1",
+                       "bam1-sample2",
+                       "bam1-not_exist",
+                       "bam2-sample1",
+                       "bam2-sample2",
+                       "bam2-not_exist")
     it2.close()
     reader.close()
 
-    val outputCells = getLinesFromFile(outputBarcodes)
-    outputCells.size shouldBe cells.size
-    outputCells.toSet shouldBe cells
+    getLinesFromFile(outputBarcodes).toSet shouldBe Set("bam1-sample1",
+                                                        "bam1-sample2",
+                                                        "bam2-sample1",
+                                                        "bam2-sample2")
   }
 
   @Test

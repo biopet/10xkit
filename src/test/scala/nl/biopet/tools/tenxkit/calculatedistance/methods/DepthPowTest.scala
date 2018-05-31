@@ -19,12 +19,24 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance
+package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-case class SampleVariant(sample: Int,
-                         contig: Int,
-                         pos: Long,
-                         refDepth: Int,
-                         altDepth: Array[Int]) {
-  def totalDepth: Int = this.altDepth.sum + this.refDepth
+import nl.biopet.test.BiopetTest
+import org.testng.annotations.Test
+
+class DepthPowTest extends BiopetTest {
+  @Test
+  def test(): Unit = {
+    val pow1 = new DepthPow(1)
+    val pow2 = new DepthPow(2)
+    val value = pow1.calculate(IndexedSeq(2, 0, 0), IndexedSeq(0, 2, 0))
+    value.isNaN shouldBe false
+
+    pow1.calculate(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0.0
+    pow1.calculate(IndexedSeq(0, 1), IndexedSeq(1, 1)) shouldBe math.sqrt(2.0) / 2 / 2
+    pow2.calculate(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0.0
+    pow2.calculate(IndexedSeq(0, 1), IndexedSeq(1, 0)) shouldBe math.pow(
+      math.sqrt(2.0) / 2,
+      2)
+  }
 }

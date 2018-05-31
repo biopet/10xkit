@@ -35,6 +35,15 @@ class MethodTest extends BiopetTest {
   }
 
   @Test
+  def testFromStringDepthPow(): Unit = {
+    val method1 = Method.fromString("depthpow1").asInstanceOf[DepthPow]
+    method1.pow shouldBe 1.0
+
+    val method2 = Method.fromString("depthpow4").asInstanceOf[DepthPow]
+    method2.pow shouldBe 4.0
+  }
+
+  @Test
   def testFromStringChi2(): Unit = {
     val method = Method.fromString("chi2")
     method.isInstanceOf[Chi2] shouldBe true
@@ -53,4 +62,10 @@ class MethodTest extends BiopetTest {
     method2.countsPow shouldBe 3.0
   }
 
+  @Test
+  def testWrongMethod(): Unit = {
+    intercept[IllegalArgumentException] {
+      Method.fromString("i_dot_not_exists")
+    }.getMessage shouldBe "Method 'i_dot_not_exists' does not exist"
+  }
 }

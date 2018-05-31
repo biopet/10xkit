@@ -21,6 +21,8 @@
 
 package nl.biopet.tools.tenxkit.variantcalls
 
+import java.lang
+
 import htsjdk.samtools.{Cigar, CigarOperator, SAMRecord, TextCigarCodec}
 
 import scala.collection.mutable
@@ -65,12 +67,16 @@ object SampleBase {
 
     val referenceBuffer = mutable.Map[Int, SampleBase]()
     var refPos = start
+    if (cigar.getReadLength > sequence.length)
+      throw new IllegalStateException("Sequence is to short for cigar string")
+    if (cigar.getReadLength < sequence.length)
+      throw new IllegalStateException("Sequence is to long for cigar string")
     for (element <- cigar) {
       element.getOperator match {
-        case CigarOperator.SOFT_CLIP =>
+        case CigarOperator.SOFT_CLIP | CigarOperator.S =>
           seqIt.drop(element.getLength)
         case CigarOperator.MATCH_OR_MISMATCH | CigarOperator.EQ |
-            CigarOperator.X =>
+            CigarOperator.X | CigarOperator.M =>
           seqIt.take(element.getLength).foreach {
             case (base, qual) =>
               referenceBuffer += refPos -> SampleBase(base.toChar.toString,
@@ -78,7 +84,7 @@ object SampleBase {
                                                       qual :: Nil)
               refPos += 1
           }
-        case CigarOperator.INSERTION =>
+        case CigarOperator.INSERTION | CigarOperator.I =>
           val seq = seqIt.take(element.getLength).toList
           referenceBuffer.get(refPos - 1) match {
             case Some(b) =>
@@ -89,7 +95,7 @@ object SampleBase {
               throw new IllegalStateException(
                 "Insertion without a base found, cigar start with I (or after the S/H)")
           }
-        case CigarOperator.DELETION =>
+        case CigarOperator.DELETION | CigarOperator.D =>
           referenceBuffer.get(refPos - 1) match {
             case Some(b) =>
               referenceBuffer += (refPos - 1) -> b.copy(
@@ -101,11 +107,12 @@ object SampleBase {
           (refPos to (element.getLength + refPos)).foreach(p =>
             referenceBuffer += p -> SampleBase("", strand, Nil))
           refPos += element.getLength
-        case CigarOperator.SKIPPED_REGION                    => refPos += element.getLength
-        case CigarOperator.HARD_CLIP | CigarOperator.PADDING =>
+        case CigarOperator.SKIPPED_REGION | CigarOperator.N =>
+          refPos += element.getLength
+        case CigarOperator.HARD_CLIP | CigarOperator.H | CigarOperator.PADDING |
+            CigarOperator.P =>
       }
     }
-    require(!seqIt.hasNext, "After cigar parsing sequence is not depleted")
     referenceBuffer.toList
   }
 }

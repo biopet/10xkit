@@ -26,21 +26,23 @@ import java.io.File
 import cern.jet.random.Binomial
 import cern.jet.random.engine.RandomEngine
 import htsjdk.samtools.SAMSequenceDictionary
+import htsjdk.variant.variantcontext.writer.VariantContextWriterBuilder
 import htsjdk.variant.variantcontext.{
   Allele,
   GenotypeBuilder,
   VariantContext,
   VariantContextBuilder
 }
-import htsjdk.variant.vcf.VCFFileReader
+import htsjdk.variant.vcf.{VCFFileReader, VCFHeader}
 import nl.biopet.tools.tenxkit.variantcalls.{
   AlleleCount,
   PositionBases,
   SampleAllele
 }
-import nl.biopet.utils.ngs.{fasta, vcf}
+import nl.biopet.utils.Logging
 import nl.biopet.utils.ngs.fasta.ReferenceRegion
 import nl.biopet.utils.ngs.intervals.BedRecordList
+import nl.biopet.utils.ngs.vcf
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -50,54 +52,59 @@ import scala.collection.JavaConversions._
 case class VariantCall(contig: Int,
                        pos: Long,
                        refAllele: String,
-                       altAlleles: Array[String],
-                       samples: Map[Int, Array[AlleleCount]]) {
-  def hasNonReference: Boolean = {
-    altDepth > 0
-  }
+                       altAlleles: IndexedSeq[String],
+                       samples: Map[Int, IndexedSeq[AlleleCount]]) {
 
-  def totalDepth: Int = {
-    samples.values.flatMap(_.map(_.total)).sum
-  }
+  /** true if there is coverage on a alt allele */
+  def hasNonReference: Boolean = altDepth > 0
 
-  def totalReadDepth: Int = {
-    samples.values.flatMap(_.map(_.totalReads)).sum
-  }
+  /** total umi coverage on this position */
+  def totalDepth: Int = samples.values.flatMap(_.map(_.total)).sum
 
-  def referenceDepth: Int = {
+  /** total read coverage on this position */
+  def totalReadDepth: Int = samples.values.flatMap(_.map(_.totalReads)).sum
+
+  /** total umi coverage on the reference allele */
+  def referenceDepth: Int =
     samples.values.flatMap(_.headOption.map(_.total)).sum
-  }
 
-  def altDepth: Int = {
-    totalDepth - referenceDepth
-  }
+  /** Total umi coverage on the alt alleles */
+  def altDepth: Int = totalDepth - referenceDepth
 
-  def totalAltRatio: Double = {
-    altDepth.toDouble / totalDepth
-  }
+  /** Ratio of  the alt depth to the reference allele */
+  def totalAltRatio: Double = altDepth.toDouble / totalDepth
 
+  /** true if there is a sample alt allele with atleast the goiven number of umis */
   def minSampleAltDepth(cutoff: Int): Boolean = {
     samples.values.exists(_.tail.exists(_.total >= cutoff))
   }
 
-  def toVcfLine(samplesIdxs: Range, dict: SAMSequenceDictionary): String = {
-    s"${dict.getSequence(contig).getSequenceName}\t$pos\t.\t$refAllele\t${altAlleles
-      .mkString(",")}\t.\t.\t.\tAD\t" +
-      s"${samplesIdxs
-        .map { idx =>
-          samples.get(idx).map(a => s"${a.map(_.total).mkString(",")}").getOrElse(".")
-        }
-        .mkString("\t")}"
+  /** Allele alles in 1 IndexedSeq */
+  def allAlleles: IndexedSeq[String] = IndexedSeq(refAllele) ++ altAlleles
+
+  /** Umi depth for each allele acrosss samples */
+  def alleleDepth: Seq[Int] = {
+    allAlleles.indices.map(i =>
+      samples.values.flatMap(_.lift(i).map(_.total)).sum)
   }
 
+  /** Read depth for each allele acrosss samples */
+  def alleleReadDepth: Seq[Int] = {
+    allAlleles.indices.map(i =>
+      samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
+  }
+
+  /** This sets the depth of alleles back to 0 if they are below the cutoff */
   def setAllelesToZeroDepth(minAlleleDepth: Int): VariantCall = {
     val newSamples = samples.map {
       case (s, a) =>
-        s -> a.map(a => if (a.totalReads > minAlleleDepth) a else AlleleCount())
+        s -> a.map(a => if (a.total >= minAlleleDepth) a else AlleleCount())
     }
     this.copy(samples = newSamples)
   }
 
+  /** This will remove all alleles that does not have any coverage anymore
+    * When no alleles are left a None is returned */
   def cleanupAlleles(): Option[VariantCall] = {
     val ad = alleleDepth
     val alleles = allAlleles
@@ -119,6 +126,7 @@ case class VariantCall(contig: Int,
     else None
   }
 
+  /** This will calculate a pvalue with a binominal test. All above the cutoff will be set to 0 depth */
   def setAllelesToZeroPvalue(seqError: Float,
                              cutoffPvalue: Float): VariantCall = {
     val pvalues = createBinomialPvalues(seqError)
@@ -132,11 +140,14 @@ case class VariantCall(contig: Int,
     this.copy(samples = newSamples)
   }
 
-  def createBinomialPvalues(seqError: Float): Map[Int, Array[Double]] = {
+  /** This will calculate a pvalue with a binominal test for each allele and each sample */
+  def createBinomialPvalues(
+      seqError: Float,
+      minAlleleDepth: Int = 2): Map[Int, IndexedSeq[Double]] = {
     samples.map {
       case (s, a) =>
         val totalReads = a.map(_.totalReads).sum
-        if (totalReads > 1) {
+        if (totalReads >= minAlleleDepth) {
           val binomial =
             new Binomial(totalReads, seqError, RandomEngine.makeDefault())
           s -> a.map(b => 1.0 - binomial.cdf(b.totalReads))
@@ -144,17 +155,7 @@ case class VariantCall(contig: Int,
     }
   }
 
-  def allAlleles: Array[String] = Array(refAllele) ++ altAlleles
-
-  def alleleDepth: Seq[Int] = {
-    allAlleles.indices.map(i =>
-      samples.values.flatMap(_.lift(i).map(_.total)).sum)
-  }
-  def alleleReadDepth: Seq[Int] = {
-    allAlleles.indices.map(i =>
-      samples.values.flatMap(_.lift(i).map(_.totalReads)).sum)
-  }
-  def toVariantContext(sampleList: Array[String],
+  def toVariantContext(sampleList: IndexedSeq[String],
                        dict: SAMSequenceDictionary,
                        seqError: Float): VariantContext = {
     val seqErrors = createBinomialPvalues(seqError)
@@ -173,7 +174,7 @@ case class VariantCall(contig: Int,
           "ADR" -> a.map(_.reverseUmi).mkString(",")
         )
         new GenotypeBuilder(sampleList(sample))
-          .AD(a.map(_.total))
+          .AD(a.map(_.total).toArray)
           .DP(a.map(_.total).sum)
           .attributes(attributes)
           .make()
@@ -201,7 +202,7 @@ case class VariantCall(contig: Int,
     GroupCall.fromVariantCall(this, groupsMap)
 
   def getUniqueAlleles(groupsMap: Map[Int, String],
-                       balance: Double = 0.9): Array[(String, String)] = {
+                       balance: Double = 0.9): IndexedSeq[(String, String)] = {
     val groupFactions = samples
       .filter { case (groupId, _) => groupsMap.contains(groupId) }
       .groupBy { case (groupId, _) => groupsMap(groupId) }
@@ -209,7 +210,7 @@ case class VariantCall(contig: Int,
         case (groupName, cells) =>
           groupName -> allAlleles.indices.map { i =>
             cells.values.count(_(i).total > 1).toDouble / cells.size
-          }.toArray
+          }
       }
     allAlleles.zipWithIndex.flatMap {
       case (allele, i) =>
@@ -224,7 +225,7 @@ case class VariantCall(contig: Int,
   }
 }
 
-object VariantCall {
+object VariantCall extends Logging {
 
   def fromVariantContext(variant: VariantContext,
                          dict: SAMSequenceDictionary,
@@ -232,8 +233,9 @@ object VariantCall {
     val contig = dict.getSequenceIndex(variant.getContig)
     val pos = variant.getStart
     val refAllele = variant.getReference.getBaseString
-    val altAlleles = variant.getAlternateAlleles.map(_.getBaseString).toArray
-    val alleleIndencies = (Array(refAllele) ++ altAlleles).zipWithIndex
+    val altAlleles =
+      variant.getAlternateAlleles.map(_.getBaseString).toIndexedSeq
+    val alleleIndencies = (IndexedSeq(refAllele) ++ altAlleles).zipWithIndex
     val genotypes = variant.getGenotypes.flatMap { g =>
       (Option(g.getExtendedAttribute("ADR"))
          .map(_.toString.split(",").map(_.toInt)),
@@ -246,9 +248,13 @@ object VariantCall {
         case (Some(adr), Some(adf), Some(adrRead), Some(adfRead)) =>
           val alleles = alleleIndencies.map {
             case (_, i) => AlleleCount(adf(i), adr(i), adfRead(i), adrRead(i))
-          }
+          }.toIndexedSeq
           Some(sampleMap(g.getSampleName) -> alleles)
-        case _ => None
+        case _ =>
+          logger.warn(
+            s"Genotype '${g.getSampleName}' at ${variant.getContig}:$pos skipped because not all required field are there. " +
+              s"Required fields: ADR, ADF, ADR-READ, ADF-READ")
+          None
       }
     }
     VariantCall(contig, pos, refAllele, altAlleles, genotypes.toMap)
@@ -259,62 +265,65 @@ object VariantCall {
                       bases: PositionBases,
                       referenceRegion: ReferenceRegion,
                       minCellAlleleCoverage: Int): Option[VariantCall] = {
-    val maxDel = bases.samples.values.flatMap(_.keys.map(_.delBases)).max
-    val end = position + maxDel
-    val refAllele = new String(
-      referenceRegion.sequence.slice(
-        position - referenceRegion.start,
-        position - referenceRegion.start + maxDel + 1)).toUpperCase
-    val oldAlleles = bases.samples.values.flatMap(_.keySet)
-    val newAllelesMap = oldAlleles.map { a =>
-      SampleAllele(a.allele, a.delBases) -> (if (a.delBases > 0 || !refAllele
-                                                   .startsWith(a.allele)) {
-                                               if (a.allele.length == refAllele.length || a.delBases > 0)
-                                                 a.allele
-                                               else
-                                                 new String(
-                                                   refAllele.zipWithIndex.map {
-                                                     case (nuc, idx) =>
-                                                       a.allele
-                                                         .lift(idx)
-                                                         .getOrElse(nuc)
-                                                   }.toArray)
-                                             } else refAllele)
-    }.toMap
-    val altAlleles =
-      newAllelesMap.values.filter(_ != refAllele).toArray.distinct
-    val allAlleles = Array(refAllele) ++ altAlleles
-
-    if (altAlleles.isEmpty) None
+    if (bases.samples.isEmpty) None
     else {
-      val samples = bases.samples
-        .map {
-          case (sample, sampleBases) =>
-            val alleles =
-              sampleBases.map {
-                case (allele, alleleBases) =>
-                  newAllelesMap(allele) -> alleleBases
-              }
-            sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
-        }
-        .filter {
-          case (sample, alleles) =>
-            alleles.exists(_.total >= minCellAlleleCoverage)
-        }
-      Some(VariantCall(contig, position, refAllele, altAlleles, samples.toMap))
+      val maxDel = bases.samples.values.flatMap(_.keys.map(_.delBases)).max
+      val end = position + maxDel
+      val refAllele = new String(
+        referenceRegion.sequence.slice(
+          position - referenceRegion.start,
+          position - referenceRegion.start + maxDel + 1)).toUpperCase
+      val oldAlleles = bases.samples.values.flatMap(_.keySet)
+      val newAllelesMap = oldAlleles.map { a =>
+        SampleAllele(a.allele, a.delBases) -> (if (a.delBases > 0 || !refAllele
+                                                     .startsWith(a.allele)) {
+                                                 if (a.allele.length == refAllele.length || a.delBases > 0)
+                                                   a.allele
+                                                 else
+                                                   new String(
+                                                     refAllele.zipWithIndex.map {
+                                                       case (nuc, idx) =>
+                                                         a.allele
+                                                           .lift(idx)
+                                                           .getOrElse(nuc)
+                                                     }.toArray)
+                                               } else refAllele)
+      }.toMap
+      val altAlleles =
+        newAllelesMap.values.filter(_ != refAllele).toIndexedSeq.distinct
+      val allAlleles = IndexedSeq(refAllele) ++ altAlleles
+
+      if (altAlleles.isEmpty) None
+      else {
+        val samples = bases.samples
+          .map {
+            case (sample, sampleBases) =>
+              val alleles =
+                sampleBases.map {
+                  case (allele, alleleBases) =>
+                    newAllelesMap(allele) -> alleleBases
+                }
+              sample -> allAlleles.map(x => alleles.getOrElse(x, AlleleCount()))
+          }
+          .filter {
+            case (sample, alleles) =>
+              alleles.exists(_.total >= minCellAlleleCoverage)
+          }
+        Some(
+          VariantCall(contig, position, refAllele, altAlleles, samples.toMap))
+      }
     }
   }
 
   def fromVcfFile(inputFile: File,
-                  reference: File,
+                  dict: Broadcast[SAMSequenceDictionary],
                   sampleMap: Broadcast[Map[String, Int]],
                   binsize: Int)(implicit sc: SparkContext): RDD[VariantCall] = {
     if (inputFile.isDirectory) {
-      fromPartitionedVcf(inputFile, reference, sampleMap)
+      fromPartitionedVcf(inputFile, dict, sampleMap)
     } else {
-      val dict = sc.broadcast(fasta.getCachedDict(reference))
       val regions =
-        BedRecordList.fromReference(reference).scatter(binsize)
+        BedRecordList.fromDict(dict.value).scatter(binsize)
       sc.parallelize(regions, regions.size).mapPartitions { it =>
         it.flatMap { list =>
           vcf
@@ -326,16 +335,16 @@ object VariantCall {
   }
 
   def fromPartitionedVcf(directory: File,
-                         reference: File,
+                         dict: Broadcast[SAMSequenceDictionary],
                          sampleMap: Broadcast[Map[String, Int]])(
       implicit sc: SparkContext): RDD[VariantCall] = {
-    val dict = sc.broadcast(fasta.getCachedDict(reference))
     require(directory.isDirectory, s"'$directory' is not a directory")
     val files = directory
       .listFiles()
       .filter(_.getName.endsWith(".vcf.gz"))
+      .sortBy(_.getName.stripSuffix(".vcf.gz").toInt)
       .map(_.getAbsoluteFile)
-    sc.parallelize(files, files.size)
+    sc.parallelize(files, files.length)
       .mapPartitions { it =>
         it.flatMap { file =>
           new VCFFileReader(file)
@@ -343,5 +352,30 @@ object VariantCall {
             .map(fromVariantContext(_, dict.value, sampleMap.value))
         }
       }
+  }
+
+  /** Writes variants to a partitioned vcf file */
+  def writeToPartitionedVcf(rdd: RDD[VariantCall],
+                            outputDir: File,
+                            correctCells: Broadcast[IndexedSeq[String]],
+                            dict: Broadcast[SAMSequenceDictionary],
+                            vcfHeader: Broadcast[VCFHeader],
+                            seqError: Float): Unit = {
+    outputDir.mkdirs()
+    val outputFiles = rdd
+      .map(_.toVariantContext(correctCells.value, dict.value, seqError))
+      .mapPartitionsWithIndex {
+        case (idx, it) =>
+          val outputFile = new File(outputDir, s"$idx.vcf.gz")
+          val writer =
+            new VariantContextWriterBuilder()
+              .setOutputFile(outputFile)
+              .build()
+          writer.writeHeader(vcfHeader.value)
+          it.foreach(writer.add)
+          writer.close()
+          Iterator(outputFile)
+      }
+      .collect()
   }
 }

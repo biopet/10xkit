@@ -41,6 +41,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
   def main(args: Array[String]): Unit = {
     val cmdArgs = cmdArrayToArgs(args)
+    logger.info("Start")
     val sparkConf: SparkConf =
       new SparkConf(true).setMaster(cmdArgs.sparkMaster)
     implicit val sparkSession: SparkSession =
@@ -59,13 +60,11 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     val groupsMap = sc.broadcast(groups.value.flatMap {
       case (k, l) => l.map(_ -> k)
     })
-    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toArray))
+    val vcfHeader =
+      sc.broadcast(tenxkit.vcfHeader(groups.value.keys.toIndexedSeq))
 
     val variants = VariantCall
-      .fromVcfFile(cmdArgs.inputVcfFile,
-                   cmdArgs.reference,
-                   correctCellsMap,
-                   1000000)
+      .fromVcfFile(cmdArgs.inputVcfFile, dict, correctCellsMap, 1000000)
     val groupCalls = variants
       .map(_.toGroupCall(groupsMap.value))
       .sortBy(x => (x.contig, x.pos), ascending = true, numPartitions = 200)
@@ -88,6 +87,8 @@ object ExtractGroupVariants extends ToolCommand[Args] {
 
     Await.result(outputFilterFiles, Duration.Inf)
     Await.result(outputFiles, Duration.Inf)
+    sparkSession.stop()
+    logger.info("Done")
   }
 
   /**
@@ -106,7 +107,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
           g.genotypes.values.filter(_.genotype.exists(_.isDefined))
         called.headOption match {
           case Some(gt) =>
-            !called.tail.forall(_.genotype sameElements gt.genotype)
+            !called.tail.forall(_.genotype == gt.genotype)
           case _ => false
         }
       }
@@ -115,8 +116,7 @@ object ExtractGroupVariants extends ToolCommand[Args] {
           .filter(_.genotype.exists(_.isDefined))
           .toList
           .distinct
-        gts.exists(x =>
-          g.genotypes.values.count(_.genotype sameElements x.genotype) == 1)
+        gts.exists(x => g.genotypes.values.count(_.genotype == x.genotype) == 1)
       }
       .filter(_.alleleCount.values.forall(_.map(_.total).sum >= minSampleDepth))
   }

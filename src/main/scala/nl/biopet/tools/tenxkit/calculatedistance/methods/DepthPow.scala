@@ -26,8 +26,8 @@ package nl.biopet.tools.tenxkit.calculatedistance.methods
   * @param pow Power value
   */
 class DepthPow(val pow: Double) extends Method {
-  protected def calulateInternal(cell1: Array[Int],
-                                 cell2: Array[Int]): Double = {
+  protected def calulateInternal(cell1: IndexedSeq[Int],
+                                 cell2: IndexedSeq[Int]): Double = {
     // Calculate total depth
     val cell1Total = cell1.sum
     val cell2Total = cell2.sum
@@ -35,9 +35,8 @@ class DepthPow(val pow: Double) extends Method {
       .zip(cell2)
       .map {
         case (c1, c2) => // calculate distance for each allele
-          val depthFraction = List(
-            c1.toDouble / cell1Total,
-            c2.toDouble / cell2Total).filter(_ != 0.0).min
+          val depthFraction =
+            ((c1.toDouble / cell1Total) + (c2.toDouble / cell2Total)) / 2
           val distanceToMidle =
             Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
                                           c2.toDouble / cell2Total)

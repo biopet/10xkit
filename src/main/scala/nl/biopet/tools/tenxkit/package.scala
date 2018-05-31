@@ -94,19 +94,19 @@ package object tenxkit {
     new VCFFormatHeaderLine("CN", 1, VCFHeaderLineType.Integer, "Cell count")
   )
 
-  def vcfHeader(samples: Array[String]) =
+  def vcfHeader(samples: IndexedSeq[String]) =
     new VCFHeader(headerLines.toSet, samples.toSet)
 
   def parseCorrectCells(file: File)(
-      implicit sc: SparkContext): Broadcast[Array[String]] = {
-    val correctCells =
-      sc.broadcast(io.getLinesFromFile(file).toArray)
+      implicit sc: SparkContext): Broadcast[IndexedSeq[String]] = {
+    val correctCells: Broadcast[IndexedSeq[String]] =
+      sc.broadcast(io.getLinesFromFile(file).toIndexedSeq)
     require(correctCells.value.length == correctCells.value.distinct.length,
             "Duplicates cell barcodes found")
     correctCells
   }
 
-  def correctCellsMap(samples: Broadcast[Array[String]])(
+  def correctCellsMap(samples: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext): Broadcast[Map[String, Int]] = {
     sc.broadcast(samples.value.zipWithIndex.toMap)
   }

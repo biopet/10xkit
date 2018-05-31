@@ -23,7 +23,7 @@ package nl.biopet.tools.tenxkit
 
 package object calculatedistance {
   case class SampleCombinationKey(sample1: Int, sample2: Int)
-  case class AlleleDepth(ad1: Array[Int], ad2: Array[Int])
+  case class AlleleDepth(ad1: IndexedSeq[Int], ad2: IndexedSeq[Int])
 
   case class FractionPairDistance(f1: Double, f2: Double, distance: Double)
 

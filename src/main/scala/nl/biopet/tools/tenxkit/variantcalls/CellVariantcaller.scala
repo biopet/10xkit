@@ -25,16 +25,10 @@ import java.io.File
 
 import htsjdk.samtools._
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
-import htsjdk.variant.variantcontext.writer.{
-  Options,
-  VariantContextWriterBuilder
-}
-import htsjdk.variant.vcf._
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
 import nl.biopet.utils.ngs.bam
-import nl.biopet.utils.ngs.bam.IndexScattering._
-import nl.biopet.utils.ngs.intervals.{BedRecord, BedRecordList}
+import nl.biopet.utils.ngs.intervals.BedRecord
 import nl.biopet.utils.tool.{AbstractOptParser, ToolCommand}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -91,6 +85,7 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     Await.result(result.totalFuture, Duration.Inf)
 
+    sparkSession.stop()
     logger.info("Done")
   }
 
@@ -111,7 +106,7 @@ object CellVariantcaller extends ToolCommand[Args] {
       intervals: Option[File],
       sampleTag: String,
       umiTag: Option[String],
-      correctCells: Broadcast[Array[String]],
+      correctCells: Broadcast[IndexedSeq[String]],
       correctCellsMap: Broadcast[Map[String, Int]],
       cutoffs: Broadcast[Cutoffs],
       seqError: Float,
@@ -135,7 +130,7 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val writeFilterVcfFuture =
       if (writeFilteredVcf) Some(filteredVariants.map { rdd =>
-        writeVcf(
+        VariantCall.writeToPartitionedVcf(
           rdd.cache().sortBy(x => (x.contig, x.pos), numPartitions = 200),
           new File(outputDir, "filter-vcf"),
           correctCells,
@@ -147,12 +142,12 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val writeAllVcfFuture = {
       if (writeRawVcf) Some(Future {
-        writeVcf(allVariants.cache(),
-                 new File(outputDir, "raw-vcf"),
-                 correctCells,
-                 dict,
-                 vcfHeader,
-                 seqError)
+        VariantCall.writeToPartitionedVcf(allVariants.cache(),
+                                          new File(outputDir, "raw-vcf"),
+                                          correctCells,
+                                          dict,
+                                          vcfHeader,
+                                          seqError)
       })
       else None
     }
@@ -219,31 +214,6 @@ object CellVariantcaller extends ToolCommand[Args] {
           }
         }
       }
-  }
-
-  def writeVcf(rdd: RDD[VariantCall],
-               outputDir: File,
-               correctCells: Broadcast[Array[String]],
-               dict: Broadcast[SAMSequenceDictionary],
-               vcfHeader: Broadcast[VCFHeader],
-               seqError: Float): Unit = {
-    outputDir.mkdirs()
-    val outputFiles = rdd
-      .map(_.toVariantContext(correctCells.value, dict.value, seqError))
-      .mapPartitionsWithIndex {
-        case (idx, it) =>
-          val outputFile = new File(outputDir, s"$idx.vcf.gz")
-          val writer =
-            new VariantContextWriterBuilder()
-              .unsetOption(Options.INDEX_ON_THE_FLY)
-              .setOutputFile(outputFile)
-              .build()
-          writer.writeHeader(vcfHeader.value)
-          it.foreach(writer.add)
-          writer.close()
-          Iterator(outputFile)
-      }
-      .collect()
   }
 
   case class Key(sample: Int, allele: String, delBases: Int, umi: Option[Int])

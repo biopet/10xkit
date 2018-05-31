@@ -21,33 +21,22 @@
 
 package nl.biopet.tools.tenxkit.calculatedistance.methods
 
-/**
-  * This method will clculate the distance to the middle line of the fractions for each allele
-  * @param pow Power value
-  */
-class Pow(val pow: Double) extends Method {
-  protected def calulateInternal(cell1: IndexedSeq[Int],
-                                 cell2: IndexedSeq[Int]): Double = {
-    // Calculate total depth
-    val cell1Total = cell1.sum
-    val cell2Total = cell2.sum
-    cell1
-      .zip(cell2)
-      .map {
-        case (c1, c2) => // calculate distance for each allele
-          val distanceToMidle =
-            Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
-                                          c2.toDouble / cell2Total)
-          math.pow(distanceToMidle, pow)
-      }
-      .sum
-  }
-}
+import nl.biopet.test.BiopetTest
+import org.testng.annotations.Test
 
-object Pow {
-  def calculateDistanceToMiddle(fraction1: Double,
-                                fraction2: Double): Double = {
-    val middlePoint = ((fraction1 - fraction2) / 2) + fraction1
-    math.sqrt(math.pow(middlePoint - fraction1, 2) * 2)
+class PowTest extends BiopetTest {
+  @Test
+  def test(): Unit = {
+    val pow1 = new Pow(1)
+    val pow2 = new Pow(2)
+    val value = pow1.calculate(IndexedSeq(2, 0, 0), IndexedSeq(0, 2, 0))
+    value.isNaN shouldBe false
+
+    pow1.calculate(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0.0
+    pow1.calculate(IndexedSeq(0, 1), IndexedSeq(1, 1)) shouldBe math.sqrt(2.0) / 2
+    pow2.calculate(IndexedSeq(1, 1), IndexedSeq(1, 1)) shouldBe 0.0
+    pow2.calculate(IndexedSeq(0, 1), IndexedSeq(1, 0)) shouldBe math.pow(
+      math.sqrt(2.0) / 2,
+      2) * 2
   }
 }

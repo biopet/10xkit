@@ -19,35 +19,27 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit.calculatedistance.methods
+package nl.biopet.tools.tenxkit
 
-/**
-  * This method will clculate the distance to the middle line of the fractions for each allele
-  * @param pow Power value
-  */
-class Pow(val pow: Double) extends Method {
-  protected def calulateInternal(cell1: IndexedSeq[Int],
-                                 cell2: IndexedSeq[Int]): Double = {
-    // Calculate total depth
-    val cell1Total = cell1.sum
-    val cell2Total = cell2.sum
-    cell1
-      .zip(cell2)
-      .map {
-        case (c1, c2) => // calculate distance for each allele
-          val distanceToMidle =
-            Pow.calculateDistanceToMiddle(c1.toDouble / cell1Total,
-                                          c2.toDouble / cell2Total)
-          math.pow(distanceToMidle, pow)
-      }
-      .sum
-  }
-}
+import nl.biopet.test.BiopetTest
+import org.testng.annotations.Test
 
-object Pow {
-  def calculateDistanceToMiddle(fraction1: Double,
-                                fraction2: Double): Double = {
-    val middlePoint = ((fraction1 - fraction2) / 2) + fraction1
-    math.sqrt(math.pow(middlePoint - fraction1, 2) * 2)
+class DistanceHistogramTest extends BiopetTest {
+  @Test
+  def testBin(): Unit = {
+    val hist = new DistanceHistogram()
+    for (i <- 0 to 20) hist.add(i.toDouble / 10000)
+
+    hist.binned.countsMap shouldBe Map(0.0 -> 5, 0.001 -> 10, 0.002 -> 6)
   }
+
+  @Test
+  def testTotalDistance(): Unit = {
+    val hist = new DistanceHistogram()
+    hist.add(1.0)
+    hist.add(2.0)
+
+    hist.totalDistance shouldBe 3.0
+  }
+
 }
