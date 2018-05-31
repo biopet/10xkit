@@ -23,12 +23,18 @@ package nl.biopet.tools.tenxkit.cellreads
 
 import java.io.{File, PrintWriter}
 
-import htsjdk.samtools.{QueryInterval, SAMRecord, SamReaderFactory}
+import htsjdk.samtools.{
+  QueryInterval,
+  SAMRecord,
+  SAMSequenceDictionary,
+  SamReaderFactory
+}
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.Histogram
 import nl.biopet.utils.ngs.bam.getDictFromBam
 import nl.biopet.utils.tool.ToolCommand
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
@@ -54,29 +60,43 @@ object CellReads extends ToolCommand[Args] {
       s"Context is up, see ${sparkSession.sparkContext.uiWebUrl.getOrElse("")}")
 
     val dict = sc.broadcast(getDictFromBam(cmdArgs.inputFile))
-    val partitions = (cmdArgs.reference.length() / 1500000).toInt + 2
-    val regions = sc.parallelize(tenxkit.createRegions(cmdArgs.inputFile,
-                                                       cmdArgs.reference,
-                                                       partitions,
-                                                       cmdArgs.intervals),
-                                 partitions)
+    val future = runTotal(cmdArgs.inputFile,
+                          cmdArgs.reference,
+                          cmdArgs.outputDir,
+                          cmdArgs.sampleTag,
+                          cmdArgs.intervals,
+                          dict)
+
+    Await.result(future, Duration.Inf)
+
+    sparkSession.stop()
+    logger.info("Done")
+  }
+
+  def runTotal(bamFile: File,
+               reference: File,
+               outputDir: File,
+               sampleTag: String,
+               intervals: Option[File],
+               dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): Future[Unit] = {
+    val partitions = (reference.length() / 1500000).toInt + 2
+    val regions = sc.parallelize(
+      tenxkit.createRegions(bamFile, reference, partitions, intervals),
+      partitions)
 
     val reads = regions.mapPartitions { it =>
       val regions = it.toList.flatten
-      val reader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
+      val reader = SamReaderFactory.makeDefault().open(bamFile)
       val intervals = regions
         .map(r =>
           new QueryInterval(dict.value.getSequenceIndex(r.chr), r.start, r.end))
         .toArray
+        .sortBy(x => (x.referenceIndex, x.start))
       reader.query(intervals, false)
     }
 
-    Await.result(
-      generateHistograms(reads, cmdArgs.sampleTag, cmdArgs.outputDir),
-      Duration.Inf)
-
-    sparkSession.stop()
-    logger.info("Done")
+    generateHistograms(reads, sampleTag, outputDir)
   }
 
   def generateHistograms(reads: RDD[SAMRecord],

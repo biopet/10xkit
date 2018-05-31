@@ -27,6 +27,7 @@ import htsjdk.samtools.SAMSequenceDictionary
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit, VariantCall}
 import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
+import nl.biopet.tools.tenxkit.cellreads.CellReads
 import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
 import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
@@ -97,8 +98,9 @@ object SampleMatcher extends ToolCommand[Args] {
           runEvalSubGroups(cmdArgs, g.groups, g.trash, correctCells, d))
     }
 
+    futures += runCellReads(cmdArgs, dict)
+
     //TODO: Extract bam files
-    //TODO: Add CellReads
 
     Await.result(Future.sequence(futures.toList), Duration.Inf)
 
@@ -212,6 +214,18 @@ object SampleMatcher extends ToolCommand[Args] {
       else None
 
     distanceEval :: knownTrue.toList
+  }
+
+  def runCellReads(cmdArgs: Args, dict: Broadcast[SAMSequenceDictionary])(
+      implicit sc: SparkContext): Future[Unit] = {
+    val dir = new File(cmdArgs.outputDir, "cellreads")
+    dir.mkdir()
+    CellReads.runTotal(cmdArgs.inputFile,
+                       cmdArgs.reference,
+                       dir,
+                       cmdArgs.sampleTag,
+                       cmdArgs.intervals,
+                       dict)
   }
 
   def descriptionText: String =
