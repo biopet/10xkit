@@ -98,13 +98,22 @@ object CalulateDistance extends ToolCommand[Args] {
                minAlleleCoverage: Int,
                method: String,
                additionalMethods: List[String] = Nil,
-               scatters: Boolean = false)(implicit sc: SparkContext, sparkSession: SparkSession): Result = {
+               scatters: Boolean = false)(
+      implicit sc: SparkContext,
+      sparkSession: SparkSession): Result = {
     val futures = new ListBuffer[Future[_]]()
 
+    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
     val distances =
-      combinationDistance(method, outputDir, variants, correctCells, minAlleleCoverage)
+      combinationDistance(method,
+                          outputDir,
+                          variants,
+                          correctCells,
+                          minAlleleCoverage)
     val counts = distances.map { case (k, v) => k -> v.count }
-    val correctedDistances = distances.map { case (k, v) => k -> v.correctedDistance}
+    val correctedDistances = distances.map {
+      case (k, v) => k -> v.correctedDistance
+    }
     val correctedDistancesMatrix =
       DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
     sc.setLocalProperty("spark.scheduler.pool", "high-prio")
@@ -120,7 +129,8 @@ object CalulateDistance extends ToolCommand[Args] {
       .collectAsync()
       .map(_(0))
     futures += DistanceMatrix
-      .rddToMatrix(distances.map { case (k, v) => k -> v.distance }, correctCells)
+      .rddToMatrix(distances.map { case (k, v) => k -> v.distance },
+                   correctCells)
       .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.csv")))
 
     additionalMethods
@@ -129,13 +139,19 @@ object CalulateDistance extends ToolCommand[Args] {
       .sorted
       .foreach { m =>
         val distances =
-          combinationDistance(m, outputDir, variants, correctCells, minAlleleCoverage)
+          combinationDistance(m,
+                              outputDir,
+                              variants,
+                              correctCells,
+                              minAlleleCoverage)
         futures += DistanceMatrix
           .rddToMatrix(distances.map { case (k, v) => k -> v.distance },
                        correctCells)
           .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv")))
         futures += DistanceMatrix
-          .rddToMatrix(distances.map { case (k, v) => k -> v.correctedDistance }, correctCells)
+          .rddToMatrix(
+            distances.map { case (k, v) => k -> v.correctedDistance },
+            correctCells)
           .foreachAsync(
             _.writeFile(new File(outputDir, s"distance.corrected.$m.csv")))
       }
@@ -151,32 +167,49 @@ object CalulateDistance extends ToolCommand[Args] {
     Result(matrix, correctedDistancesMatrixFile, countFile, futures.toList)
   }
 
-  case class TempClass(sample1: Int, sample2: Int, ad1: IndexedSeq[Int], ad2: IndexedSeq[Int])
-  case class TempClass2(key: SampleCombinationKey, distance: Double, count: Long, correctedDistance: Double)
-  case class TempClass3(distance: Double, count: Long, correctedDistance: Double)
+  case class TempClass(sample1: Int,
+                       sample2: Int,
+                       ad1: IndexedSeq[Int],
+                       ad2: IndexedSeq[Int])
+  case class TempClass2(key: SampleCombinationKey,
+                        distance: Double,
+                        count: Long,
+                        correctedDistance: Double)
+  case class TempClass3(distance: Double,
+                        count: Long,
+                        correctedDistance: Double)
 
   def combinationDistance(methodString: String,
                           outputDir: File,
                           variants: RDD[VariantCall],
                           correctCells: Broadcast[IndexedSeq[String]],
                           minAlleleCoverage: Int)(
-      implicit sc: SparkContext, sparkSession: SparkSession): RDD[(SampleCombinationKey, TempClass3)] = {
+      implicit sc: SparkContext,
+      sparkSession: SparkSession): RDD[(SampleCombinationKey, TempClass3)] = {
     val method = sc.broadcast(Method.fromString(methodString))
 
     import sparkSession.implicits._
 
-    val keys = sc.parallelize(for {
-      s1 <- correctCells.value.indices
-      s2 <- correctCells.value.indices
-      if s2 > s1
-    } yield SampleCombinationKey(s1, s2)).toDF()
+    val keys = sc
+      .parallelize(for {
+        s1 <- correctCells.value.indices
+        s2 <- correctCells.value.indices
+        if s2 > s1
+      } yield SampleCombinationKey(s1, s2))
+      .toDF()
 
-    val ads = variants.zipWithIndex().flatMap { case (variant, idx) =>
-      variant.samples.filter {
-        case (_, alleles) =>
-          alleles.map(_.total).sum > minAlleleCoverage
-      }.map{ case (s, a) => (idx, s, a.map(_.total))}
-    }.toDF("i", "s", "ad")
+    val ads = variants
+      .zipWithIndex()
+      .flatMap {
+        case (variant, idx) =>
+          variant.samples
+            .filter {
+              case (_, alleles) =>
+                alleles.map(_.total).sum > minAlleleCoverage
+            }
+            .map { case (s, a) => (idx, s, a.map(_.total)) }
+      }
+      .toDF("i", "s", "ad")
 
     val ads1 = ads
       .withColumnRenamed("i", "i1")
@@ -194,17 +227,26 @@ object CalulateDistance extends ToolCommand[Args] {
       .select("sample1", "sample2", "ad1", "ad2")
       .as[TempClass]
 
-    val bla2 = bla.map(x => SampleCombinationKey(x.sample1, x.sample2) -> method.value.calculate(x.ad1, x.ad2)).toDF("key", "distance")
+    val bla2 = bla
+      .map(
+        x =>
+          SampleCombinationKey(x.sample1, x.sample2) -> method.value
+            .calculate(x.ad1, x.ad2))
+      .toDF("key", "distance")
 
     val bla3 = bla2.groupBy("key").sum("distance")
     val bla4 = bla2.groupBy("key").count().withColumnRenamed("key", "key2")
 
-    val bla5 = bla3.join(bla4, bla3("key") === bla4("key2"))
+    val bla5 = bla3
+      .join(bla4, bla3("key") === bla4("key2"))
       .withColumnRenamed("sum(distance)", "distance")
       .select("key", "distance", "count")
 
-    val bla6 = bla5.withColumn("correctedDistance", bla5("distance") / bla5("count")).as[TempClass2]
-      .map(x => x.key -> TempClass3(x.distance, x.count, x.correctedDistance)).rdd
+    val bla6 = bla5
+      .withColumn("correctedDistance", bla5("distance") / bla5("count"))
+      .as[TempClass2]
+      .map(x => x.key -> TempClass3(x.distance, x.count, x.correctedDistance))
+      .rdd
 
 //    variants
 //      .mapPartitions { it =>

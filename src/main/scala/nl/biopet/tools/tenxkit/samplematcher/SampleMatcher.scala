@@ -158,7 +158,8 @@ object SampleMatcher extends ToolCommand[Args] {
   def runCalculateDistance(cmdArgs: Args,
                            variants: RDD[VariantCall],
                            correctCells: Broadcast[IndexedSeq[String]])(
-      implicit sc: SparkContext, sparkSession: SparkSession): CalulateDistance.Result = {
+      implicit sc: SparkContext,
+      sparkSession: SparkSession): CalulateDistance.Result = {
     val dir = new File(cmdArgs.outputDir, "calculatedistance")
     dir.mkdir()
     CalulateDistance.totalRun(
