@@ -209,6 +209,11 @@ object DistanceMatrix extends Logging {
     distances.join(counts).map { case (k, (d, c)) => k -> (d / c) }
   }
 
+  def correctDistances(distances: RDD[(SampleCombinationKey, (Double, Int))])
+    : RDD[(SampleCombinationKey, Double)] = {
+    distances.map { case (k, (d, c)) => k -> (d / c) }
+  }
+
   def rddToMatrix(
       rdd: RDD[(SampleCombinationKey, Double)],
       samples: Broadcast[IndexedSeq[String]]): RDD[DistanceMatrix] = {

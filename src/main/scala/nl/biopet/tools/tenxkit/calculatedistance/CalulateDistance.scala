@@ -103,8 +103,8 @@ object CalulateDistance extends ToolCommand[Args] {
 
     val distances =
       combinationDistance(method, outputDir, variants, minAlleleCoverage)
-    val counts = countPositionsRdd(variants, minAlleleCoverage)
-    val correctedDistances = DistanceMatrix.correctDistances(distances, counts)
+    val counts = distances.map { case (k, (_, c)) => k -> c }
+    val correctedDistances = DistanceMatrix.correctDistances(distances)
     val correctedDistancesMatrix =
       DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
     sc.setLocalProperty("spark.scheduler.pool", "high-prio")
@@ -120,7 +120,7 @@ object CalulateDistance extends ToolCommand[Args] {
       .collectAsync()
       .map(_(0))
     futures += DistanceMatrix
-      .rddToMatrix(distances, correctCells)
+      .rddToMatrix(distances.map { case (k, (d, _)) => k -> d }, correctCells)
       .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.csv")))
 
     additionalMethods
@@ -131,11 +131,11 @@ object CalulateDistance extends ToolCommand[Args] {
         val distances =
           combinationDistance(m, outputDir, variants, minAlleleCoverage)
         futures += DistanceMatrix
-          .rddToMatrix(distances, correctCells)
+          .rddToMatrix(distances.map { case (k, (d, _)) => k -> d },
+                       correctCells)
           .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv")))
         futures += DistanceMatrix
-          .rddToMatrix(DistanceMatrix.correctDistances(distances, counts),
-                       correctCells)
+          .rddToMatrix(DistanceMatrix.correctDistances(distances), correctCells)
           .foreachAsync(
             _.writeFile(new File(outputDir, s"distance.corrected.$m.csv")))
       }
@@ -155,12 +155,12 @@ object CalulateDistance extends ToolCommand[Args] {
                           outputDir: File,
                           variants: RDD[VariantCall],
                           minAlleleCoverage: Int)(
-      implicit sc: SparkContext): RDD[(SampleCombinationKey, Double)] = {
+      implicit sc: SparkContext): RDD[(SampleCombinationKey, (Double, Int))] = {
     val method = sc.broadcast(Method.fromString(methodString))
 
     variants
       .mapPartitions { it =>
-        val result = mutable.Map[SampleCombinationKey, Double]()
+        val result = mutable.Map[SampleCombinationKey, (Double, Int)]()
         it.foreach { variant =>
           val samples = variant.samples.filter {
             case (_, alleles) =>
@@ -174,14 +174,15 @@ object CalulateDistance extends ToolCommand[Args] {
             if s2 > s1
           } {
             val key = SampleCombinationKey(s1, s2)
-            if (!result.contains(key)) result += key -> 0.0
-            result(key) = result(key) + method.value.calculate(samplesAd(s1),
-                                                               samplesAd(s2))
+            if (!result.contains(key)) result += key -> (0.0, 0)
+            val (d, c) = result(key)
+            result(key) =
+              (d + method.value.calculate(samplesAd(s1), samplesAd(s2)), c + 1)
           }
         }
         result.iterator
       }
-      .reduceByKey(_ + _)
+      .reduceByKey { case ((d1, c1), (d2, c2)) => (d1 + d2, c1 + c2) }
   }
 
   def createCombinations(variants: RDD[VariantCall], minAlleleCoverage: Int)
