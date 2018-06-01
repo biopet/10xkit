@@ -40,6 +40,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -99,11 +100,10 @@ object CalulateDistance extends ToolCommand[Args] {
                additionalMethods: List[String] = Nil,
                scatters: Boolean = false)(implicit sc: SparkContext): Result = {
     val futures = new ListBuffer[Future[_]]()
-    val combinations = createCombinations(variants, minAlleleCoverage)
 
     val distances =
-      combinationDistance(method, outputDir, combinations, correctCells)
-    val counts = countPositionsRdd(combinations)
+      combinationDistance(method, outputDir, variants, minAlleleCoverage)
+    val counts = countPositionsRdd(variants, minAlleleCoverage)
     val correctedDistances = DistanceMatrix.correctDistances(distances, counts)
     val correctedDistancesMatrix =
       DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
@@ -129,7 +129,7 @@ object CalulateDistance extends ToolCommand[Args] {
       .sorted
       .foreach { m =>
         val distances =
-          combinationDistance(m, outputDir, combinations, correctCells)
+          combinationDistance(m, outputDir, variants, minAlleleCoverage)
         futures += DistanceMatrix
           .rddToMatrix(distances, correctCells)
           .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv")))
@@ -140,8 +140,10 @@ object CalulateDistance extends ToolCommand[Args] {
             _.writeFile(new File(outputDir, s"distance.corrected.$m.csv")))
       }
 
-    if (scatters)
+    if (scatters) {
+      val combinations = createCombinations(variants, minAlleleCoverage)
       futures += writeScatters(outputDir, combinations, correctCells)
+    }
 
     val countFile = writeCountPositions(outputDir, counts, correctCells)
     futures += countFile
@@ -149,20 +151,38 @@ object CalulateDistance extends ToolCommand[Args] {
     Result(matrix, correctedDistancesMatrixFile, countFile, futures.toList)
   }
 
-  def combinationDistance(
-      methodString: String,
-      outputDir: File,
-      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])],
-      correctCells: Broadcast[IndexedSeq[String]])(
+  def combinationDistance(methodString: String,
+                          outputDir: File,
+                          variants: RDD[VariantCall],
+                          minAlleleCoverage: Int)(
       implicit sc: SparkContext): RDD[(SampleCombinationKey, Double)] = {
     val method = sc.broadcast(Method.fromString(methodString))
-    combinations
-      .map {
-        case (key, alleleDepts) =>
-          key -> alleleDepts
-            .map(x => method.value.calculate(x.ad1, x.ad2))
-            .sum
+
+    variants
+      .mapPartitions { it =>
+        val result = mutable.Map[SampleCombinationKey, Double]()
+        it.foreach { variant =>
+          val samples = variant.samples.filter {
+            case (_, alleles) =>
+              alleles.map(_.total).sum > minAlleleCoverage
+          }.keys
+          val samplesAd = samples.map(variant.samples.map {
+            case (s, c) => s -> c.map(_.total)
+          })
+          for {
+            s1 <- samples
+            s2 <- samples
+            if s2 > s1
+          } {
+            val key = SampleCombinationKey(s1, s2)
+            if (!result.contains(key)) result += key -> 0.0
+            result(key) = result(key) + method.value.calculate(samplesAd(s1),
+                                                               samplesAd(s2))
+          }
+        }
+        result.iterator
       }
+      .reduceByKey(_ + _)
   }
 
   def createCombinations(variants: RDD[VariantCall], minAlleleCoverage: Int)
@@ -183,10 +203,29 @@ object CalulateDistance extends ToolCommand[Args] {
   }
 
   def countPositionsRdd(
-      combinations: RDD[(SampleCombinationKey, Iterable[AlleleDepth])])
-    : RDD[(SampleCombinationKey, Int)] = {
-    combinations
-      .map { case (key, list) => key -> list.size }
+      variants: RDD[VariantCall],
+      minAlleleCoverage: Int): RDD[(SampleCombinationKey, Int)] = {
+    variants
+      .mapPartitions { it =>
+        val result = mutable.Map[SampleCombinationKey, Int]()
+        it.foreach { variant =>
+          val samples = variant.samples.filter {
+            case (_, alleles) =>
+              alleles.map(_.total).sum > minAlleleCoverage
+          }.keys
+          for {
+            s1 <- samples
+            s2 <- samples
+            if s2 > s1
+          } {
+            val key = SampleCombinationKey(s1, s2)
+            if (!result.contains(key)) result += key -> 1
+            else result(key) = result(key) + 1
+          }
+        }
+        result.iterator
+      }
+      .reduceByKey(_ + _)
   }
 
   def writeCountPositions(
