@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <allocations>
     <pool name="high-prio">
-        <schedulingMode>FAIR</schedulingMode>
+        <schedulingMode>FIFO</schedulingMode>
         <weight>10000</weight>
         <minShare>0</minShare>
     </pool>
     <pool name="default">
-        <schedulingMode>FAIR</schedulingMode>
+        <schedulingMode>FIFO</schedulingMode>
         <weight>5000</weight>
         <minShare>0</minShare>
     </pool>
     <pool name="low-prio">
-        <schedulingMode>FAIR</schedulingMode>
+        <schedulingMode>FIFO</schedulingMode>
         <weight>0</weight>
         <minShare>0</minShare>
     </pool>
