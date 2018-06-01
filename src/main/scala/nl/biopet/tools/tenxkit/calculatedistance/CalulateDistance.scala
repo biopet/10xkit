@@ -166,9 +166,8 @@ object CalulateDistance extends ToolCommand[Args] {
             case (_, alleles) =>
               alleles.map(_.total).sum > minAlleleCoverage
           }.keys
-          val samplesAd = samples.map(variant.samples.map {
-            case (s, c) => s -> c.map(_.total)
-          })
+          val samplesAd =
+            samples.map(s => s -> variant.samples(s).map(_.total)).toMap
           for {
             s1 <- samples
             s2 <- samples
