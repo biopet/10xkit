@@ -38,6 +38,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.collection.JavaConversions._
 
 object CellVariantcaller extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
@@ -92,13 +93,21 @@ object CellVariantcaller extends ToolCommand[Args] {
     if (x > 0) x else 1
   }
 
-  case class Result(filteredVariants: Future[RDD[VariantCall]],
-                    allVariants: RDD[VariantCall],
+  case class Result(contigs: Map[String, ContigResult],
                     writeFilteredFuture: Option[Future[Unit]],
                     writeRawFuture: Option[Future[Unit]]) {
     def totalFuture: Future[List[Unit]] =
       Future.sequence(writeFilteredFuture.toList ::: writeRawFuture.toList)
+
+    def allVariants()(implicit sc: SparkContext): RDD[VariantCall] =
+      sc.union(contigs.map(_._2.allVariants).toSeq)
+    def filteredVariants()(implicit sc: SparkContext): RDD[VariantCall] =
+      sc.union(contigs.map(_._2.filteredVariants).toSeq)
+
   }
+
+  case class ContigResult(filteredVariants: RDD[VariantCall],
+                          allVariants: RDD[VariantCall])
 
   def totalRun(
       inputFile: File,
@@ -118,73 +127,87 @@ object CellVariantcaller extends ToolCommand[Args] {
     val regions =
       tenxkit.createRegions(inputFile, reference, partitions, intervals)
 
-    val allVariants = createAllVariants(inputFile,
-                                        reference,
-                                        regions,
-                                        correctCellsMap,
-                                        cutoffs,
-                                        sampleTag,
-                                        umiTag)
+    val contigs = regions.groupBy(_.map(_.chr).distinct).map {
+      case (contig, r) =>
+        val all = createAllVariants(inputFile,
+                                    reference,
+                                    r,
+                                    correctCellsMap,
+                                    cutoffs,
+                                    sampleTag,
+                                    umiTag)
+        val filter = filterVariants(all, seqError, cutoffs).cache()
+        contig.headOption
+          .map(_ -> ContigResult(all, filter))
+          .getOrElse(throw new IllegalStateException("No contig found"))
+    }
 
     val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
 
-    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
-    val filteredVariants =
-      filterVariants(allVariants, seqError, cutoffs).map(
-        _.sortBy(x => (x.contig, x.pos), numPartitions = 1000).cache())
+    //sc.setLocalProperty("spark.scheduler.pool", "high-prio")
 
     val writeFilterVcfFuture =
       if (writeFilteredVcf) {
-        val x = Some(filteredVariants.map { rdd =>
           Thread.sleep(10000)
           sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-          VariantCall.writeToPartitionedVcf(rdd,
-                                            new File(outputDir, "filter-vcf"),
-                                            correctCells,
-                                            dict,
-                                            vcfHeader,
-                                            seqError)
-        })
-        x
+          val sorted = dict.value.getSequences
+              .sortBy(_.getSequenceIndex)
+              .flatMap(c =>
+                contigs
+                  .get(c.getSequenceName)
+                  .map(x => c.getSequenceName -> Future(x.filteredVariants.sortBy(_.pos))))
+          Some(Future.sequence(sorted.map(_._2)).map { r =>
+            VariantCall.writeToPartitionedVcf(sc.union(r),
+              new File(outputDir, "filter-vcf"),
+              correctCells,
+              dict,
+              vcfHeader,
+              seqError)
+          }
+        )
       } else None
 
     val writeAllVcfFuture = {
-      if (writeRawVcf) Some(Future[Unit] {
+      if (writeRawVcf) {
         Thread.sleep(10000)
         sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-        VariantCall.writeToPartitionedVcf(allVariants,
-                                          new File(outputDir, "raw-vcf"),
-                                          correctCells,
-                                          dict,
-                                          vcfHeader,
-                                          seqError)
-      })
+        val sorted = dict.value.getSequences
+          .sortBy(_.getSequenceIndex)
+          .flatMap(c =>
+            contigs
+              .get(c.getSequenceName)
+              .map(x => c.getSequenceName -> Future(x.allVariants.sortBy(_.pos))))
+        Some(Future.sequence(sorted.map(_._2)).map { r =>
+          VariantCall.writeToPartitionedVcf(sc.union(r),
+            new File(outputDir, "raw-vcf"),
+            correctCells,
+            dict,
+            vcfHeader,
+            seqError)
+        }
+        )
+      }
       else None
     }
 
-    Result(filteredVariants,
-           allVariants,
-           writeFilterVcfFuture,
-           writeAllVcfFuture)
+    Result(contigs, writeFilterVcfFuture, writeAllVcfFuture)
   }
 
   def filterVariants(variants: RDD[VariantCall],
                      seqError: Float = Args().seqError,
-                     cutoffs: Broadcast[Cutoffs]): Future[RDD[VariantCall]] = {
-    Future {
-      variants
-        .flatMap(
-          _.setAllelesToZeroPvalue(seqError, cutoffs.value.maxPvalue)
-            .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
-            .cleanupAlleles()
-        )
-        .filter(
-          x =>
-            x.hasNonReference &&
-              x.altDepth >= cutoffs.value.minAlternativeDepth &&
-              x.totalDepth >= cutoffs.value.minTotalDepth &&
-              x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
-    }
+                     cutoffs: Broadcast[Cutoffs]): RDD[VariantCall] = {
+    variants
+      .flatMap(
+        _.setAllelesToZeroPvalue(seqError, cutoffs.value.maxPvalue)
+          .setAllelesToZeroDepth(cutoffs.value.minCellAlternativeDepth)
+          .cleanupAlleles()
+      )
+      .filter(
+        x =>
+          x.hasNonReference &&
+            x.altDepth >= cutoffs.value.minAlternativeDepth &&
+            x.totalDepth >= cutoffs.value.minTotalDepth &&
+            x.minSampleAltDepth(cutoffs.value.minCellAlternativeDepth))
   }
 
   def createAllVariants(inputFile: File,

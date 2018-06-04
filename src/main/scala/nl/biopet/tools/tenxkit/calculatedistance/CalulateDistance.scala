@@ -88,11 +88,40 @@ object CalulateDistance extends ToolCommand[Args] {
   }
 
   case class Result(distanceMatrix: Future[DistanceMatrix],
+                    distanceRdd: RDD[(SampleCombinationKey, (Double, Long))],
                     distanceMatrixFile: Future[File],
                     countFile: Future[File],
                     writeFileFutures: List[Future[Any]])
 
-  def totalRun(variants: RDD[VariantCall],
+  def runPerContig(variants: Map[String, RDD[VariantCall]],
+                   outputDir: File,
+                   correctCells: Broadcast[IndexedSeq[String]],
+                   minAlleleCoverage: Int,
+                   method: String,
+                   additionalMethods: List[String] = Nil,
+                   scatters: Boolean = false): Map[String, Result] = {
+    val contigsDir = new File(outputDir, "contigs")
+    contigsDir.mkdir()
+    variants.map{ case (k, v) =>
+      val contigDir = new File(contigsDir, k)
+      contigDir.mkdir()
+      k -> totalRun(v, contigDir, correctCells, minAlleleCoverage, method, additionalMethods, scatters)
+    }
+  }
+
+  def runTotalPerContig(variants: Map[String, RDD[VariantCall]],
+                   outputDir: File,
+                   correctCells: Broadcast[IndexedSeq[String]],
+                   minAlleleCoverage: Int,
+                   method: String,
+                   additionalMethods: List[String] = Nil,
+                   scatters: Boolean = false): Result = {
+    val contigResults = runPerContig(variants, outputDir, correctCells, minAlleleCoverage, method, additionalMethods, scatters)
+
+    Result()
+  }
+
+    def totalRun(variants: RDD[VariantCall],
                outputDir: File,
                correctCells: Broadcast[IndexedSeq[String]],
                minAlleleCoverage: Int,
@@ -129,8 +158,7 @@ object CalulateDistance extends ToolCommand[Args] {
       .collectAsync()
       .map(_(0))
     futures += DistanceMatrix
-      .rddToMatrix(distances.map { case (k, v) => k -> v._1 },
-                   correctCells)
+      .rddToMatrix(distances.map { case (k, v) => k -> v._1 }, correctCells)
       .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.csv")))
 
     additionalMethods
@@ -145,13 +173,11 @@ object CalulateDistance extends ToolCommand[Args] {
                               correctCells,
                               minAlleleCoverage)
         futures += DistanceMatrix
-          .rddToMatrix(distances.map { case (k, v) => k -> v._1 },
-                       correctCells)
+          .rddToMatrix(distances.map { case (k, v) => k -> v._1 }, correctCells)
           .foreachAsync(_.writeFile(new File(outputDir, s"distance.$m.csv")))
         futures += DistanceMatrix
-          .rddToMatrix(
-            distances.map { case (k, v) => k -> v._1 / v._2 },
-            correctCells)
+          .rddToMatrix(distances.map { case (k, v) => k -> v._1 / v._2 },
+                       correctCells)
           .foreachAsync(
             _.writeFile(new File(outputDir, s"distance.corrected.$m.csv")))
       }
@@ -164,7 +190,7 @@ object CalulateDistance extends ToolCommand[Args] {
     val countFile = writeCountPositions(outputDir, counts, correctCells)
     futures += countFile
 
-    Result(matrix, correctedDistancesMatrixFile, countFile, futures.toList)
+    Result(matrix, distances, correctedDistancesMatrixFile, countFile, futures.toList)
   }
 
 //  case class TempClass(sample1: Int,
@@ -183,9 +209,9 @@ object CalulateDistance extends ToolCommand[Args] {
                           outputDir: File,
                           variants: RDD[VariantCall],
                           correctCells: Broadcast[IndexedSeq[String]],
-                          minAlleleCoverage: Int)(
-      implicit sc: SparkContext,
-      sparkSession: SparkSession): RDD[(SampleCombinationKey, (Double, Long))] = {
+                          minAlleleCoverage: Int)(implicit sc: SparkContext,
+                                                  sparkSession: SparkSession)
+    : RDD[(SampleCombinationKey, (Double, Long))] = {
     val method = sc.broadcast(Method.fromString(methodString))
 
 //    import sparkSession.implicits._
@@ -399,7 +425,7 @@ object CalulateDistance extends ToolCommand[Args] {
         val result =
           readBamFile(cmdArgs, correctCells, correctCellsMap, cmdArgs.binSize)
         futures += result.totalFuture
-        Await.result(result.filteredVariants, Duration.Inf)
+        result.filteredVariants
       case name
           if name.endsWith(".vcf") | name.endsWith(".vcf.gz") | cmdArgs.inputFile.isDirectory =>
         VariantCall.fromVcfFile(cmdArgs.inputFile,

@@ -39,7 +39,7 @@ import nl.biopet.utils.io.resourceToFile
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.{FutureAction, SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
@@ -81,15 +81,15 @@ object SampleMatcher extends ToolCommand[Args] {
       runVariant(cmdArgs, correctCells, correctCellsMap, dict)
     futures += variantsResult.totalFuture
 
-    val calculateDistanceResult = variantsResult.filteredVariants.map { v =>
-      sc.setJobGroup("Calculate distance", "Calculate distance")
-      runCalculateDistance(cmdArgs, v, correctCells)
-    }
-    futures += calculateDistanceResult.flatMap(r =>
-      Future.sequence(r.writeFileFutures))
+    sc.setJobGroup("Calculate distance", "Calculate distance")
+    val calculateDistanceResult = runCalculateDistance(
+      cmdArgs,
+      variantsResult.filteredVariants,
+      correctCells)
+    futures ++= calculateDistanceResult.writeFileFutures
 
     val distanceMatrix =
-      calculateDistanceResult.flatMap(_.distanceMatrix).map(sc.broadcast(_))
+      calculateDistanceResult.distanceMatrix.map(sc.broadcast(_))
 
     val groupDistanceResult =
       distanceMatrix.map { x =>
@@ -99,10 +99,13 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
     val extractGroupVariantsResult =
-      variantsResult.filteredVariants.zip(groupDistanceResult).flatMap {
-        case (v, g) =>
-          sc.setJobGroup("Extract group variants", "Extract group variants")
-          runExtractGroupVariants(cmdArgs, v, g.groups, g.trash, dict)
+      groupDistanceResult.flatMap { g =>
+        sc.setJobGroup("Extract group variants", "Extract group variants")
+        runExtractGroupVariants(cmdArgs,
+                                variantsResult.filteredVariants,
+                                g.groups,
+                                g.trash,
+                                dict)
       }
     futures += extractGroupVariantsResult.flatMap(x =>
       Future.sequence(x.futures))
