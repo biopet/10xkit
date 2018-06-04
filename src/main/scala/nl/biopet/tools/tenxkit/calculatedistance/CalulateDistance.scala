@@ -87,7 +87,7 @@ object CalulateDistance extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  case class Result(distanceMatrix: Future[DistanceMatrix],
+  case class Result(distanceMatrix: Option[Future[DistanceMatrix]],
                     distanceRdd: RDD[(SampleCombinationKey, (Double, Long))],
                     distanceMatrixFile: Future[File],
                     countFile: Future[File],
@@ -105,7 +105,7 @@ object CalulateDistance extends ToolCommand[Args] {
     variants.map{ case (k, v) =>
       val contigDir = new File(contigsDir, k)
       contigDir.mkdir()
-      k -> totalRun(v, contigDir, correctCells, minAlleleCoverage, method, additionalMethods, scatters)
+      k -> totalRun(v, contigDir, correctCells, minAlleleCoverage, method, additionalMethods, scatters, false)
     }
   }
 
@@ -122,12 +122,13 @@ object CalulateDistance extends ToolCommand[Args] {
   }
 
     def totalRun(variants: RDD[VariantCall],
-               outputDir: File,
-               correctCells: Broadcast[IndexedSeq[String]],
-               minAlleleCoverage: Int,
-               method: String,
-               additionalMethods: List[String] = Nil,
-               scatters: Boolean = false)(
+                 outputDir: File,
+                 correctCells: Broadcast[IndexedSeq[String]],
+                 minAlleleCoverage: Int,
+                 method: String,
+                 additionalMethods: List[String] = Nil,
+                 scatters: Boolean = false,
+                 outputMatrix: Boolean = true)(
       implicit sc: SparkContext,
       sparkSession: SparkSession): Result = {
     val futures = new ListBuffer[Future[_]]()
@@ -146,7 +147,8 @@ object CalulateDistance extends ToolCommand[Args] {
     val correctedDistancesMatrix =
       DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
     sc.setLocalProperty("spark.scheduler.pool", "high-prio")
-    val matrix = correctedDistancesMatrix.collectAsync().map(_(0))
+    val matrix = if (outputMatrix) Some(correctedDistancesMatrix.collectAsync().map(_(0)))
+      else None
 
     sc.setLocalProperty("spark.scheduler.pool", "low-prio")
     val correctedDistancesMatrixFile = correctedDistancesMatrix
