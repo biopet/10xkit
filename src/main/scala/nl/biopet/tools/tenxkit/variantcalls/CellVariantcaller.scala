@@ -64,13 +64,19 @@ object CellVariantcaller extends ToolCommand[Args] {
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val cutoffs = sc.broadcast(cmdArgs.cutoffs)
 
+    val regions =
+      tenxkit.createRegions(
+        cmdArgs.inputFile,
+        cmdArgs.reference,
+        getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
+        cmdArgs.intervals)
+
     val result = totalRun(
       cmdArgs.inputFile,
       cmdArgs.outputDir,
       cmdArgs.reference,
       dict,
-      getPartitions(cmdArgs.inputFile, cmdArgs.partitions),
-      cmdArgs.intervals,
+      regions,
       cmdArgs.sampleTag,
       cmdArgs.umiTag,
       correctCells,
@@ -105,14 +111,17 @@ object CellVariantcaller extends ToolCommand[Args] {
                          dict: Broadcast[SAMSequenceDictionary],
                          vcfHeader: Broadcast[VCFHeader],
                          seqError: Float): Unit = {
-      futures += sortedAllVariants.map { r =>
-        VariantCall.writeToPartitionedVcf(r,
-                                          new File(outputDir, "raw-vcf"),
-                                          correctCells,
-                                          dict,
-                                          vcfHeader,
-                                          seqError)
-      }
+      futures += Future {
+        Thread.sleep(10000)
+        sortedAllVariants.map { r =>
+          VariantCall.writeToPartitionedVcf(r,
+                                            new File(outputDir, "raw-vcf"),
+                                            correctCells,
+                                            dict,
+                                            vcfHeader,
+                                            seqError)
+        }
+      }.flatMap(x => x)
     }
 
     def writeFilterVariants(outputDir: File,
@@ -120,14 +129,17 @@ object CellVariantcaller extends ToolCommand[Args] {
                             dict: Broadcast[SAMSequenceDictionary],
                             vcfHeader: Broadcast[VCFHeader],
                             seqError: Float): Unit = {
-      futures += sortedFilteredVariants.map { r =>
-        VariantCall.writeToPartitionedVcf(r,
-                                          new File(outputDir, "filter-vcf"),
-                                          correctCells,
-                                          dict,
-                                          vcfHeader,
-                                          seqError)
-      }
+      futures += Future {
+        Thread.sleep(10000)
+        sortedFilteredVariants.map { r =>
+          VariantCall.writeToPartitionedVcf(r,
+                                            new File(outputDir, "filter-vcf"),
+                                            correctCells,
+                                            dict,
+                                            vcfHeader,
+                                            seqError)
+        }
+      }.flatMap(x => x)
     }
 
     lazy val allVariants: RDD[VariantCall] =
@@ -136,7 +148,11 @@ object CellVariantcaller extends ToolCommand[Args] {
       sc.union(contigs.map(_._2.filteredVariants).toSeq)
     lazy val sortedFilteredVariants: Future[RDD[VariantCall]] =
       Future
-        .sequence(contigs.map(_._2.filterSorted))
+        .sequence(contigs.map(x =>
+          Future {
+            sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+            x._2.filteredVariants.sortBy(_.pos)
+        }))
         .map(s => sc.union(s.toSeq))
     lazy val sortedAllVariants: Future[RDD[VariantCall]] = Future {
       Thread.sleep(10000)
@@ -148,15 +164,14 @@ object CellVariantcaller extends ToolCommand[Args] {
 
   case class ContigResult(filteredVariants: RDD[VariantCall],
                           allVariants: RDD[VariantCall],
-                          filterSorted: Future[RDD[VariantCall]])
+                          indexSize: Long)
 
   def totalRun(
       inputFile: File,
       outputDir: File,
       reference: File,
       dict: Broadcast[SAMSequenceDictionary],
-      partitions: Int,
-      intervals: Option[File],
+      regions: List[(List[BedRecord], Long)],
       sampleTag: String,
       umiTag: Option[String],
       correctCells: Broadcast[IndexedSeq[String]],
@@ -165,31 +180,38 @@ object CellVariantcaller extends ToolCommand[Args] {
       seqError: Float,
       writeRawVcf: Boolean = false,
       writeFilteredVcf: Boolean = true)(implicit sc: SparkContext): Result = {
-    val regions =
-      tenxkit.createRegions(inputFile, reference, partitions, intervals)
 
-    val contigs = regions.groupBy(_.map(_.chr).distinct).map {
-      case (contig, r) =>
-        val all = createAllVariants(inputFile,
-                                    reference,
-                                    r,
-                                    correctCellsMap,
-                                    cutoffs,
-                                    sampleTag,
-                                    umiTag)
-        val filter = filterVariants(all, seqError, cutoffs).cache()
-        contig.headOption
-          .map(_ -> ContigResult(all, filter, Future {
-            Thread.sleep(10000)
-            sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-            filter.sortBy(_.pos)
-          }))
-          .getOrElse(throw new IllegalStateException("No contig found"))
-    }
+    val contigs = regions
+      .groupBy(_._1.map(_.chr).distinct)
+      .toList
+      .sortBy(_._2.map(_._2).sum)
+      .reverse
+      .map {
+        case (contig, r) =>
+          val all = createAllVariants(inputFile,
+                                      reference,
+                                      r.map(_._1),
+                                      correctCellsMap,
+                                      cutoffs,
+                                      sampleTag,
+                                      umiTag)
+          contig.headOption
+            .map { c =>
+              val filter = filterVariants(all, seqError, cutoffs)
+                .setName(s"Variants: $c")
+                .cache()
+              c -> ContigResult(
+                allVariants = all,
+                filteredVariants = filter,
+                indexSize = r.map(_._2).sum
+              )
+            }
+            .getOrElse(throw new IllegalStateException("No contig found"))
+      }
 
     lazy val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
 
-    val result = Result(contigs)
+    val result = Result(contigs.toMap)
 
     if (writeFilteredVcf)
       result.writeFilterVariants(outputDir,

@@ -93,11 +93,11 @@ class CalulateDistanceTest extends ToolTest[Args] {
         "RG"
       ))
 
-    new File(outputDir, "distance.pow4.csv") should exist
-    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "distance.pow4.tsv") should exist
+    new File(outputDir, "count.positions.tsv") should exist
     val vcfDir = new File(outputDir, "filter-vcf")
     vcfDir should exist
-    for (i <- (0 until 200).par) {
+    for (i <- (0 until 1).par) {
       new File(vcfDir, s"$i.vcf.gz") should exist
       new File(vcfDir, s"$i.vcf.gz.tbi") should exist
     }
@@ -122,9 +122,9 @@ class CalulateDistanceTest extends ToolTest[Args] {
         resourcePath("/samples.txt")
       ))
 
-    val distanceMatrixFile = new File(outputDir, "distance.pow4.csv")
+    val distanceMatrixFile = new File(outputDir, "distance.pow4.tsv")
     distanceMatrixFile should exist
-    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "count.positions.tsv") should exist
     new File(outputDir, "filter-vcf") shouldNot exist
     val scatterDir = new File(outputDir, "scatters")
     scatterDir shouldNot exist
@@ -159,9 +159,9 @@ class CalulateDistanceTest extends ToolTest[Args] {
         "pow3"
       ))
 
-    new File(outputDir, "distance.pow4.csv") shouldNot exist
-    new File(outputDir, "distance.pow3.csv") should exist
-    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "distance.pow4.tsv") shouldNot exist
+    new File(outputDir, "distance.pow3.tsv") should exist
+    new File(outputDir, "count.positions.tsv") should exist
     new File(outputDir, "filter-vcf") shouldNot exist
   }
 
@@ -186,9 +186,9 @@ class CalulateDistanceTest extends ToolTest[Args] {
         "pow3"
       ))
 
-    new File(outputDir, "distance.pow4.csv") should exist
-    new File(outputDir, "distance.pow3.csv") should exist
-    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "distance.pow4.tsv") should exist
+    new File(outputDir, "distance.pow3.tsv") should exist
+    new File(outputDir, "count.positions.tsv") should exist
     new File(outputDir, "filter-vcf") shouldNot exist
   }
 
@@ -212,9 +212,9 @@ class CalulateDistanceTest extends ToolTest[Args] {
         "--writeScatters"
       ))
 
-    val distanceMatrixFile = new File(outputDir, "distance.pow4.csv")
+    val distanceMatrixFile = new File(outputDir, "distance.pow4.tsv")
     distanceMatrixFile should exist
-    new File(outputDir, "count.positions.csv") should exist
+    new File(outputDir, "count.positions.tsv") should exist
     new File(outputDir, "filter-vcf") shouldNot exist
     val scatterDir = new File(outputDir, "scatters")
     scatterDir should exist

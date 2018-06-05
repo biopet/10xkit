@@ -33,9 +33,11 @@ import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
+import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.getPartitions
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.fasta.getCachedDict
 import nl.biopet.utils.io.resourceToFile
+import nl.biopet.utils.ngs.intervals.BedRecord
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -74,32 +76,51 @@ object SampleMatcher extends ToolCommand[Args] {
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val dict = sc.broadcast(getCachedDict(cmdArgs.reference))
 
+    val regions =
+      tenxkit.createRegions(
+        cmdArgs.inputFile,
+        cmdArgs.reference,
+        CellVariantcaller.getPartitions(cmdArgs.inputFile,
+                                        cmdArgs.partitions,
+                                        fileSizePerPartition =
+                                          cmdArgs.fileBinSize),
+        cmdArgs.intervals
+      )
+
     val futures = new ListBuffer[Future[Any]]()
 
-    sc.setJobGroup("Variant calling", "Variant calling")
     val variantsResult =
-      runVariant(cmdArgs, correctCells, correctCellsMap, dict)
-    futures += variantsResult.totalFuture
+      runVariant(cmdArgs, regions, correctCells, correctCellsMap, dict)
 
-    sc.setJobGroup("Calculate distance", "Calculate distance")
     val calculateDistanceResult =
       runCalculateDistance(cmdArgs, variantsResult.contigs.map {
         case (k, v) => k -> v.filteredVariants
       }, correctCells)
-    futures ++= calculateDistanceResult.writeFileFutures
+    futures += calculateDistanceResult.totalFuture
 
     val distanceMatrix =
-      calculateDistanceResult.distanceMatrix match {
-        case Some(x) => x.map(sc.broadcast(_))
-        case _       => throw new IllegalStateException("Matrix not found")
-      }
+      calculateDistanceResult.correctedDistancesMatrixRdd
+        .collectAsync()
+        .map(x => sc.broadcast(x(0)))
 
     val groupDistanceResult =
       distanceMatrix.map { x =>
         sc.setJobGroup("Group distance", "Group distance")
         runGroupDistance(cmdArgs, x, correctCells)
       }
+    sc.clearJobGroup()
     futures += groupDistanceResult.flatMap(_.writeFuture)
+
+    //TODO: extra jobs
+
+    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
+    variantsResult.writeFilterVariants(
+      new File(cmdArgs.outputDir, "variantcalling"),
+      correctCells,
+      dict,
+      vcfHeader,
+      cmdArgs.seqError)
+    futures += variantsResult.totalFuture
 
     val extractGroupVariantsResult =
       groupDistanceResult.zip(variantsResult.sortedFilteredVariants).flatMap {
@@ -133,6 +154,7 @@ object SampleMatcher extends ToolCommand[Args] {
   }
 
   def runVariant(cmdArgs: Args,
+                 regions: List[(List[BedRecord], Long)],
                  correctCells: Broadcast[IndexedSeq[String]],
                  correctCellsMap: Broadcast[Map[String, Int]],
                  dict: Broadcast[SAMSequenceDictionary])(
@@ -144,17 +166,14 @@ object SampleMatcher extends ToolCommand[Args] {
       dir,
       cmdArgs.reference,
       dict,
-      CellVariantcaller.getPartitions(
-        cmdArgs.inputFile,
-        cmdArgs.partitions,
-        fileSizePerPartition = cmdArgs.fileBinSize),
-      cmdArgs.intervals,
+      regions,
       cmdArgs.sampleTag,
       Some(cmdArgs.umiTag),
       correctCells,
       correctCellsMap,
       sc.broadcast(cmdArgs.cutoffs),
-      cmdArgs.seqError
+      cmdArgs.seqError,
+      writeFilteredVcf = false
     )
   }
 
@@ -171,7 +190,6 @@ object SampleMatcher extends ToolCommand[Args] {
       correctCells,
       cmdArgs.cutoffs.minAlleleDepth,
       cmdArgs.method,
-      cmdArgs.additionalMethods,
       cmdArgs.writeScatters
     )
   }

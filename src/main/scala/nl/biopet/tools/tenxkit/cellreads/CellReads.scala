@@ -83,7 +83,9 @@ object CellReads extends ToolCommand[Args] {
       implicit sc: SparkContext): Future[Unit] = {
     val partitions = (reference.length() / 1500000).toInt + 2
     val regions = sc.parallelize(
-      tenxkit.createRegions(bamFile, reference, partitions, intervals),
+      tenxkit.createRegions(bamFile, reference, partitions, intervals).map {
+        case (r, _) => r
+      },
       partitions)
 
     val reads = regions.mapPartitions { it =>
