@@ -148,23 +148,22 @@ object CellVariantcaller extends ToolCommand[Args] {
       sc.union(contigs.map(_._2.filteredVariants).toSeq)
     lazy val sortedFilteredVariants: Future[RDD[VariantCall]] =
       Future
-        .sequence(contigs.map(x =>
-          Future {
-            sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-            x._2.filteredVariants.sortBy(_.pos)
-        }))
+        .sequence(contigs.map(x => x._2.sortedFilterVariants))
         .map(s => sc.union(s.toSeq))
     lazy val sortedAllVariants: Future[RDD[VariantCall]] = Future {
-      Thread.sleep(10000)
-      sc.setLocalProperty("spark.scheduler.pool", "low-prio")
       sc.union(contigs.map(_._2.allVariants.sortBy(_.pos)).toSeq)
     }
 
   }
 
-  case class ContigResult(filteredVariants: RDD[VariantCall],
-                          allVariants: RDD[VariantCall],
-                          indexSize: Long)
+  case class ContigResult(
+      contig: String,
+      filteredVariants: RDD[VariantCall],
+      allVariants: RDD[VariantCall])(implicit sc: SparkContext) {
+    lazy val sortedFilterVariants: Future[RDD[VariantCall]] =
+      Future(
+        filteredVariants.sortBy(_.pos).setName(s"Variants: $contig").cache())
+  }
 
   def totalRun(
       inputFile: File,
@@ -199,12 +198,9 @@ object CellVariantcaller extends ToolCommand[Args] {
             .map { c =>
               val filter = filterVariants(all, seqError, cutoffs)
                 .setName(s"Variants: $c")
-                .cache()
-              c -> ContigResult(
-                allVariants = all,
-                filteredVariants = filter,
-                indexSize = r.map(_._2).sum
-              )
+              c -> ContigResult(contig = c,
+                                allVariants = all,
+                                filteredVariants = filter)
             }
             .getOrElse(throw new IllegalStateException("No contig found"))
       }

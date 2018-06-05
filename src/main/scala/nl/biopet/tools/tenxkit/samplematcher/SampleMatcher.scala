@@ -92,16 +92,20 @@ object SampleMatcher extends ToolCommand[Args] {
     val variantsResult =
       runVariant(cmdArgs, regions, correctCells, correctCellsMap, dict)
 
+    val contigSorted = Future
+      .sequence(variantsResult.contigs.map {
+        case (k, v) => v.sortedFilterVariants.map(k -> _)
+      })
+      .map(_.toMap)
     val calculateDistanceResult =
-      runCalculateDistance(cmdArgs, variantsResult.contigs.map {
-        case (k, v) => k -> v.filteredVariants
-      }, correctCells)
-    futures += calculateDistanceResult.totalFuture
+      contigSorted.map(runCalculateDistance(cmdArgs, _, correctCells))
+    futures += calculateDistanceResult.flatMap(_.totalFuture)
 
     val distanceMatrix =
-      calculateDistanceResult.correctedDistancesMatrixRdd
-        .collectAsync()
-        .map(x => sc.broadcast(x(0)))
+      calculateDistanceResult.flatMap(
+        _.correctedDistancesMatrixRdd
+          .collectAsync()
+          .map(x => sc.broadcast(x(0))))
 
     val groupDistanceResult =
       distanceMatrix.map { x =>
@@ -143,7 +147,6 @@ object SampleMatcher extends ToolCommand[Args] {
 
     sc.setLocalProperty("spark.scheduler.pool", "low-prio")
     futures += runCellReads(cmdArgs, dict)
-    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
 
     //TODO: Extract bam files
 
