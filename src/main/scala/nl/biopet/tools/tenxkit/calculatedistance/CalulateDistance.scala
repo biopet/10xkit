@@ -99,41 +99,96 @@ object CalulateDistance extends ToolCommand[Args] {
                    minAlleleCoverage: Int,
                    method: String,
                    additionalMethods: List[String] = Nil,
-                   scatters: Boolean = false): Map[String, Result] = {
+                   scatters: Boolean = false)(
+      implicit sc: SparkContext): Map[String, Result] = {
     val contigsDir = new File(outputDir, "contigs")
     contigsDir.mkdir()
-    variants.map{ case (k, v) =>
-      val contigDir = new File(contigsDir, k)
-      contigDir.mkdir()
-      k -> totalRun(v, contigDir, correctCells, minAlleleCoverage, method, additionalMethods, scatters, false)
+    variants.map {
+      case (k, v) =>
+        sc.setJobGroup(s"Group distance: $k", s"Group distance: $k")
+        val contigDir = new File(contigsDir, k)
+        contigDir.mkdir()
+        k -> totalRun(v,
+                      contigDir,
+                      correctCells,
+                      minAlleleCoverage,
+                      method,
+                      additionalMethods,
+                      scatters,
+                      outputMatrix = false)
     }
   }
 
-  def runTotalPerContig(variants: Map[String, RDD[VariantCall]],
-                   outputDir: File,
-                   correctCells: Broadcast[IndexedSeq[String]],
-                   minAlleleCoverage: Int,
-                   method: String,
-                   additionalMethods: List[String] = Nil,
-                   scatters: Boolean = false): Result = {
-    val contigResults = runPerContig(variants, outputDir, correctCells, minAlleleCoverage, method, additionalMethods, scatters)
+  def runTotalPerContig(
+      variants: Map[String, RDD[VariantCall]],
+      outputDir: File,
+      correctCells: Broadcast[IndexedSeq[String]],
+      minAlleleCoverage: Int,
+      method: String,
+      additionalMethods: List[String] = Nil,
+      scatters: Boolean = false)(implicit sc: SparkContext): Result = {
+    val contigResults = runPerContig(variants,
+                                     outputDir,
+                                     correctCells,
+                                     minAlleleCoverage,
+                                     method,
+                                     additionalMethods,
+                                     scatters)
 
-    Result()
+    sc.setJobGroup("Group distance", "Group distance")
+
+    val futures = new ListBuffer[Future[Any]]()
+
+    val distances = sc
+      .union(contigResults.map(_._2.distanceRdd).toSeq)
+      .reduceByKey { case ((d1, c1), (d2, c2)) => (d1 + d2, c1 + c2) }
+
+    val counts = distances.map { case (k, v) => k -> v._2 }
+    val correctedDistances = distances.map {
+      case (k, v) => k -> v._1 / v._2
+    }
+    val correctedDistancesMatrix =
+      DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
+    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+    val matrix = correctedDistancesMatrix.collectAsync().map(_(0))
+
+    val correctedDistancesMatrixFile = correctedDistancesMatrix
+      .map { x =>
+        val outputFile = new File(outputDir, s"distance.corrected.$method.tsv")
+        x.writeFile(outputFile)
+        outputFile
+      }
+      .collectAsync()
+      .map(_(0))
+    futures += correctedDistancesMatrixFile
+
+    futures += DistanceMatrix
+      .rddToMatrix(distances.map { case (k, (d, _)) => k -> d }, correctCells)
+      .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.tsv")))
+
+    val countFile = writeCountPositions(outputDir, counts, correctCells)
+    futures += countFile
+
+    futures ++= contigResults.flatMap(_._2.writeFileFutures)
+
+    Result(Some(matrix),
+           distances,
+           correctedDistancesMatrixFile,
+           countFile,
+           futures.toList)
   }
 
-    def totalRun(variants: RDD[VariantCall],
-                 outputDir: File,
-                 correctCells: Broadcast[IndexedSeq[String]],
-                 minAlleleCoverage: Int,
-                 method: String,
-                 additionalMethods: List[String] = Nil,
-                 scatters: Boolean = false,
-                 outputMatrix: Boolean = true)(
-      implicit sc: SparkContext,
-      sparkSession: SparkSession): Result = {
+  def totalRun(
+      variants: RDD[VariantCall],
+      outputDir: File,
+      correctCells: Broadcast[IndexedSeq[String]],
+      minAlleleCoverage: Int,
+      method: String,
+      additionalMethods: List[String] = Nil,
+      scatters: Boolean = false,
+      outputMatrix: Boolean = true)(implicit sc: SparkContext): Result = {
     val futures = new ListBuffer[Future[_]]()
 
-    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
     val distances =
       combinationDistance(method,
                           outputDir,
@@ -146,28 +201,38 @@ object CalulateDistance extends ToolCommand[Args] {
     }
     val correctedDistancesMatrix =
       DistanceMatrix.rddToMatrix(correctedDistances, correctCells)
-    sc.setLocalProperty("spark.scheduler.pool", "high-prio")
-    val matrix = if (outputMatrix) Some(correctedDistancesMatrix.collectAsync().map(_(0)))
-      else None
+    val matrix =
+      if (outputMatrix) {
+        sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+        Some(correctedDistancesMatrix.collectAsync().map(_(0)))
+      } else None
 
-    sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-    val correctedDistancesMatrixFile = correctedDistancesMatrix
-      .map { x =>
-        val outputFile = new File(outputDir, s"distance.corrected.$method.csv")
-        x.writeFile(outputFile)
-        outputFile
+    val correctedDistancesMatrixFile = Future(correctedDistancesMatrix)
+      .flatMap { x =>
+        x.map { y =>
+            Thread.sleep(10000)
+            sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+            val outputFile =
+              new File(outputDir, s"distance.corrected.$method.csv")
+            y.writeFile(outputFile)
+            outputFile
+          }
+          .collectAsync()
+          .map(_(0))
+
       }
-      .collectAsync()
-      .map(_(0))
+
     futures += DistanceMatrix
       .rddToMatrix(distances.map { case (k, v) => k -> v._1 }, correctCells)
-      .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.csv")))
+      .foreachAsync(_.writeFile(new File(outputDir, s"distance.$method.tsv")))
 
     additionalMethods
       .filter(_ != method)
       .distinct
       .sorted
+      .par
       .foreach { m =>
+        sc.setLocalProperty("spark.scheduler.pool", "low-prio")
         val distances =
           combinationDistance(m,
                               outputDir,
@@ -192,90 +257,21 @@ object CalulateDistance extends ToolCommand[Args] {
     val countFile = writeCountPositions(outputDir, counts, correctCells)
     futures += countFile
 
-    Result(matrix, distances, correctedDistancesMatrixFile, countFile, futures.toList)
+    Result(matrix,
+           distances,
+           correctedDistancesMatrixFile,
+           countFile,
+           futures.toList)
   }
 
-//  case class TempClass(sample1: Int,
-//                       sample2: Int,
-//                       ad1: IndexedSeq[Int],
-//                       ad2: IndexedSeq[Int])
-//  case class TempClass2(key: SampleCombinationKey,
-//                        distance: Double,
-//                        count: Long,
-//                        correctedDistance: Double)
-//  case class TempClass3(distance: Double,
-//                        count: Long,
-//                        correctedDistance: Double)
-//
   def combinationDistance(methodString: String,
                           outputDir: File,
                           variants: RDD[VariantCall],
                           correctCells: Broadcast[IndexedSeq[String]],
-                          minAlleleCoverage: Int)(implicit sc: SparkContext,
-                                                  sparkSession: SparkSession)
+                          minAlleleCoverage: Int)(implicit sc: SparkContext)
     : RDD[(SampleCombinationKey, (Double, Long))] = {
     val method = sc.broadcast(Method.fromString(methodString))
 
-//    import sparkSession.implicits._
-//
-//    val keys = sc
-//      .parallelize(for {
-//        s1 <- correctCells.value.indices
-//        s2 <- correctCells.value.indices
-//        if s2 > s1
-//      } yield SampleCombinationKey(s1, s2))
-//      .toDF()
-//
-//    val ads = variants
-//      .zipWithIndex()
-//      .flatMap {
-//        case (variant, idx) =>
-//          variant.samples
-//            .filter {
-//              case (_, alleles) =>
-//                alleles.map(_.total).sum > minAlleleCoverage
-//            }
-//            .map { case (s, a) => (idx, s, a.map(_.total)) }
-//      }
-//      .toDF("i", "s", "ad")
-//
-//    val ads1 = ads
-//      .withColumnRenamed("i", "i1")
-//      .withColumnRenamed("s", "s1")
-//      .withColumnRenamed("ad", "ad1")
-//
-//    val ads2 = ads
-//      .withColumnRenamed("i", "i2")
-//      .withColumnRenamed("s", "s2")
-//      .withColumnRenamed("ad", "ad2")
-//
-//    val bla = keys
-//      .join(ads1, ads1("s1") === keys("sample1"))
-//      .join(ads2, ads2("s2") === keys("sample2") && ads1("i1") === ads2("i2"))
-//      .select("sample1", "sample2", "ad1", "ad2")
-//      .as[TempClass]
-//
-//    val bla2 = bla
-//      .map(
-//        x =>
-//          SampleCombinationKey(x.sample1, x.sample2) -> method.value
-//            .calculate(x.ad1, x.ad2))
-//      .toDF("key", "distance")
-//
-//    val bla3 = bla2.groupBy("key").sum("distance")
-//    val bla4 = bla2.groupBy("key").count().withColumnRenamed("key", "key2")
-//
-//    val bla5 = bla3
-//      .join(bla4, bla3("key") === bla4("key2"))
-//      .withColumnRenamed("sum(distance)", "distance")
-//      .select("key", "distance", "count")
-//
-//    val bla6 = bla5
-//      .withColumn("correctedDistance", bla5("distance") / bla5("count"))
-//      .as[TempClass2]
-//      .map(x => x.key -> TempClass3(x.distance, x.count, x.correctedDistance))
-//      .rdd
-//
     variants
       .mapPartitions { it =>
         val result = mutable.Map[SampleCombinationKey, (Double, Long)]()
@@ -365,7 +361,7 @@ object CalulateDistance extends ToolCommand[Args] {
       .repartition(1)
       .mapPartitions { it =>
         val map = it.toMap
-        val outputFile = new File(outputDir, "count.positions.csv")
+        val outputFile = new File(outputDir, "count.positions.tsv")
         val writer =
           new PrintWriter(outputFile)
         writer.println(correctCells.value.mkString("Sample\t", "\t", ""))

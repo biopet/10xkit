@@ -69,9 +69,9 @@ class SampleMatcherTest extends ToolTest[Args] {
     new File(variantcallingDir, "filter-vcf") should exist
 
     calulateDistanceDir should exist
-    new File(calulateDistanceDir, "count.positions.csv") should exist
-    new File(calulateDistanceDir, "distance.pow4.csv") should exist
-    new File(calulateDistanceDir, "distance.corrected.pow4.csv") should exist
+    new File(calulateDistanceDir, "count.positions.tsv") should exist
+    new File(calulateDistanceDir, "distance.pow4.tsv") should exist
+    new File(calulateDistanceDir, "distance.corrected.pow4.tsv") should exist
 
     groupDistanceDir should exist
     new File(groupDistanceDir, "trash.txt") should exist

@@ -25,6 +25,7 @@ import java.io.File
 
 import htsjdk.samtools._
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
+import htsjdk.variant.vcf.VCFHeader
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.{TenxKit, VariantCall}
 import nl.biopet.utils.ngs.bam
@@ -38,7 +39,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.collection.JavaConversions._
+import scala.collection.mutable.ListBuffer
 
 object CellVariantcaller extends ToolCommand[Args] {
   def argsParser: AbstractOptParser[Args] = new ArgsParser(this)
@@ -93,21 +94,61 @@ object CellVariantcaller extends ToolCommand[Args] {
     if (x > 0) x else 1
   }
 
-  case class Result(contigs: Map[String, ContigResult],
-                    writeFilteredFuture: Option[Future[Unit]],
-                    writeRawFuture: Option[Future[Unit]]) {
-    def totalFuture: Future[List[Unit]] =
-      Future.sequence(writeFilteredFuture.toList ::: writeRawFuture.toList)
+  case class Result(contigs: Map[String, ContigResult])(
+      implicit sc: SparkContext) {
+    private val futures = new ListBuffer[Future[Any]]()
 
-    def allVariants()(implicit sc: SparkContext): RDD[VariantCall] =
+    def totalFuture: Future[List[Any]] = Future.sequence(futures.toList)
+
+    def writeAllVariants(outputDir: File,
+                         correctCells: Broadcast[IndexedSeq[String]],
+                         dict: Broadcast[SAMSequenceDictionary],
+                         vcfHeader: Broadcast[VCFHeader],
+                         seqError: Float): Unit = {
+      futures += sortedAllVariants.map { r =>
+        VariantCall.writeToPartitionedVcf(r,
+                                          new File(outputDir, "raw-vcf"),
+                                          correctCells,
+                                          dict,
+                                          vcfHeader,
+                                          seqError)
+      }
+    }
+
+    def writeFilterVariants(outputDir: File,
+                            correctCells: Broadcast[IndexedSeq[String]],
+                            dict: Broadcast[SAMSequenceDictionary],
+                            vcfHeader: Broadcast[VCFHeader],
+                            seqError: Float): Unit = {
+      futures += sortedFilteredVariants.map { r =>
+        VariantCall.writeToPartitionedVcf(r,
+                                          new File(outputDir, "filter-vcf"),
+                                          correctCells,
+                                          dict,
+                                          vcfHeader,
+                                          seqError)
+      }
+    }
+
+    lazy val allVariants: RDD[VariantCall] =
       sc.union(contigs.map(_._2.allVariants).toSeq)
-    def filteredVariants()(implicit sc: SparkContext): RDD[VariantCall] =
+    lazy val filteredVariants: RDD[VariantCall] =
       sc.union(contigs.map(_._2.filteredVariants).toSeq)
+    lazy val sortedFilteredVariants: Future[RDD[VariantCall]] =
+      Future
+        .sequence(contigs.map(_._2.filterSorted))
+        .map(s => sc.union(s.toSeq))
+    lazy val sortedAllVariants: Future[RDD[VariantCall]] = Future {
+      Thread.sleep(10000)
+      sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+      sc.union(contigs.map(_._2.allVariants.sortBy(_.pos)).toSeq)
+    }
 
   }
 
   case class ContigResult(filteredVariants: RDD[VariantCall],
-                          allVariants: RDD[VariantCall])
+                          allVariants: RDD[VariantCall],
+                          filterSorted: Future[RDD[VariantCall]])
 
   def totalRun(
       inputFile: File,
@@ -138,59 +179,32 @@ object CellVariantcaller extends ToolCommand[Args] {
                                     umiTag)
         val filter = filterVariants(all, seqError, cutoffs).cache()
         contig.headOption
-          .map(_ -> ContigResult(all, filter))
+          .map(_ -> ContigResult(all, filter, Future {
+            Thread.sleep(10000)
+            sc.setLocalProperty("spark.scheduler.pool", "low-prio")
+            filter.sortBy(_.pos)
+          }))
           .getOrElse(throw new IllegalStateException("No contig found"))
     }
 
-    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
+    lazy val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
 
-    //sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+    val result = Result(contigs)
 
-    val writeFilterVcfFuture =
-      if (writeFilteredVcf) {
-          Thread.sleep(10000)
-          sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-          val sorted = dict.value.getSequences
-              .sortBy(_.getSequenceIndex)
-              .flatMap(c =>
-                contigs
-                  .get(c.getSequenceName)
-                  .map(x => c.getSequenceName -> Future(x.filteredVariants.sortBy(_.pos))))
-          Some(Future.sequence(sorted.map(_._2)).map { r =>
-            VariantCall.writeToPartitionedVcf(sc.union(r),
-              new File(outputDir, "filter-vcf"),
-              correctCells,
-              dict,
-              vcfHeader,
-              seqError)
-          }
-        )
-      } else None
+    if (writeFilteredVcf)
+      result.writeFilterVariants(outputDir,
+                                 correctCells,
+                                 dict,
+                                 vcfHeader,
+                                 seqError)
+    if (writeRawVcf)
+      result.writeAllVariants(outputDir,
+                              correctCells,
+                              dict,
+                              vcfHeader,
+                              seqError)
 
-    val writeAllVcfFuture = {
-      if (writeRawVcf) {
-        Thread.sleep(10000)
-        sc.setLocalProperty("spark.scheduler.pool", "low-prio")
-        val sorted = dict.value.getSequences
-          .sortBy(_.getSequenceIndex)
-          .flatMap(c =>
-            contigs
-              .get(c.getSequenceName)
-              .map(x => c.getSequenceName -> Future(x.allVariants.sortBy(_.pos))))
-        Some(Future.sequence(sorted.map(_._2)).map { r =>
-          VariantCall.writeToPartitionedVcf(sc.union(r),
-            new File(outputDir, "raw-vcf"),
-            correctCells,
-            dict,
-            vcfHeader,
-            seqError)
-        }
-        )
-      }
-      else None
-    }
-
-    Result(contigs, writeFilterVcfFuture, writeAllVcfFuture)
+    result
   }
 
   def filterVariants(variants: RDD[VariantCall],

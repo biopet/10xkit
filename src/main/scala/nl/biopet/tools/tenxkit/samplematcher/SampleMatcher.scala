@@ -82,14 +82,17 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += variantsResult.totalFuture
 
     sc.setJobGroup("Calculate distance", "Calculate distance")
-    val calculateDistanceResult = runCalculateDistance(
-      cmdArgs,
-      variantsResult.filteredVariants,
-      correctCells)
+    val calculateDistanceResult =
+      runCalculateDistance(cmdArgs, variantsResult.contigs.map {
+        case (k, v) => k -> v.filteredVariants
+      }, correctCells)
     futures ++= calculateDistanceResult.writeFileFutures
 
     val distanceMatrix =
-      calculateDistanceResult.distanceMatrix.map(sc.broadcast(_))
+      calculateDistanceResult.distanceMatrix match {
+        case Some(x) => x.map(sc.broadcast(_))
+        case _       => throw new IllegalStateException("Matrix not found")
+      }
 
     val groupDistanceResult =
       distanceMatrix.map { x =>
@@ -99,13 +102,10 @@ object SampleMatcher extends ToolCommand[Args] {
     futures += groupDistanceResult.flatMap(_.writeFuture)
 
     val extractGroupVariantsResult =
-      groupDistanceResult.flatMap { g =>
-        sc.setJobGroup("Extract group variants", "Extract group variants")
-        runExtractGroupVariants(cmdArgs,
-                                variantsResult.filteredVariants,
-                                g.groups,
-                                g.trash,
-                                dict)
+      groupDistanceResult.zip(variantsResult.sortedFilteredVariants).flatMap {
+        case (g, v) =>
+          sc.setJobGroup("Extract group variants", "Extract group variants")
+          runExtractGroupVariants(cmdArgs, v, g.groups, g.trash, dict)
       }
     futures += extractGroupVariantsResult.flatMap(x =>
       Future.sequence(x.futures))
@@ -159,13 +159,13 @@ object SampleMatcher extends ToolCommand[Args] {
   }
 
   def runCalculateDistance(cmdArgs: Args,
-                           variants: RDD[VariantCall],
+                           variants: Map[String, RDD[VariantCall]],
                            correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext,
       sparkSession: SparkSession): CalulateDistance.Result = {
     val dir = new File(cmdArgs.outputDir, "calculatedistance")
     dir.mkdir()
-    CalulateDistance.totalRun(
+    CalulateDistance.runTotalPerContig(
       variants,
       dir,
       correctCells,
