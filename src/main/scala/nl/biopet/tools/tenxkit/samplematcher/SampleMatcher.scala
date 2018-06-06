@@ -98,7 +98,7 @@ object SampleMatcher extends ToolCommand[Args] {
 
     val contigFutures = contigs
       .map { contig =>
-        sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+        sc.setLocalProperty("spark.scheduler.pool", null)
         sc.setJobGroup(s"Variantcalling: $contig", s"Variantcalling: $contig")
         futures += variantsResult
           .contigs(contig)
