@@ -94,10 +94,9 @@ object SampleMatcher extends ToolCommand[Args] {
     val variantsResult =
       runVariant(cmdArgs, regions, correctCells, correctCellsMap, dict)
 
-    val contigs = regions.map(_._1.map(_.chr).head)
+    val contigs = regions.groupBy(_._1.map(_.chr).head).map(x => x._1 -> x._2.map(_._2).sum).toList.sortBy(_._2).reverse.map(_._1)
 
-    val contigFutures = regions
-      .map(_._1.map(_.chr).head)
+    val contigFutures = contigs
       .map { contig =>
         sc.setLocalProperty("spark.scheduler.pool", "high-prio")
         sc.setJobGroup(s"Variantcalling: $contig", s"Variantcalling: $contig")
