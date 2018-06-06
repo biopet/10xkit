@@ -230,32 +230,46 @@ object CalulateDistance extends ToolCommand[Args] {
                           minAlleleCoverage: Int)(implicit sc: SparkContext)
     : RDD[(SampleCombinationKey, (Double, Long))] = {
     val method = sc.broadcast(Method.fromString(methodString))
-
-    variants
-      .mapPartitions { it =>
-        val result = mutable.Map[SampleCombinationKey, (Double, Long)]()
-        it.foreach { variant =>
-          val samples = variant.samples.filter {
-            case (_, alleles) =>
-              alleles.map(_.total).sum > minAlleleCoverage
-          }.keys
-          val samplesAd =
-            samples.map(s => s -> variant.samples(s).map(_.total)).toMap
-          for {
-            s1 <- samples
-            s2 <- samples
-            if s2 > s1
-          } {
-            val key = SampleCombinationKey(s1, s2)
-            if (!result.contains(key)) result += key -> (0.0, 0L)
-            val (d, c) = result(key)
-            result(key) =
-              (d + method.value.calculate(samplesAd(s1), samplesAd(s2)), c + 1)
-          }
-        }
-        result.iterator
+    variants.flatMap { variant =>
+      val samples = variant.samples.filter {
+        case (_, alleles) =>
+          alleles.map(_.total).sum > minAlleleCoverage
+      }.keys
+      val samplesAd =
+        samples.map(s => s -> variant.samples(s).map(_.total)).toMap
+      for {
+        s1 <- samples
+        s2 <- samples
+        if s2 > s1
+      } yield {
+        SampleCombinationKey(s1, s2) -> (method.value.calculate(samplesAd(s1), samplesAd(s2)), 1L)
       }
-      .reduceByKey { case ((d1, c1), (d2, c2)) => (d1 + d2, c1 + c2) }
+    }.reduceByKey { case ((d1, c1), (d2, c2)) => (d1 + d2, c1 + c2) }
+//    variants
+//      .mapPartitions { it =>
+//        val result = mutable.Map[SampleCombinationKey, (Double, Long)]()
+//        it.foreach { variant =>
+//          val samples = variant.samples.filter {
+//            case (_, alleles) =>
+//              alleles.map(_.total).sum > minAlleleCoverage
+//          }.keys
+//          val samplesAd =
+//            samples.map(s => s -> variant.samples(s).map(_.total)).toMap
+//          for {
+//            s1 <- samples
+//            s2 <- samples
+//            if s2 > s1
+//          } {
+//            val key = SampleCombinationKey(s1, s2)
+//            if (!result.contains(key)) result += key -> (0.0, 0L)
+//            val (d, c) = result(key)
+//            result(key) =
+//              (d + method.value.calculate(samplesAd(s1), samplesAd(s2)), c + 1)
+//          }
+//        }
+//        result.iterator
+//      }
+//      .reduceByKey { case ((d1, c1), (d2, c2)) => (d1 + d2, c1 + c2) }
   }
 
   def createCombinations(variants: RDD[VariantCall], minAlleleCoverage: Int)
