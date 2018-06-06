@@ -95,7 +95,9 @@ object SampleMatcher extends ToolCommand[Args] {
     val contigSorted = Future
       .sequence(variantsResult.contigs.map {
         case (k, v) =>
+          sc.setLocalProperty("spark.scheduler.pool", "high-prio")
           futures += v.sortedFilterVariants.map(_.countAsync())
+          sc.setLocalProperty("spark.scheduler.pool", null)
           v.sortedFilterVariants.map(k -> _)
       })
       .map(_.toMap)
