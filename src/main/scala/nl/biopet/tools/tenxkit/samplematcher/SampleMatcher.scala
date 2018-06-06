@@ -77,39 +77,47 @@ object SampleMatcher extends ToolCommand[Args] {
     val dict = sc.broadcast(getCachedDict(cmdArgs.reference))
 
     val regions =
-      tenxkit.createRegions(
-        cmdArgs.inputFile,
-        cmdArgs.reference,
-        CellVariantcaller.getPartitions(cmdArgs.inputFile,
-                                        cmdArgs.partitions,
-                                        fileSizePerPartition =
-                                          cmdArgs.fileBinSize),
-        cmdArgs.intervals
-      )
+      tenxkit
+        .createRegions(
+          cmdArgs.inputFile,
+          cmdArgs.reference,
+          CellVariantcaller.getPartitions(cmdArgs.inputFile,
+                                          cmdArgs.partitions,
+                                          fileSizePerPartition =
+                                            cmdArgs.fileBinSize),
+          cmdArgs.intervals
+        )
+        .sortBy(_._2)
 
     val futures = new ListBuffer[Future[Any]]()
 
     val variantsResult =
       runVariant(cmdArgs, regions, correctCells, correctCellsMap, dict)
 
-    val contigSorted = Future
-      .sequence(variantsResult.contigs.map {
-        case (k, v) =>
-          sc.setLocalProperty("spark.scheduler.pool", "high-prio")
-          futures += v.sortedFilterVariants.map(_.countAsync())
-          sc.setLocalProperty("spark.scheduler.pool", null)
-          v.sortedFilterVariants.map(k -> _)
-      })
-      .map(_.toMap)
+    val contigs = regions.map(_._1.map(_.chr).head)
+
+    val contigFutures = regions
+      .map(_._1.map(_.chr).head)
+      .map { contig =>
+        sc.setLocalProperty("spark.scheduler.pool", "high-prio")
+        sc.setJobGroup(s"Variantcalling: $contig", s"Variantcalling: $contig")
+        futures += variantsResult
+          .contigs(contig)
+          .sortedFilterVariants
+          .map(_.countAsync())
+        sc.setLocalProperty("spark.scheduler.pool", null)
+        sc.clearJobGroup()
+        contig -> variantsResult.contigs(contig).sortedFilterVariants
+      }
+      .toMap
 
     val calculateDistanceResult =
-      contigSorted.map(runCalculateDistance(cmdArgs, _, correctCells))
-    futures += calculateDistanceResult.flatMap(_.totalFuture)
+      runCalculateDistance(cmdArgs, contigFutures, correctCells)
+    futures += calculateDistanceResult.totalFuture
 
     val distanceMatrix =
-      calculateDistanceResult.flatMap(
-        _.correctedDistancesMatrixRdd
-          .collectAsync()
+      calculateDistanceResult.correctedDistancesMatrixRdd.flatMap(
+        _.collectAsync()
           .map(x => sc.broadcast(x(0))))
 
     val groupDistanceResult =
@@ -186,7 +194,7 @@ object SampleMatcher extends ToolCommand[Args] {
   }
 
   def runCalculateDistance(cmdArgs: Args,
-                           variants: Map[String, RDD[VariantCall]],
+                           variants: Map[String, Future[RDD[VariantCall]]],
                            correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext,
       sparkSession: SparkSession): CalulateDistance.Result = {

@@ -38,7 +38,12 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{
+  Await,
+  ExecutionContext,
+  ExecutionContextExecutor,
+  Future
+}
 import scala.collection.mutable.ListBuffer
 
 object CellVariantcaller extends ToolCommand[Args] {
@@ -161,9 +166,10 @@ object CellVariantcaller extends ToolCommand[Args] {
       filteredVariants: RDD[VariantCall],
       allVariants: RDD[VariantCall])(implicit sc: SparkContext) {
     lazy val sortedFilterVariants: Future[RDD[VariantCall]] =
-      Future{
+      Future {
         sc.setJobGroup(s"VariantCalling: $contig", s"VariantCalling: $contig")
-        val r = filteredVariants.sortBy(_.pos).setName(s"Variants: $contig").cache()
+        val r =
+          filteredVariants.sortBy(_.pos).setName(s"Variants: $contig").cache()
         sc.clearJobGroup()
         r
       }
