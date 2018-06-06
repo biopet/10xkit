@@ -156,9 +156,6 @@ object CellVariantcaller extends ToolCommand[Args] {
 
   }
 
-  val bla: ExecutionContextExecutor =
-    ExecutionContext.fromExecutor(java.util.concurrent.Executors.newFixedThreadPool(5))
-
   case class ContigResult(
       contig: String,
       filteredVariants: RDD[VariantCall],
@@ -169,7 +166,7 @@ object CellVariantcaller extends ToolCommand[Args] {
         val r = filteredVariants.sortBy(_.pos).setName(s"Variants: $contig").cache()
         sc.clearJobGroup()
         r
-      }(bla)
+      }
   }
 
   def totalRun(
