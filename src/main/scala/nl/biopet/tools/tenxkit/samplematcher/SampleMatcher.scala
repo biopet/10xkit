@@ -94,9 +94,12 @@ object SampleMatcher extends ToolCommand[Args] {
 
     val contigSorted = Future
       .sequence(variantsResult.contigs.map {
-        case (k, v) => v.sortedFilterVariants.map(k -> _)
+        case (k, v) =>
+          futures += v.sortedFilterVariants.map(_.countAsync())
+          v.sortedFilterVariants.map(k -> _)
       })
       .map(_.toMap)
+
     val calculateDistanceResult =
       contigSorted.map(runCalculateDistance(cmdArgs, _, correctCells))
     futures += calculateDistanceResult.flatMap(_.totalFuture)
