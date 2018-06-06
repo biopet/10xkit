@@ -38,7 +38,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.collection.mutable.ListBuffer
 
 object CellVariantcaller extends ToolCommand[Args] {
@@ -156,6 +156,9 @@ object CellVariantcaller extends ToolCommand[Args] {
 
   }
 
+  val bla: ExecutionContextExecutor =
+    ExecutionContext.fromExecutor(java.util.concurrent.Executors.newFixedThreadPool(5))
+
   case class ContigResult(
       contig: String,
       filteredVariants: RDD[VariantCall],
@@ -166,7 +169,7 @@ object CellVariantcaller extends ToolCommand[Args] {
         val r = filteredVariants.sortBy(_.pos).setName(s"Variants: $contig").cache()
         sc.clearJobGroup()
         r
-      }
+      }(bla)
   }
 
   def totalRun(
