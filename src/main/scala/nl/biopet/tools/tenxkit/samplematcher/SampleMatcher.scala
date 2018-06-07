@@ -33,7 +33,6 @@ import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
 import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller
-import nl.biopet.tools.tenxkit.variantcalls.CellVariantcaller.getPartitions
 import nl.biopet.utils.tool.ToolCommand
 import nl.biopet.utils.ngs.fasta.getCachedDict
 import nl.biopet.utils.io.resourceToFile
@@ -81,10 +80,8 @@ object SampleMatcher extends ToolCommand[Args] {
         .createRegions(
           cmdArgs.inputFile,
           cmdArgs.reference,
-          CellVariantcaller.getPartitions(cmdArgs.inputFile,
-                                          cmdArgs.partitions,
-                                          fileSizePerPartition =
-                                            cmdArgs.fileBinSize),
+          cmdArgs.partitions.getOrElse(
+            (dict.value.getReferenceLength.toDouble / 1000000).ceil.toInt),
           cmdArgs.intervals
         )
         .sortBy(_._2)
@@ -93,25 +90,23 @@ object SampleMatcher extends ToolCommand[Args] {
 
     val variantsResult =
       runVariant(cmdArgs, regions, correctCells, correctCellsMap, dict)
-
-    val contigs = regions.groupBy(_._1.map(_.chr).head).map(x => x._1 -> x._2.map(_._2).sum).toList.sortBy(_._2).reverse.map(_._1)
-
-    val contigFutures = contigs
-      .map { contig =>
-        contig -> Future(variantsResult
-          .contigs(contig)
-          .filteredVariants)
-      }
-      .toMap
+    futures += variantsResult.totalFuture
 
     val calculateDistanceResult =
-      runCalculateDistance(cmdArgs, contigFutures, correctCells)
-    futures += calculateDistanceResult.totalFuture
+      variantsResult.filteredVariants.map(
+        runCalculateDistance(cmdArgs, _, correctCells))
+    futures += calculateDistanceResult.flatMap(_.totalFuture)
 
-    val distanceMatrix =
-      calculateDistanceResult.correctedDistancesMatrixRdd.flatMap(
-        _.collectAsync()
-          .map(x => sc.broadcast(x(0))))
+    val distanceMatrix = calculateDistanceResult
+      .flatMap(_.distanceFile)
+      .zip(calculateDistanceResult.flatMap(_.countsFile))
+      .flatMap {
+        case (distanceFile, countsFile) =>
+          DistanceMatrix
+            .fromFileSpark(distanceFile, Some(countsFile))
+            .collectAsync()
+            .map(x => sc.broadcast(x(0)))
+      }
 
     val groupDistanceResult =
       distanceMatrix.map { x =>
@@ -123,17 +118,8 @@ object SampleMatcher extends ToolCommand[Args] {
 
     //TODO: extra jobs
 
-    val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
-    variantsResult.writeFilterVariants(
-      new File(cmdArgs.outputDir, "variantcalling"),
-      correctCells,
-      dict,
-      vcfHeader,
-      cmdArgs.seqError)
-    futures += variantsResult.totalFuture
-
     val extractGroupVariantsResult =
-      groupDistanceResult.zip(variantsResult.sortedFilteredVariants).flatMap {
+      groupDistanceResult.zip(variantsResult.filteredVariants).flatMap {
         case (g, v) =>
           sc.setJobGroup("Extract group variants", "Extract group variants")
           runExtractGroupVariants(cmdArgs, v, g.groups, g.trash, dict)
@@ -175,32 +161,30 @@ object SampleMatcher extends ToolCommand[Args] {
       dir,
       cmdArgs.reference,
       dict,
-      regions,
+      regions.map(_._1),
       cmdArgs.sampleTag,
       Some(cmdArgs.umiTag),
       correctCells,
       correctCellsMap,
       sc.broadcast(cmdArgs.cutoffs),
-      cmdArgs.seqError,
-      writeFilteredVcf = false
+      cmdArgs.seqError
     )
   }
 
   def runCalculateDistance(cmdArgs: Args,
-                           variants: Map[String, Future[RDD[VariantCall]]],
+                           variants: RDD[VariantCall],
                            correctCells: Broadcast[IndexedSeq[String]])(
       implicit sc: SparkContext,
       sparkSession: SparkSession): CalulateDistance.Result = {
     val dir = new File(cmdArgs.outputDir, "calculatedistance")
     dir.mkdir()
-    CalulateDistance.runTotalPerContig(
-      variants,
-      dir,
-      correctCells,
-      cmdArgs.cutoffs.minAlleleDepth,
-      cmdArgs.method,
-      cmdArgs.writeScatters
-    )
+    CalulateDistance.totalRun(dir,
+                              variants,
+                              correctCells,
+                              cmdArgs.cutoffs.minAlleleDepth,
+                              cmdArgs.method,
+                              cmdArgs.additionalMethods,
+                              cmdArgs.writeScatters)
   }
 
   def runGroupDistance(cmdArgs: Args,
