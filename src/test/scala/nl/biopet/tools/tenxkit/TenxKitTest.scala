@@ -21,9 +21,6 @@
 
 package nl.biopet.tools.tenxkit
 
-import java.io.File
-
-import nl.biopet.tools.tenxkit.cellreads.CellReads
 import nl.biopet.utils.test.tools.ToolTest
 import nl.biopet.utils.tool.multi
 import org.testng.annotations.Test
