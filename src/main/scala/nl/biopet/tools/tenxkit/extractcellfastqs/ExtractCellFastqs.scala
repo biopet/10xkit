@@ -106,7 +106,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
         val writerR1 = new FastqWriterFactory().newWriter(outputFileR1)
         lazy val writerR2 = new FastqWriterFactory().newWriter(outputFileR2)
         reads.toList
-          .groupBy(x => (x.id, List(x.pos, x.matePos.getOrElse(0)).sorted))
+          .groupBy(_.id)
           .foreach {
             case (_, fragments) =>
               val f = fragments.distinct
@@ -145,9 +145,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
   case class FastqRead(id: String,
                        seq: Seq[Byte],
                        qual: Seq[Byte],
-                       pair: Option[Boolean],
-                       pos: Int,
-                       matePos: Option[Int]) {
+                       pair: Option[Boolean]) {
     def toFastqRecord: FastqRecord =
       new FastqRecord(id, seq.toArray, "", qual.toArray)
   }
@@ -156,16 +154,10 @@ object ExtractCellFastqs extends ToolCommand[Args] {
       val pair = if (read.getReadPairedFlag) {
         Some(read.getSecondOfPairFlag)
       } else None
-      val matePos = if (read.getReadPairedFlag) {
-        Some(read.getMateAlignmentStart)
-      } else None
-
       FastqRead(read.getReadName,
                 read.getReadBases,
                 read.getBaseQualities,
-                pair,
-                read.getAlignmentStart,
-                matePos)
+                pair)
     }
   }
 
