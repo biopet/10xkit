@@ -143,41 +143,49 @@ object ExtractCellFastqs extends ToolCommand[Args] {
 
   def descriptionText: String =
     """
-      |This tool will generate a histogram of reads per cell barcode.
-      |This can be used to validate output from cellranger or to set a alternative cutoff.
+      |This tools will extract fastq files for a given list of cell barcodes.
+      |All reads that are marked as duplicate or secondary will be skipped by default.
     """.stripMargin
 
   def manualText: String =
     s"""
-       |By default this the sample tag is CB, this is the default tag used by Cellrenger.
+       |By default the sample tag is CB, this is the default tag used by Cellrenger.
        |If required the user can set this is a other tag with the '--sampleTag' option.
     """.stripMargin
 
   def exampleText: String =
     s"""
       |Default run:
-      |${TenxKit.sparkExample("CellReads",
-                              "-i",
-                              "<input file>",
-                              "-R",
-                              "<reference fasta>",
-                              "-o",
-                              "<output dir>",
-                              "--sparkMaster",
-                              "<spark master>")}
+      |${TenxKit.sparkExample(
+         "ExtractCellFastqs",
+         "-i",
+         "<input file>",
+         "-R",
+         "<reference fasta>",
+         "-o",
+         "<output dir>",
+         "--sparkMaster",
+         "<spark master>",
+         "--correctCells",
+         "<barcode file>"
+       )}
       |
       |Alternative tag:
-      |${TenxKit.sparkExample("CellReads",
-                              "-i",
-                              "<input file>",
-                              "-R",
-                              "<reference fasta>",
-                              "-o",
-                              "<output dir>",
-                              "--sparkMaster",
-                              "<spark master>",
-                              "--sampleTag",
-                              "<tag>")}
+      |${TenxKit.sparkExample(
+         "ExtractCellFastqs",
+         "-i",
+         "<input file>",
+         "-R",
+         "<reference fasta>",
+         "-o",
+         "<output dir>",
+         "--sparkMaster",
+         "<spark master>",
+         "--sampleTag",
+         "<tag>",
+         "--correctCells",
+         "<barcode file>"
+       )}
       |
     """.stripMargin
 }
