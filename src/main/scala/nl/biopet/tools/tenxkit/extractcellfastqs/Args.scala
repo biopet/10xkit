@@ -29,4 +29,5 @@ case class Args(inputFile: File = null,
                 correctCells: File = null,
                 sampleTag: String = "CB",
                 intervals: Option[File] = None,
+                binSize: Int = 1500000,
                 sparkMaster: String = null)

@@ -21,22 +21,19 @@
 
 package nl.biopet.tools.tenxkit.extractcellfastqs
 
-import java.io.{File, PrintWriter}
+import java.io.File
 
 import htsjdk.samtools.fastq.{FastqReader, FastqRecord, FastqWriterFactory}
 import htsjdk.samtools.{QueryInterval, SAMRecord, SamReaderFactory}
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.TenxKit
-import nl.biopet.utils.Histogram
 import nl.biopet.utils.ngs.bam.getDictFromBam
 import nl.biopet.utils.tool.ToolCommand
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.JavaConversions._
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.collection.mutable.ListBuffer
 
 object ExtractCellFastqs extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -57,7 +54,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
     val dict = sc.broadcast(getDictFromBam(cmdArgs.inputFile))
-    val partitions = (cmdArgs.reference.length() / 1500000).toInt + 2
+    val partitions = (cmdArgs.reference.length() / cmdArgs.binSize).toInt + 2
     val regions = sc.parallelize(tenxkit.createRegions(cmdArgs.inputFile,
                                                        cmdArgs.reference,
                                                        partitions,
@@ -68,11 +65,25 @@ object ExtractCellFastqs extends ToolCommand[Args] {
       val regions = it.toList.flatten
       val reader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
       val intervals = regions
-        .map(r =>
-          new QueryInterval(dict.value.getSequenceIndex(r.chr), r.start, r.end))
-        .toArray
+        .map(
+          r =>
+            new QueryInterval(dict.value.getSequenceIndex(r.chr),
+                              r.start + 1,
+                              r.end))
+        .sortBy(x => (x.referenceIndex, x.start))
+        .foldLeft(ListBuffer[QueryInterval]()) {
+          case (a, b) =>
+            a.lastOption match {
+              case Some(l)
+                  if l.referenceIndex == b.referenceIndex && l.end + 1 == b.start =>
+                a -= l
+                a += new QueryInterval(l.referenceIndex, l.start, b.end)
+              case _ => a += b
+            }
+        }
+
       reader
-        .query(intervals, false)
+        .query(intervals.toArray, false)
         .filter(!_.getDuplicateReadFlag)
         .filter(!_.getSupplementaryAlignmentFlag)
     }
@@ -93,25 +104,29 @@ object ExtractCellFastqs extends ToolCommand[Args] {
           new File(cmdArgs.outputDir, cellName + "_R2.fq.gz")
         val writerR1 = new FastqWriterFactory().newWriter(outputFileR1)
         lazy val writerR2 = new FastqWriterFactory().newWriter(outputFileR2)
-        reads.toList.groupBy(_.id).foreach {
-          case (id, fragments) =>
-            val f = fragments.distinct
-            (f.lift(0), f.lift(1), f.lift(2)) match {
-              case (_, _, Some(r)) =>
-                throw new IllegalStateException(
-                  "More then 2 read for a single read id found")
-              case (Some(r1), Some(r2), _) =>
-                if (r2.read2) {
-                  writerR1.write(r1.toFastqRecord)
-                  writerR2.write(r2.toFastqRecord)
-                } else {
-                  writerR1.write(r2.toFastqRecord)
-                  writerR2.write(r1.toFastqRecord)
-                }
-              case (Some(r1), _, _) => writerR1.write(r1.toFastqRecord)
-              case _                => // No reads found
-            }
-        }
+        reads.toList
+          .groupBy(x => (x.id, List(x.pos, x.matePos.getOrElse(0)).sorted))
+          .foreach {
+            case (_, fragments) =>
+              val f = fragments.distinct
+              (f.lift(0), f.lift(1), f.lift(2)) match {
+                case (Some(r1), Some(r2), None) =>
+                  if (r1.pair.contains(false) && r2.pair.contains(true)) {
+                    writerR1.write(r1.toFastqRecord)
+                    writerR2.write(r2.toFastqRecord)
+                  } else if (r1.pair.contains(true) && r2.pair.contains(false)) {
+                    writerR1.write(r2.toFastqRecord)
+                    writerR2.write(r1.toFastqRecord)
+                  } else {
+                    throw new IllegalStateException(
+                      s"Read are not proper paired: $r1 - $r2")
+                  }
+                case (Some(r1), None, None) => writerR1.write(r1.toFastqRecord)
+                case _ =>
+                  throw new IllegalStateException(
+                    "More then 2 reads for a single read id found")
+              }
+          }
         writerR1.close()
         writerR2.close()
 
@@ -127,17 +142,29 @@ object ExtractCellFastqs extends ToolCommand[Args] {
   }
 
   case class FastqRead(id: String,
-                       seq: Array[Byte],
-                       qual: Array[Byte],
-                       read2: Boolean = false) {
-    def toFastqRecord: FastqRecord = new FastqRecord(id, seq, "", qual)
+                       seq: Seq[Byte],
+                       qual: Seq[Byte],
+                       pair: Option[Boolean],
+                       pos: Int,
+                       matePos: Option[Int]) {
+    def toFastqRecord: FastqRecord =
+      new FastqRecord(id, seq.toArray, "", qual.toArray)
   }
   object FastqRead {
     def apply(read: SAMRecord): FastqRead = {
+      val pair = if (read.getReadPairedFlag) {
+        Some(read.getSecondOfPairFlag)
+      } else None
+      val matePos = if (read.getReadPairedFlag) {
+        Some(read.getMateAlignmentStart)
+      } else None
+
       FastqRead(read.getReadName,
                 read.getReadBases,
                 read.getBaseQualities,
-                read.getSecondOfPairFlag)
+                pair,
+                read.getAlignmentStart,
+                matePos)
     }
   }
 

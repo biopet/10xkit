@@ -67,6 +67,35 @@ class ExtractCellFastqsTest extends ToolTest[Args] {
       new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000 - 8
   }
 
+  @Test
+  def testBins(): Unit = {
+    val outputDir = File.createTempFile("test.", ".out")
+    outputDir.delete()
+    outputDir.mkdirs()
+    outputDir.deleteOnExit()
+    val sampleTag = "RG"
+    ExtractCellFastqs.main(
+      Array(
+        "-i",
+        resourcePath("/wgs2.realign.bam"),
+        "-R",
+        resourcePath("/reference.fasta"),
+        "--sparkMaster",
+        "local[2]",
+        "--sampleTag",
+        sampleTag,
+        "-o",
+        outputDir.getAbsolutePath,
+        "--correctCells",
+        resourcePath("/wgs2.readgroups.txt"), "--binSize", "1000"
+      ))
+
+    readsFastq(new File(outputDir, "wgs2-lib1_R1.fq.gz")) + readsFastq(
+      new File(outputDir, "wgs2-lib2_R1.fq.gz")) shouldBe 10000 - 8
+    readsFastq(new File(outputDir, "wgs2-lib1_R2.fq.gz")) + readsFastq(
+      new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000 - 8
+  }
+
   def readsFastq(file: File): Long = {
     val reader = new FastqReader(file)
     try {
