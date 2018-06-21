@@ -23,8 +23,11 @@ package nl.biopet.tools.tenxkit.extractcellfastqs
 
 import java.io.File
 
+import htsjdk.samtools.fastq.FastqReader
 import nl.biopet.utils.test.tools.ToolTest
 import org.testng.annotations.Test
+
+import scala.collection.JavaConversions._
 
 class ExtractCellFastqsTest extends ToolTest[Args] {
   def toolCommand: ExtractCellFastqs.type = ExtractCellFastqs
@@ -37,15 +40,15 @@ class ExtractCellFastqsTest extends ToolTest[Args] {
 
   @Test
   def testDefault(): Unit = {
-    val outputFile = File.createTempFile("test.", ".csv")
-    outputFile.delete()
-    outputFile.mkdirs()
-    outputFile.deleteOnExit()
-    val sampleTag = "SM"
+    val outputDir = File.createTempFile("test.", ".out")
+    outputDir.delete()
+    outputDir.mkdirs()
+    outputDir.deleteOnExit()
+    val sampleTag = "RG"
     ExtractCellFastqs.main(
       Array(
         "-i",
-        resourcePath("/read_bam.bam"),
+        resourcePath("/wgs2.realign.bam"),
         "-R",
         resourcePath("/reference.fasta"),
         "--sparkMaster",
@@ -53,9 +56,23 @@ class ExtractCellFastqsTest extends ToolTest[Args] {
         "--sampleTag",
         sampleTag,
         "-o",
-        outputFile.getAbsolutePath,
+        outputDir.getAbsolutePath,
         "--correctCells",
-        resourcePath("/group1.txt")
+        resourcePath("/wgs2.readgroups.txt")
       ))
+
+    readsFastq(new File(outputDir, "wgs2-lib1_R1.fq.gz")) + readsFastq(
+      new File(outputDir, "wgs2-lib2_R1.fq.gz")) shouldBe 10000 - 8
+    readsFastq(new File(outputDir, "wgs2-lib1_R2.fq.gz")) + readsFastq(
+      new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000 - 8
+  }
+
+  def readsFastq(file: File): Long = {
+    val reader = new FastqReader(file)
+    try {
+      reader.iterator().length
+    } finally {
+      reader.close()
+    }
   }
 }

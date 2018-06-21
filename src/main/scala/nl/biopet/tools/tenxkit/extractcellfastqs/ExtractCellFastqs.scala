@@ -71,40 +71,49 @@ object ExtractCellFastqs extends ToolCommand[Args] {
         .map(r =>
           new QueryInterval(dict.value.getSequenceIndex(r.chr), r.start, r.end))
         .toArray
-      reader.query(intervals, false).filter(!_.getDuplicateReadFlag).filter(!_.getSupplementaryAlignmentFlag)
+      reader
+        .query(intervals, false)
+        .filter(!_.getDuplicateReadFlag)
+        .filter(!_.getSupplementaryAlignmentFlag)
     }
 
-    val cells = samReads.flatMap(read => Option(read.getAttribute(cmdArgs.sampleTag)).flatMap(x => correctCellsMap.value.get(x.toString)).map(_ -> FastqRead(read)))
+    val cells = samReads
+      .flatMap(
+        read =>
+          Option(read.getAttribute(cmdArgs.sampleTag))
+            .flatMap(x => correctCellsMap.value.get(x.toString))
+            .map(_ -> FastqRead(read)))
       .groupByKey()
 
-    cells.foreach { case (cell, reads) =>
-      val cellName = correctCells.value(cell)
-      val outputFileR1 = new File(cmdArgs.outputDir, cellName + "_R1.fq.gz")
-      lazy val outputFileR2 = new File(cmdArgs.outputDir, cellName + "_R2.fq.gz")
-      val writerR1 = new FastqWriterFactory().newWriter(outputFileR1)
-      lazy val writerR2 = new FastqWriterFactory().newWriter(outputFileR2)
-      reads.toList.groupBy(_.id).foreach{ case (id, fragment) =>
-        (fragment.lift(0), fragment.lift(3), fragment.lift(2)) match {
-          case (_, _, Some(r)) => throw new IllegalStateException("More then 2 read for a single read id found")
-          case (Some(r1), Some(r2), _) =>
-            if (r1.read2) {
-              writerR1.write(r2.toFastqRecord)
-              writerR2.write(r1.toFastqRecord)
-            } else {
-              writerR1.write(r1.toFastqRecord)
-              writerR2.write(r2.toFastqRecord)
+    cells.foreach {
+      case (cell, reads) =>
+        val cellName = correctCells.value(cell)
+        val outputFileR1 = new File(cmdArgs.outputDir, cellName + "_R1.fq.gz")
+        lazy val outputFileR2 =
+          new File(cmdArgs.outputDir, cellName + "_R2.fq.gz")
+        val writerR1 = new FastqWriterFactory().newWriter(outputFileR1)
+        lazy val writerR2 = new FastqWriterFactory().newWriter(outputFileR2)
+        reads.toList.groupBy(_.id).foreach {
+          case (id, fragments) =>
+            val f = fragments.distinct
+            (f.lift(0), f.lift(1), f.lift(2)) match {
+              case (_, _, Some(r)) =>
+                throw new IllegalStateException(
+                  "More then 2 read for a single read id found")
+              case (Some(r1), Some(r2), _) =>
+                if (r2.read2) {
+                  writerR1.write(r1.toFastqRecord)
+                  writerR2.write(r2.toFastqRecord)
+                } else {
+                  writerR1.write(r2.toFastqRecord)
+                  writerR2.write(r1.toFastqRecord)
+                }
+              case (Some(r1), _, _) => writerR1.write(r1.toFastqRecord)
+              case _                => // No reads found
             }
-          case (Some(r1), _, _) => writerR1.write(r1.toFastqRecord)
-          case _ => // No reads found
         }
-        fragment.size match {
-          case 1 =>
-          case 2 =>
-          case _ => throw new IllegalStateException("More then 2 read for a single read id found")
-        }
-      }
-      writerR1.close()
-      writerR2.close()
+        writerR1.close()
+        writerR2.close()
 
         val test = new FastqReader(outputFileR2)
         if (!test.hasNext) {
@@ -117,12 +126,18 @@ object ExtractCellFastqs extends ToolCommand[Args] {
     logger.info("Done")
   }
 
-  case class FastqRead(id: String, seq: Array[Byte], qual: Array[Byte], read2: Boolean = false) {
+  case class FastqRead(id: String,
+                       seq: Array[Byte],
+                       qual: Array[Byte],
+                       read2: Boolean = false) {
     def toFastqRecord: FastqRecord = new FastqRecord(id, seq, "", qual)
   }
   object FastqRead {
     def apply(read: SAMRecord): FastqRead = {
-      FastqRead(read.getReadName, read.getReadBases, read.getBaseQualities, read.getSecondOfPairFlag)
+      FastqRead(read.getReadName,
+                read.getReadBases,
+                read.getBaseQualities,
+                read.getSecondOfPairFlag)
     }
   }
 
