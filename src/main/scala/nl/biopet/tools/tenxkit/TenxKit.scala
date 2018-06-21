@@ -24,6 +24,7 @@ package nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.calculatedistance.CalulateDistance
 import nl.biopet.tools.tenxkit.cellreads.CellReads
 import nl.biopet.tools.tenxkit.evalsubgroups.EvalSubGroups
+import nl.biopet.tools.tenxkit.extractcellfastqs.ExtractCellFastqs
 import nl.biopet.tools.tenxkit.extractgroupvariants.ExtractGroupVariants
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance
 import nl.biopet.tools.tenxkit.mergebams.MergeBams
@@ -41,7 +42,8 @@ object TenxKit extends MultiToolCommand {
                       GroupDistance,
                       MergeBams,
                       EvalSubGroups,
-                      ExtractGroupVariants))
+                      ExtractGroupVariants,
+                      ExtractCellFastqs))
 
   def descriptionText: String = extendedDescriptionText
 
