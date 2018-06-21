@@ -36,4 +36,6 @@ class TenxKitTest extends ToolTest[multi.Args] {
       TenxKit.main(Array())
     }
   }
+
+  override def maxDescriptionWords = 500
 }
