@@ -62,9 +62,9 @@ class ExtractCellFastqsTest extends ToolTest[Args] {
       ))
 
     readsFastq(new File(outputDir, "wgs2-lib1_R1.fq.gz")) + readsFastq(
-      new File(outputDir, "wgs2-lib2_R1.fq.gz")) shouldBe 10000 - 8
+      new File(outputDir, "wgs2-lib2_R1.fq.gz")) shouldBe 10000
     readsFastq(new File(outputDir, "wgs2-lib1_R2.fq.gz")) + readsFastq(
-      new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000 - 8
+      new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000
   }
 
   @Test
@@ -87,13 +87,15 @@ class ExtractCellFastqsTest extends ToolTest[Args] {
         "-o",
         outputDir.getAbsolutePath,
         "--correctCells",
-        resourcePath("/wgs2.readgroups.txt"), "--binSize", "1000"
+        resourcePath("/wgs2.readgroups.txt"),
+        "--binSize",
+        "1000"
       ))
 
     readsFastq(new File(outputDir, "wgs2-lib1_R1.fq.gz")) + readsFastq(
-      new File(outputDir, "wgs2-lib2_R1.fq.gz")) shouldBe 10000 - 8
+      new File(outputDir, "wgs2-lib2_R1.fq.gz")) shouldBe 10000
     readsFastq(new File(outputDir, "wgs2-lib1_R2.fq.gz")) + readsFastq(
-      new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000 - 8
+      new File(outputDir, "wgs2-lib2_R2.fq.gz")) shouldBe 10000
   }
 
   def readsFastq(file: File): Long = {

@@ -31,9 +31,13 @@ import nl.biopet.utils.ngs.bam.getDictFromBam
 import nl.biopet.utils.tool.ToolCommand
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
+import org.bdgenomics.formats.avro.AlignmentRecord
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
+
+// import RDD load functions and conversion functions
+import org.bdgenomics.adam.rdd.ADAMContext._
 
 object ExtractCellFastqs extends ToolCommand[Args] {
   def emptyArgs = Args()
@@ -61,41 +65,58 @@ object ExtractCellFastqs extends ToolCommand[Args] {
                                                        cmdArgs.intervals),
                                  partitions)
 
-    val samReads = regions.mapPartitions { it =>
-      val regions = it.toList.flatten
-      val reader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
-      val intervals = regions
-        .map(
-          r =>
-            new QueryInterval(dict.value.getSequenceIndex(r.chr),
-                              r.start + 1,
-                              r.end))
-        .sortBy(x => (x.referenceIndex, x.start))
-        .foldLeft(ListBuffer[QueryInterval]()) {
-          case (a, b) =>
-            a.lastOption match {
-              case Some(l)
-                  if l.referenceIndex == b.referenceIndex && l.end + 1 == b.start =>
-                a -= l
-                a += new QueryInterval(l.referenceIndex, l.start, b.end)
-              case _ => a += b
-            }
-        }
+    val bamRecords = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
 
-      reader
-        .query(intervals.toArray, false)
-        //.filter(!_.getDuplicateReadFlag)
-        .filter(!_.getSupplementaryAlignmentFlag)
-        .filter(!_.isSecondaryAlignment)
-    }
+    val cells = bamRecords.rdd
+      .filter(!_.getSecondaryAlignment)
+      .filter(!_.getSupplementaryAlignment)
+      .flatMap { read =>
+        val sampleTag = read.getAttributes
+          .split("\t")
+          .find(_.startsWith(cmdArgs.sampleTag + ":"))
+          .flatMap(_.split(":").lift(2))
 
-    val cells = samReads
-      .flatMap(
-        read =>
-          Option(read.getAttribute(cmdArgs.sampleTag))
-            .flatMap(x => correctCellsMap.value.get(x.toString))
-            .map(_ -> FastqRead(read)))
+        sampleTag
+          .flatMap(s => correctCellsMap.value.get(s))
+          .map(s => s -> FastqRead(read))
+      }
       .groupByKey()
+
+//    val samReads = regions.mapPartitions { it =>
+//      val regions = it.toList.flatten
+//      val reader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
+//      val intervals = regions
+//        .map(
+//          r =>
+//            new QueryInterval(dict.value.getSequenceIndex(r.chr),
+//                              r.start + 1,
+//                              r.end))
+//        .sortBy(x => (x.referenceIndex, x.start))
+//        .foldLeft(ListBuffer[QueryInterval]()) {
+//          case (a, b) =>
+//            a.lastOption match {
+//              case Some(l)
+//                  if l.referenceIndex == b.referenceIndex && l.end + 1 == b.start =>
+//                a -= l
+//                a += new QueryInterval(l.referenceIndex, l.start, b.end)
+//              case _ => a += b
+//            }
+//        }
+//
+//      reader
+//        .query(intervals.toArray, false)
+//        //.filter(!_.getDuplicateReadFlag)
+//        .filter(!_.getSupplementaryAlignmentFlag)
+//        .filter(!_.isSecondaryAlignment)
+//    }
+//
+//    val cells = samReads
+//      .flatMap(
+//        read =>
+//          Option(read.getAttribute(cmdArgs.sampleTag))
+//            .flatMap(x => correctCellsMap.value.get(x.toString))
+//            .map(_ -> FastqRead(read)))
+//      .groupByKey()
 
     cells.foreach {
       case (cell, reads) =>
@@ -163,6 +184,16 @@ object ExtractCellFastqs extends ToolCommand[Args] {
       FastqRead(read.getReadName,
                 read.getReadBases,
                 read.getBaseQualities,
+                pair)
+    }
+
+    def apply(read: AlignmentRecord): FastqRead = {
+      val pair = if (read.getReadPaired) {
+        Some(read.getReadInFragment == 1)
+      } else None
+      FastqRead(read.getReadName,
+                read.getSequence.map(_.toByte),
+                read.getQual.map(_.toByte),
                 pair)
     }
   }
