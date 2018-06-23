@@ -86,7 +86,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
         .query(intervals.toArray, false)
         .filter(!_.getDuplicateReadFlag)
         .filter(!_.getSupplementaryAlignmentFlag)
-        .filter(!_.getSecondOfPairFlag)
+        .filter(!_.isSecondaryAlignment)
     }
 
     val cells = samReads
