@@ -148,6 +148,12 @@ object ExtractCellFastqs extends ToolCommand[Args] {
                        pair: Option[Boolean]) {
     def toFastqRecord: FastqRecord =
       new FastqRecord(id, seq.toArray, "", qual.toArray)
+
+    override def toString: String = {
+      val s = new String(seq.toArray)
+      val q = new String(qual.toArray)
+      s"($id, $s, $q, $pair)"
+    }
   }
   object FastqRead {
     def apply(read: SAMRecord): FastqRead = {
