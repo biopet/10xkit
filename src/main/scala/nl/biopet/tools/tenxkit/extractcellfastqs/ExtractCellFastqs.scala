@@ -129,7 +129,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
         reads.toList
           .groupBy(_.id)
           .foreach {
-            case (_, fragments) =>
+            case (id, fragments) =>
               val f = fragments.distinct
               (f.lift(0), f.lift(1), f.lift(2)) match {
                 case (Some(r1), Some(r2), None) =>
@@ -146,7 +146,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
                 case (Some(r1), None, None) => writerR1.write(r1.toFastqRecord)
                 case _ =>
                   throw new IllegalStateException(
-                    "More then 2 reads for a single read id found")
+                    s"More then 2 reads for a single read id found: $id")
               }
           }
         writerR1.close()
