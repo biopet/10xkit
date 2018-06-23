@@ -84,7 +84,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
 
       reader
         .query(intervals.toArray, false)
-        .filter(!_.getDuplicateReadFlag)
+        //.filter(!_.getDuplicateReadFlag)
         .filter(!_.getSupplementaryAlignmentFlag)
         .filter(!_.isSecondaryAlignment)
     }
