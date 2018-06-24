@@ -68,7 +68,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
     val bamRecords = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
 
     val cells = bamRecords.rdd
-      .filter(!_.getSecondaryAlignment)
+      .filter(_.getPrimaryAlignment)
       .filter(!_.getSupplementaryAlignment)
       .flatMap { read =>
         val sampleTag = read.getAttributes
@@ -81,42 +81,6 @@ object ExtractCellFastqs extends ToolCommand[Args] {
           .map(s => s -> FastqRead(read))
       }
       .groupByKey()
-
-//    val samReads = regions.mapPartitions { it =>
-//      val regions = it.toList.flatten
-//      val reader = SamReaderFactory.makeDefault().open(cmdArgs.inputFile)
-//      val intervals = regions
-//        .map(
-//          r =>
-//            new QueryInterval(dict.value.getSequenceIndex(r.chr),
-//                              r.start + 1,
-//                              r.end))
-//        .sortBy(x => (x.referenceIndex, x.start))
-//        .foldLeft(ListBuffer[QueryInterval]()) {
-//          case (a, b) =>
-//            a.lastOption match {
-//              case Some(l)
-//                  if l.referenceIndex == b.referenceIndex && l.end + 1 == b.start =>
-//                a -= l
-//                a += new QueryInterval(l.referenceIndex, l.start, b.end)
-//              case _ => a += b
-//            }
-//        }
-//
-//      reader
-//        .query(intervals.toArray, false)
-//        //.filter(!_.getDuplicateReadFlag)
-//        .filter(!_.getSupplementaryAlignmentFlag)
-//        .filter(!_.isSecondaryAlignment)
-//    }
-//
-//    val cells = samReads
-//      .flatMap(
-//        read =>
-//          Option(read.getAttribute(cmdArgs.sampleTag))
-//            .flatMap(x => correctCellsMap.value.get(x.toString))
-//            .map(_ -> FastqRead(read)))
-//      .groupByKey()
 
     cells.foreach {
       case (cell, reads) =>
