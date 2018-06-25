@@ -23,8 +23,8 @@ package nl.biopet.tools.tenxkit.extractcellfastqs
 
 import java.io.File
 
+import htsjdk.samtools.SAMRecord
 import htsjdk.samtools.fastq.{FastqReader, FastqRecord, FastqWriterFactory}
-import htsjdk.samtools.{QueryInterval, SAMRecord, SamReaderFactory}
 import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.ngs.bam.getDictFromBam
@@ -35,9 +35,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.formats.avro.AlignmentRecord
-
-import scala.collection.JavaConversions._
-import scala.collection.mutable.ListBuffer
 
 // import RDD load functions and conversion functions
 import org.bdgenomics.adam.rdd.ADAMContext._
@@ -173,6 +170,7 @@ object ExtractCellFastqs extends ToolCommand[Args] {
     }
   }
 
+  /** This method will check if a fastq file is empty, if so it does remove it */
   def removeEmptyFastq(file: File): Unit = {
     val test = new FastqReader(file)
     if (!test.hasNext) {
