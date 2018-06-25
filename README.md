@@ -52,6 +52,13 @@ This can also be used to validate if there is a true set known.
     
         
 
+#### Tools - ExtractCellFastqs
+
+This tools will extract fastq files for a given list of cell barcodes.
+All reads that are marked as duplicate or secondary will be skipped by default.
+    
+        
+
 # Documentation
 
 For documentation and manuals visit our [github.io page](https://biopet.github.io/tenxkit).

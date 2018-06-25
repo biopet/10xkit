@@ -19,23 +19,15 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package nl.biopet.tools.tenxkit
+package nl.biopet.tools.tenxkit.extractcellfastqs
 
 import java.io.File
 
-import nl.biopet.tools.tenxkit.cellreads.CellReads
-import nl.biopet.utils.test.tools.ToolTest
-import nl.biopet.utils.tool.multi
-import org.testng.annotations.Test
-
-class TenxKitTest extends ToolTest[multi.Args] {
-  def toolCommand: TenxKit.type = TenxKit
-  @Test
-  def testNoArgs(): Unit = {
-    intercept[IllegalArgumentException] {
-      TenxKit.main(Array())
-    }
-  }
-
-  override def maxDescriptionWords = 500
-}
+case class Args(inputFile: File = null,
+                reference: File = null,
+                outputDir: File = null,
+                correctCells: File = null,
+                sampleTag: String = "CB",
+                intervals: Option[File] = None,
+                binSize: Int = 1500000,
+                sparkMaster: String = null)
