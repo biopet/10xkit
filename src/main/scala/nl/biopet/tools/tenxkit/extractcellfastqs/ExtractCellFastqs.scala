@@ -29,8 +29,11 @@ import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.TenxKit
 import nl.biopet.utils.ngs.bam.getDictFromBam
 import nl.biopet.utils.tool.ToolCommand
+import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
+import org.bdgenomics.adam.rdd.read.AlignmentRecordRDD
 import org.bdgenomics.formats.avro.AlignmentRecord
 
 import scala.collection.JavaConversions._
@@ -67,61 +70,10 @@ object ExtractCellFastqs extends ToolCommand[Args] {
 
     val bamRecords = sc.loadBam(cmdArgs.inputFile.getAbsolutePath)
 
-    val cells = bamRecords.rdd
-      .filter(_.getPrimaryAlignment)
-      .filter(!_.getSupplementaryAlignment)
-      .flatMap { read =>
-        val sampleTag = read.getAttributes
-          .split("\t")
-          .find(_.startsWith(cmdArgs.sampleTag + ":"))
-          .flatMap(_.split(":").lift(2))
+    val cells =
+      bamRecordsToCells(bamRecords, correctCellsMap, cmdArgs.sampleTag)
 
-        sampleTag
-          .flatMap(s => correctCellsMap.value.get(s))
-          .map(s => s -> FastqRead(read))
-      }
-      .groupByKey()
-
-    cells.foreach {
-      case (cell, reads) =>
-        val cellName = correctCells.value(cell)
-        val outputFileR1 = new File(cmdArgs.outputDir, cellName + "_R1.fq.gz")
-        lazy val outputFileR2 =
-          new File(cmdArgs.outputDir, cellName + "_R2.fq.gz")
-        val writerR1 = new FastqWriterFactory().newWriter(outputFileR1)
-        lazy val writerR2 = new FastqWriterFactory().newWriter(outputFileR2)
-        reads.toList
-          .groupBy(_.id)
-          .foreach {
-            case (id, fragments) =>
-              val f = fragments.distinct
-              (f.lift(0), f.lift(1), f.lift(2)) match {
-                case (Some(r1), Some(r2), None) =>
-                  if (r1.pair.contains(false) && r2.pair.contains(true)) {
-                    writerR1.write(r1.toFastqRecord)
-                    writerR2.write(r2.toFastqRecord)
-                  } else if (r1.pair.contains(true) && r2.pair.contains(false)) {
-                    writerR1.write(r2.toFastqRecord)
-                    writerR2.write(r1.toFastqRecord)
-                  } else {
-                    throw new IllegalStateException(
-                      s"Read are not proper paired: $r1 - $r2")
-                  }
-                case (Some(r1), None, None) => writerR1.write(r1.toFastqRecord)
-                case _ =>
-                  throw new IllegalStateException(
-                    s"More then 2 reads for a single read id found: $id")
-              }
-          }
-        writerR1.close()
-        writerR2.close()
-
-        val test = new FastqReader(outputFileR2)
-        if (!test.hasNext) {
-          test.close()
-          outputFileR2.delete()
-        } else test.close()
-    }
+    writeCellsFastq(cells, correctCells, cmdArgs.outputDir)
 
     sparkSession.stop()
     logger.info("Done")
@@ -160,6 +112,73 @@ object ExtractCellFastqs extends ToolCommand[Args] {
                 read.getQual.map(_.toByte),
                 pair)
     }
+  }
+
+  def bamRecordsToCells(bamRecords: AlignmentRecordRDD,
+                        correctCellsMap: Broadcast[Map[String, Int]],
+                        sampleTag: String): RDD[(Int, Iterable[FastqRead])] = {
+    bamRecords.rdd
+      .filter(_.getPrimaryAlignment)
+      .filter(!_.getSupplementaryAlignment)
+      .flatMap { read =>
+        read.getAttributes
+          .split("\t")
+          .find(_.startsWith(sampleTag + ":"))
+          .flatMap(_.split(":").lift(2))
+          .flatMap(s => correctCellsMap.value.get(s))
+          .map(s => s -> FastqRead(read))
+      }
+      .groupByKey()
+  }
+
+  def writeCellsFastq(cells: RDD[(Int, Iterable[FastqRead])],
+                      correctCells: Broadcast[IndexedSeq[String]],
+                      outputDir: File): Unit = {
+    cells.foreach {
+      case (cell, reads) =>
+        val cellName = correctCells.value(cell)
+        val outputFileR1 = new File(outputDir, cellName + "_R1.fq.gz")
+        lazy val outputFileR2 =
+          new File(outputDir, cellName + "_R2.fq.gz")
+        val writerR1 = new FastqWriterFactory().newWriter(outputFileR1)
+        lazy val writerR2 = new FastqWriterFactory().newWriter(outputFileR2)
+        reads.toList
+          .groupBy(_.id)
+          .foreach {
+            case (id, fragments) =>
+              val f = fragments.distinct
+              (f.lift(0), f.lift(1), f.lift(2)) match {
+                case (Some(r1), Some(r2), None) =>
+                  (r1.pair, r2.pair) match {
+                    case (Some(false), Some(true)) =>
+                      writerR1.write(r1.toFastqRecord)
+                      writerR2.write(r2.toFastqRecord)
+                    case (Some(true), Some(false)) =>
+                      writerR1.write(r2.toFastqRecord)
+                      writerR2.write(r1.toFastqRecord)
+                    case _ =>
+                      throw new IllegalStateException(
+                        s"Read are not proper paired: $r1 - $r2")
+                  }
+                case (Some(r1), None, None) => writerR1.write(r1.toFastqRecord)
+                case _ =>
+                  throw new IllegalStateException(
+                    s"More then 2 reads for a single read id found: $id")
+              }
+          }
+        writerR1.close()
+        writerR2.close()
+
+        removeEmptyFastq(outputFileR2)
+    }
+  }
+
+  def removeEmptyFastq(file: File): Unit = {
+    val test = new FastqReader(file)
+    if (!test.hasNext) {
+      test.close()
+      file.delete()
+    } else test.close()
   }
 
   def descriptionText: String =
