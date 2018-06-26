@@ -133,6 +133,10 @@
         <p>This tool will merge variants from the same group. This will be a representation of the real samples.
         This can also be used to validate if there is a true set known.</p>
         
+        <h4 id="tools---extractcellfastqs" class="section">Tools - ExtractCellFastqs</h4>
+        <p>This tools will extract fastq files for a given list of cell barcodes.
+        All reads that are marked as duplicate or secondary will be skipped by default.</p>
+        
         <h1 id="installation" class="section">Installation</h1>
         <p>TenxKit requires Java 8 to be installed on your device. Download Java 8
         <a href="http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html">here</a>
@@ -174,6 +178,10 @@
         <h4 id="tools---extractgroupvariants-1" class="section">Tools - ExtractGroupVariants</h4>
         <p>This tool will require a vcf file that contains a AD for each cell that has coverage on a position.
         From here the sample for each group given with the --group argument will compress this group in 1 single vcf genotype.</p>
+        
+        <h4 id="tools---extractcellfastqs-1" class="section">Tools - ExtractCellFastqs</h4>
+        <p>By default the sample tag is CB, this is the default tag used by Cellrenger.
+        If required the user can set this is a other tag with the &#39;--sampleTag&#39; option.</p>
         
         <h2 id="example" class="section">Example</h2>
         
@@ -263,6 +271,23 @@
 --correctCells &lt;list of cells&gt; \
 --group &lt;group name&gt;=&lt;group file&gt; \
 --group &lt;group name&gt;=&lt;group file&gt;</code></pre>
+        
+        <h4 id="tools---extractcellfastqs-2" class="section">Tools - ExtractCellFastqs</h4>
+        <p>Default run:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; ExtractCellFastqs \
+-i &lt;input file&gt; \
+-R &lt;reference fasta&gt; \
+-o &lt;output dir&gt; \
+--sparkMaster &lt;spark master&gt; \
+--correctCells &lt;barcode file&gt;</code></pre>
+        <p>Alternative tag:</p>
+        <pre><code>spark-submit &lt;spark arguments&gt; &lt;TenxKit_jar&gt; ExtractCellFastqs \
+-i &lt;input file&gt; \
+-R &lt;reference fasta&gt; \
+-o &lt;output dir&gt; \
+--sparkMaster &lt;spark master&gt; \
+--sampleTag &lt;tag&gt; \
+--correctCells &lt;barcode file&gt;</code></pre>
         
         <h2 id="usage" class="section">Usage</h2>
         <p>Usage for TenxKit:</p>
