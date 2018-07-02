@@ -23,6 +23,7 @@ package nl.biopet.tools.tenxkit.groupdistance
 
 import java.io.File
 
+import nl.biopet.tools.tenxkit
 import nl.biopet.tools.tenxkit.DistanceMatrix
 import nl.biopet.tools.tenxkit.groupdistance.GroupDistance.GroupSample
 import nl.biopet.utils.test.tools.ToolTest
@@ -73,14 +74,14 @@ class GroupDistanceTest extends ToolTest[Args] {
         resourcePath("/samples4.txt")
       ))
 
-    val clusterFiles = outputDir
-      .listFiles()
-      .filter(_.getName.startsWith("cluster."))
-      .filter(_.getName.endsWith(".txt"))
-    clusterFiles.length shouldBe 2
-    val clusters = clusterFiles.map(getLinesFromFile)
-    clusters.contains(List("sample1", "sample2")) shouldBe true
-    clusters.contains(List("sample3", "sample4")) shouldBe true
+    val clustersFile = new File(outputDir, "clusters.tsv")
+    clustersFile should exist
+
+    val clusters = tenxkit.readClusters(clustersFile)
+
+    clusters.size shouldBe 2
+    clusters.values.toList.contains(List("sample1", "sample2")) shouldBe true
+    clusters.values.toList.contains(List("sample3", "sample4")) shouldBe true
   }
 
   @Test
@@ -107,14 +108,12 @@ class GroupDistanceTest extends ToolTest[Args] {
         "--skipKmeans"
       ))
 
-    val clusterFiles = outputDir
-      .listFiles()
-      .filter(_.getName.startsWith("cluster."))
-      .filter(_.getName.endsWith(".txt"))
-    clusterFiles.length shouldBe 2
-    val clusters = clusterFiles.map(getLinesFromFile(_).sorted)
-    clusters.contains(List("sample1", "sample2")) shouldBe true
-    clusters.contains(List("sample3", "sample4")) shouldBe true
+    val clustersFile = new File(outputDir, "clusters.tsv")
+    clustersFile should exist
+
+    val clusters = tenxkit.readClusters(clustersFile)
+    clusters.values.toList.map(_.sorted).contains(List("sample1", "sample2")) shouldBe true
+    clusters.values.toList.map(_.sorted).contains(List("sample3", "sample4")) shouldBe true
   }
 
   @DataProvider(name = "recluster")

@@ -107,7 +107,7 @@ object GroupDistance extends ToolCommand[Args] {
     )
     sc.clearJobGroup()
 
-    writeGroups(groups.cache(), trash.cache(), cmdArgs.outputDir, correctCells)
+    writeGroups(groups.cache(), trash.cache(), new File(cmdArgs.outputDir, "clusters.tsv"), correctCells)
 
     sparkSession.stop()
     logger.info("Done")
@@ -115,22 +115,22 @@ object GroupDistance extends ToolCommand[Args] {
 
   def writeGroups(groups: RDD[GroupSample],
                   trash: RDD[Int],
-                  outputDir: File,
+                  outputFile: File,
                   correctCells: Broadcast[IndexedSeq[String]]): Unit = {
     val trashData = trash.collect()
 
-    val writer =
-      new PrintWriter(new File(outputDir, s"trash.txt"))
-    trashData.foreach(s => writer.println(correctCells.value(s)))
-    writer.close()
+    val writer = new PrintWriter(outputFile)
+    writer.println("#barcode\tcluster")
 
-    groups.groupBy(_.group).foreach {
+
+    groups.groupBy(_.group).collect().foreach {
       case (idx, samples) =>
-        val writer =
-          new PrintWriter(new File(outputDir, s"cluster.$idx.txt"))
-        samples.foreach(s => writer.println(correctCells.value(s.sample)))
-        writer.close()
+        samples.foreach(s => writer.println(correctCells.value(s.sample) + s"\tcluster_$idx"))
     }
+
+    trashData.foreach(s => writer.println(correctCells.value(s) + "\ttrash"))
+
+    writer.close()
   }
 
   case class Prediction(sample: Int, prediction: Int)
@@ -220,9 +220,10 @@ object GroupDistance extends ToolCommand[Args] {
         .toMap)
 
     {
-      val iterationDir = new File(outputDir, s"iteration-${iteration - 1}")
+      val iterationDir = new File(outputDir, "iterations")
       iterationDir.mkdir()
-      writeGroups(groups, trash, iterationDir, correctCells)
+      val ieterationFile = new File(iterationDir, s"${iteration - 1}.tsv")
+      writeGroups(groups, trash, ieterationFile, correctCells)
     }
 
     sc.setJobGroup(s"Iteration $iteration", s"Iteration $iteration")
