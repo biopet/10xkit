@@ -53,7 +53,9 @@ object ExtractGroupVariants extends ToolCommand[Args] {
     val dict = sc.broadcast(fasta.getCachedDict(cmdArgs.reference))
     val correctCells = tenxkit.parseCorrectCells(cmdArgs.correctCells)
     val correctCellsMap = tenxkit.correctCellsMap(correctCells)
-    val groups = sc.broadcast(tenxkit.readClusters(cmdArgs.groupsFile).map{ case (cluster, cells) => cluster -> cells.map(correctCellsMap.value)})
+    val groups = sc.broadcast(tenxkit.readClusters(cmdArgs.groupsFile).map {
+      case (cluster, cells) => cluster -> cells.map(correctCellsMap.value)
+    })
     val groupsMap = sc.broadcast(groups.value.flatMap {
       case (k, l) => l.map(_ -> k)
     })

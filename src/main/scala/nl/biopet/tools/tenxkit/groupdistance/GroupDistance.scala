@@ -107,7 +107,10 @@ object GroupDistance extends ToolCommand[Args] {
     )
     sc.clearJobGroup()
 
-    writeGroups(groups.cache(), trash.cache(), new File(cmdArgs.outputDir, "clusters.tsv"), correctCells)
+    writeGroups(groups.cache(),
+                trash.cache(),
+                new File(cmdArgs.outputDir, "clusters.tsv"),
+                correctCells)
 
     sparkSession.stop()
     logger.info("Done")
@@ -122,10 +125,10 @@ object GroupDistance extends ToolCommand[Args] {
     val writer = new PrintWriter(outputFile)
     writer.println("#barcode\tcluster")
 
-
     groups.groupBy(_.group).collect().foreach {
       case (idx, samples) =>
-        samples.foreach(s => writer.println(correctCells.value(s.sample) + s"\tcluster_$idx"))
+        samples.foreach(s =>
+          writer.println(correctCells.value(s.sample) + s"\tcluster_$idx"))
     }
 
     trashData.foreach(s => writer.println(correctCells.value(s) + "\ttrash"))

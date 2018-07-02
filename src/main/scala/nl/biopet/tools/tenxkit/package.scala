@@ -132,10 +132,22 @@ package object tenxkit {
 
   def readClusters(file: File): Map[String, List[String]] = {
     val reader = Source.fromFile(file)
-    val result = reader.getLines().filter(!_.startsWith("#")).map(_.split("\t").toList).map {
-      case List(barcode, cluster) => (barcode, cluster)
-      case x => throw new IllegalArgumentException(s"Line does not have 2 columns: '${x.mkString("\t")}'")
-    }.toList.groupBy{ case (_, cluster) => cluster}.map{case (cluster, list) => cluster -> list.map{ case (barcode, _) => barcode}}
+    val result = reader
+      .getLines()
+      .filter(!_.startsWith("#"))
+      .map(_.split("\t").toList)
+      .map {
+        case List(barcode, cluster) => (barcode, cluster)
+        case x =>
+          throw new IllegalArgumentException(
+            s"Line does not have 2 columns: '${x.mkString("\t")}'")
+      }
+      .toList
+      .groupBy { case (_, cluster) => cluster }
+      .map {
+        case (cluster, list) =>
+          cluster -> list.map { case (barcode, _) => barcode }
+      }
     reader.close()
     result
   }

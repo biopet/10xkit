@@ -112,8 +112,12 @@ class GroupDistanceTest extends ToolTest[Args] {
     clustersFile should exist
 
     val clusters = tenxkit.readClusters(clustersFile)
-    clusters.values.toList.map(_.sorted).contains(List("sample1", "sample2")) shouldBe true
-    clusters.values.toList.map(_.sorted).contains(List("sample3", "sample4")) shouldBe true
+    clusters.values.toList
+      .map(_.sorted)
+      .contains(List("sample1", "sample2")) shouldBe true
+    clusters.values.toList
+      .map(_.sorted)
+      .contains(List("sample3", "sample4")) shouldBe true
   }
 
   @DataProvider(name = "recluster")
