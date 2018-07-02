@@ -25,6 +25,7 @@ import java.io.{File, PrintWriter}
 
 import nl.biopet.tools.tenxkit.{DistanceMatrix, TenxKit}
 import nl.biopet.utils.tool.ToolCommand
+import nl.biopet.tools.tenxkit
 
 import scala.io.Source
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,10 +40,7 @@ object EvalSubGroups extends ToolCommand[Args] {
     logger.info("Start")
 
     logger.info("Reading groups")
-    val groups = cmdArgs.groups.map {
-      case (sample, file) =>
-        sample -> Source.fromFile(file).getLines().toList
-    }
+    val groups = tenxkit.readClusters(cmdArgs.groupsFile)
 
     cmdArgs.distanceMatrix.foreach(
       evalDistanceMatrix(_, cmdArgs.outputDir, groups))
@@ -131,9 +129,12 @@ object EvalSubGroups extends ToolCommand[Args] {
     val distanceMatrix = DistanceMatrix.fromFile(distanceMatrixFile)
 
     val sampleMap = distanceMatrix.samples.zipWithIndex.toMap
-    val idxGroups = groups.map {
-      case (name, list) => name -> list.map(sampleMap)
-    }
+    val idxGroups = groups
+      .map {
+        case (name, list) => name -> list.map(sampleMap)
+      }
+      .toList
+      .sortBy { case (k, _) => k }
 
     logger.info("Writing total data")
     val histogram = distanceMatrix.totalHistogram
@@ -192,11 +193,7 @@ object EvalSubGroups extends ToolCommand[Args] {
          "-d",
          "<distance matrix>",
          "-g",
-         "<group 1>=<group 1 file>",
-         "-g",
-         "<group 2>=<group 2 file>",
-         "-g",
-         "<<group 3>=group 3 file>"
+         "<groups file>"
        )}
       |
       |Run with know true set:
@@ -209,9 +206,7 @@ object EvalSubGroups extends ToolCommand[Args] {
          "-k",
          "sample2=<sample 2 file>",
          "-g",
-         "<group 1>=<group 2 file>",
-         "-g",
-         "<group 2>=<group 2 file>"
+         "<groups file>"
        )}
       |
     """.stripMargin
