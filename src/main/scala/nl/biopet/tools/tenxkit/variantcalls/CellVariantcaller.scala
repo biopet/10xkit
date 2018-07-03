@@ -126,12 +126,12 @@ object CellVariantcaller extends ToolCommand[Args] {
     val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
 
     val filteredVariants =
-      filterVariants(allVariants, seqError, cutoffs).map(_.cache())
+      filterVariants(allVariants, seqError, cutoffs)
 
     val writeFilterVcfFuture =
       if (writeFilteredVcf) Some(filteredVariants.map { rdd =>
         VariantCall.writeToPartitionedVcf(
-          rdd.cache().sortBy(x => (x.contig, x.pos), numPartitions = 200),
+          rdd.sortBy(x => (x.contig, x.pos), numPartitions = 200),
           new File(outputDir, "filter-vcf"),
           correctCells,
           dict,
@@ -142,7 +142,7 @@ object CellVariantcaller extends ToolCommand[Args] {
 
     val writeAllVcfFuture = {
       if (writeRawVcf) Some(Future {
-        VariantCall.writeToPartitionedVcf(allVariants.cache(),
+        VariantCall.writeToPartitionedVcf(allVariants,
                                           new File(outputDir, "raw-vcf"),
                                           correctCells,
                                           dict,
