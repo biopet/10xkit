@@ -26,4 +26,4 @@ import java.io.File
 case class Args(distanceMatrix: Option[File] = None,
                 knownTrue: Map[String, File] = Map(),
                 outputDir: File = null,
-                groups: Map[String, File] = Map())
+                groupsFile: File = null)

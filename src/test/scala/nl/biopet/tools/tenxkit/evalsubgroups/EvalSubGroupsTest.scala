@@ -45,9 +45,13 @@ class EvalSubGroupsTest extends ToolTest[Args] {
     group1File.deleteOnExit()
     val group2File = File.createTempFile("group.", ".txt")
     group2File.deleteOnExit()
+    val groupsFile = File.createTempFile("group.", ".txt")
+    groupsFile.deleteOnExit()
 
     writeLinesToFile(group1File, group1)
     writeLinesToFile(group2File, group2)
+    writeLinesToFile(groupsFile,
+                     group1.map(_ + "\tgroup1") ::: group2.map(_ + "\tgroup2"))
 
     val outputDir = File.createTempFile("test.", ".eval")
     outputDir.delete()
@@ -55,9 +59,7 @@ class EvalSubGroupsTest extends ToolTest[Args] {
 
     EvalSubGroups.main(
       Array("-g",
-            s"group1=$group1File",
-            "-g",
-            s"group2=$group2File",
+            s"$groupsFile",
             "-k",
             s"sample1=$group1File",
             "-k",
@@ -85,10 +87,8 @@ class EvalSubGroupsTest extends ToolTest[Args] {
   def testDistanceMatrix(): Unit = {
     val group1 = List("cell1", "cell2")
     val group2 = List("cell3", "cell4")
-    val group1File = File.createTempFile("group.", ".txt")
-    group1File.deleteOnExit()
-    val group2File = File.createTempFile("group.", ".txt")
-    group2File.deleteOnExit()
+    val groupsFile = File.createTempFile("group.", ".txt")
+    groupsFile.deleteOnExit()
 
     val distanceMatrixFile = File.createTempFile("distance.", ".tsv")
     val distanceMatrix = DistanceMatrix(
@@ -102,8 +102,8 @@ class EvalSubGroupsTest extends ToolTest[Args] {
     )
     distanceMatrix.writeFile(distanceMatrixFile)
 
-    writeLinesToFile(group1File, group1)
-    writeLinesToFile(group2File, group2)
+    writeLinesToFile(groupsFile,
+                     group1.map(_ + "\tgroup1") ::: group2.map(_ + "\tgroup2"))
 
     val outputDir = File.createTempFile("test.", ".eval")
     outputDir.delete()
@@ -111,9 +111,7 @@ class EvalSubGroupsTest extends ToolTest[Args] {
 
     EvalSubGroups.main(
       Array("-g",
-            s"group1=$group1File",
-            "-g",
-            s"group2=$group2File",
+            s"$groupsFile",
             "-d",
             s"$distanceMatrixFile",
             "-o",

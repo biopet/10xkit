@@ -43,10 +43,9 @@ class ArgsParser(toolCommand: ToolCommand[Args])
     .required()
     .action((x, c) => c.copy(outputDir = x))
     .text("Output directory")
-  opt[(String, File)]('g', "group")
-    .action { case ((id, file), c) => c.copy(groups = c.groups + (id -> file)) }
+  opt[File]('g', "group")
+    .action { case (x, c) => c.copy(groupsFile = x) }
     .required()
-    .unbounded()
     .text("Group to extract")
   opt[Int]("minSampleDepth")
     .action((x, c) => c.copy(minSampleDepth = x))

@@ -90,9 +90,7 @@ class ExtractGroupVariantsTest extends ToolTest[Args] {
         "-o",
         outputDir.getAbsolutePath,
         "-g",
-        s"group1=${resourcePath("/group1.txt")}",
-        "-g",
-        s"group2=${resourcePath("/group2.txt")}"
+        s"${resourcePath("/groups.tsv")}"
       ))
 
     implicit val sc: SparkContext =
@@ -105,14 +103,14 @@ class ExtractGroupVariantsTest extends ToolTest[Args] {
       .collect()
     groupsCalls.length shouldBe 1
     groupsCalls.headOption.map(_.genotypes.keySet) shouldBe Some(
-      Set("group1", "group2"))
+      Set("cluster_1", "cluster_2"))
     groupsCalls.headOption.map(_.contig) shouldBe Some(0)
     groupsCalls.headOption.map(_.pos) shouldBe Some(1000)
     groupsCalls.headOption.map(_.refAllele) shouldBe Some("A")
     groupsCalls.headOption.map(_.altAlleles) shouldBe Some(IndexedSeq("G"))
-    groupsCalls.headOption.map(_.alleleCount("group1")) shouldBe Some(
+    groupsCalls.headOption.map(_.alleleCount("cluster_1")) shouldBe Some(
       IndexedSeq(AlleleCount(20), AlleleCount()))
-    groupsCalls.headOption.map(_.alleleCount("group2")) shouldBe Some(
+    groupsCalls.headOption.map(_.alleleCount("cluster_2")) shouldBe Some(
       IndexedSeq(AlleleCount(), AlleleCount(10)))
 
     sc.stop()
