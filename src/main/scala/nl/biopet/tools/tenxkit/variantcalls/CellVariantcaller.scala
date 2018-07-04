@@ -126,7 +126,7 @@ object CellVariantcaller extends ToolCommand[Args] {
     val vcfHeader = sc.broadcast(tenxkit.vcfHeader(correctCells.value))
 
     val filteredVariants =
-      filterVariants(allVariants, seqError, cutoffs)
+      filterVariants(allVariants, seqError, cutoffs).map(_.repartition(allVariants.partitions.size))
 
     val writeFilterVcfFuture =
       if (writeFilteredVcf) Some(filteredVariants.map { rdd =>
